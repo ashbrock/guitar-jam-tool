@@ -1,0 +1,76 @@
+{
+  "id": "soul-roots",
+  "name": "Soul & Roots",
+  "descriptor": "Gospel turns and honest triads",
+  "references": ["Leon Bridges", "Ray Charles", "Chris Stapleton", "Ray LaMontagne", "Norah Jones"],
+  "params": {
+    "lengths": [4, 8],
+    "harmonicRhythm": [{ "bars": 1, "w": 4 }, { "bars": 2, "w": 3 }, { "bars": 0.5, "w": 1 }],
+    "minChords": 2,
+    "allowRepeats": false,
+    "loop": "closed",
+    "modes": {
+      "major": {
+        "vocabulary": {
+          "I": { "": 3, "6": 1, "maj7": 1, "add9": 1 },
+          "ii": { "m7": 2, "m": 1 },
+          "iii": { "m": 1, "m7": 1 },
+          "IV": { "": 3, "6": 1, "maj7": 1, "add9": 1 },
+          "iv": { "m": 2, "m6": 1 },
+          "#iv": { "dim7": 1 },
+          "V": { "": 2, "7": 3, "7sus4": 1 },
+          "vi": { "m": 2, "m7": 2 },
+          "V/IV": { "7": 2 },
+          "V/V": { "7": 1, "9": 1 },
+          "bVII": { "": 1 }
+        },
+        "starts": { "I": 6, "IV": 1, "vi": 1 },
+        "transitions": {
+          "I": { "IV": 4, "V": 2, "vi": 2, "V/IV": 2, "iii": 1, "ii": 1, "V/V": 1, "bVII": 1 },
+          "V/IV": { "IV": 4 },
+          "IV": { "I": 3, "iv": 2, "V": 2, "#iv": 1, "ii": 1 },
+          "iv": { "I": 4 },
+          "#iv": { "I": 3, "V": 1 },
+          "V": { "I": 4, "IV": 2, "vi": 1 },
+          "vi": { "IV": 3, "ii": 2, "V": 1 },
+          "ii": { "V": 4 },
+          "iii": { "vi": 3, "IV": 1 },
+          "V/V": { "V": 4 },
+          "bVII": { "IV": 2, "I": 2 }
+        }
+      },
+      "minor": {
+        "vocabulary": {
+          "i": { "m": 2, "m7": 2 },
+          "iv": { "m": 2, "m7": 2 },
+          "v": { "m": 1 },
+          "V": { "7": 3, "": 1 },
+          "bVI": { "": 2, "maj7": 1 },
+          "bVII": { "": 2, "7": 1 },
+          "bIII": { "": 2 }
+        },
+        "starts": { "i": 5, "iv": 1, "bVI": 1 },
+        "transitions": {
+          "i": { "iv": 3, "bVI": 2, "bVII": 2, "V": 2, "bIII": 1 },
+          "iv": { "i": 2, "V": 2, "bVII": 2, "v": 1 },
+          "v": { "i": 3 },
+          "V": { "i": 4 },
+          "bVI": { "bVII": 3, "V": 2, "iv": 1 },
+          "bVII": { "i": 2, "bIII": 2, "bVI": 1 },
+          "bIII": { "bVII": 2, "bVI": 2, "iv": 2 }
+        }
+      }
+    }
+  },
+  "playback": {
+    "feel": "straight",
+    "swing": 0.15,
+    "groove": "soul-backbeat",
+    "voicing": "close",
+    "tempo": { "default": 92, "min": 66, "max": 124 }
+  },
+  "scalePreference": {
+    "major": ["majorPentatonic", "majorBlues", "major", "mixolydian"],
+    "minor": ["minorPentatonic", "minorBlues", "naturalMinor", "dorian"]
+  }
+}

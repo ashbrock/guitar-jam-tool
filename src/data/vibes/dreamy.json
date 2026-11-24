@@ -1,0 +1,70 @@
+{
+  "id": "dreamy",
+  "name": "Dreamy",
+  "descriptor": "Slow, wide and floating",
+  "references": ["M83", "Pink Floyd"],
+  "params": {
+    "lengths": [4, 8],
+    "harmonicRhythm": [{ "bars": 2, "w": 4 }, { "bars": 4, "w": 2 }, { "bars": 1, "w": 1 }],
+    "minChords": 2,
+    "allowRepeats": false,
+    "loop": "free",
+    "modes": {
+      "major": {
+        "vocabulary": {
+          "I": { "maj7": 3, "add9": 2, "sus2": 2, "maj9": 1 },
+          "IV": { "maj7": 2, "add9": 2, "maj7#11": 2 },
+          "vi": { "m9": 2, "m7": 1 },
+          "iii": { "m7": 2 },
+          "ii": { "m9": 1, "m11": 1 },
+          "V": { "sus4": 2, "add9": 1 },
+          "bVII": { "add9": 1 },
+          "bVI": { "maj7": 1 }
+        },
+        "starts": { "I": 4, "IV": 2, "vi": 1 },
+        "transitions": {
+          "I": { "IV": 4, "vi": 2, "iii": 2, "bVI": 1, "V": 1 },
+          "IV": { "I": 3, "vi": 2, "ii": 1, "bVII": 1 },
+          "vi": { "IV": 3, "I": 2, "iii": 1 },
+          "iii": { "IV": 2, "vi": 2 },
+          "ii": { "IV": 1, "V": 1 },
+          "V": { "IV": 2, "vi": 2, "I": 1 },
+          "bVII": { "IV": 2, "I": 2 },
+          "bVI": { "I": 2, "IV": 1 }
+        }
+      },
+      "minor": {
+        "vocabulary": {
+          "i": { "m9": 3, "madd9": 2, "m7": 1 },
+          "bVI": { "maj7": 3, "add9": 1, "maj7#11": 1 },
+          "bIII": { "maj7": 2, "add9": 1 },
+          "iv": { "m9": 1, "m7": 1 },
+          "bVII": { "add9": 2, "sus2": 1 },
+          "v": { "m7": 1 },
+          "IV": { "add9": 1 }
+        },
+        "starts": { "i": 4, "bVI": 2 },
+        "transitions": {
+          "i": { "bVI": 4, "bIII": 2, "iv": 1, "IV": 1, "bVII": 1, "v": 1 },
+          "bVI": { "i": 3, "bVII": 2, "bIII": 1 },
+          "bIII": { "bVI": 2, "iv": 1, "bVII": 1 },
+          "iv": { "i": 2, "bVI": 1 },
+          "bVII": { "i": 2, "bVI": 1 },
+          "v": { "bVI": 1, "i": 1 },
+          "IV": { "i": 3 }
+        }
+      }
+    }
+  },
+  "playback": {
+    "feel": "straight",
+    "swing": 0,
+    "groove": "half-time-wash",
+    "voicing": "open",
+    "tempo": { "default": 72, "min": 50, "max": 96 }
+  },
+  "scalePreference": {
+    "major": ["lydian", "majorPentatonic", "major"],
+    "minor": ["dorian", "naturalMinor", "minorPentatonic"]
+  }
+}

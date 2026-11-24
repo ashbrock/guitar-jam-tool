@@ -1,0 +1,80 @@
+{
+  "id": "neo-soul",
+  "name": "Neo-soul",
+  "descriptor": "Lush 7ths and 9ths, lazy pocket",
+  "references": ["Tom Misch", "D'Angelo", "Mac Ayres", "FKJ", "Christian Kuria"],
+  "params": {
+    "lengths": [4, 8],
+    "harmonicRhythm": [{ "bars": 1, "w": 5 }, { "bars": 2, "w": 2 }, { "bars": 0.5, "w": 1 }],
+    "minChords": 3,
+    "allowRepeats": false,
+    "loop": "closed",
+    "modes": {
+      "major": {
+        "vocabulary": {
+          "I": { "maj7": 3, "maj9": 3, "6/9": 1 },
+          "ii": { "m7": 2, "m9": 3, "m11": 1 },
+          "iii": { "m7": 2, "m9": 1 },
+          "IV": { "maj7": 2, "maj9": 2, "maj7#11": 1 },
+          "iv": { "m7": 2, "m6": 1, "m9": 1 },
+          "V": { "9": 2, "13": 2, "7sus4": 1 },
+          "vi": { "m7": 2, "m9": 2 },
+          "V/ii": { "7": 1, "9": 1, "7b9": 1 },
+          "V/vi": { "7": 1, "7#9": 1 },
+          "bVII": { "9": 1, "13": 1 }
+        },
+        "starts": { "I": 4, "IV": 3, "ii": 2, "vi": 2, "iii": 1 },
+        "transitions": {
+          "I": { "ii": 3, "iii": 2, "IV": 3, "vi": 2, "V/ii": 1, "V/vi": 1, "iv": 1 },
+          "ii": { "V": 4, "iii": 1, "IV": 1, "bVII": 1, "I": 1 },
+          "iii": { "vi": 3, "IV": 2, "ii": 2, "V/ii": 1 },
+          "IV": { "iv": 2, "iii": 2, "V": 1, "I": 2, "ii": 1, "bVII": 1, "V/vi": 1 },
+          "iv": { "I": 3, "bVII": 2, "iii": 1 },
+          "V": { "I": 4, "vi": 1, "IV": 1, "iii": 1 },
+          "vi": { "ii": 3, "IV": 2, "V": 1, "iii": 1 },
+          "V/ii": { "ii": 4 },
+          "V/vi": { "vi": 4 },
+          "bVII": { "I": 4, "IV": 1 }
+        }
+      },
+      "minor": {
+        "vocabulary": {
+          "i": { "m9": 3, "m7": 3, "m11": 1 },
+          "iv": { "m9": 2, "m7": 2 },
+          "IV": { "9": 1, "13": 1 },
+          "bVI": { "maj7": 3, "maj9": 1 },
+          "bVII": { "9": 1, "13": 1, "maj7": 1 },
+          "bIII": { "maj7": 2, "maj9": 1 },
+          "v": { "m7": 2, "m9": 1 },
+          "V": { "7#9": 1, "7b9": 1 },
+          "ii": { "m7b5": 1 },
+          "bII": { "maj7": 1 }
+        },
+        "starts": { "i": 4, "iv": 2, "bVI": 2, "bIII": 1 },
+        "transitions": {
+          "i": { "iv": 3, "bVI": 2, "IV": 2, "bIII": 2, "v": 1, "bVII": 1 },
+          "iv": { "v": 2, "bVII": 2, "i": 2, "bIII": 1, "V": 1, "bVI": 1 },
+          "IV": { "i": 3, "iv": 1, "bVII": 1 },
+          "bVI": { "bVII": 2, "v": 1, "V": 1, "iv": 1, "bII": 1, "ii": 1 },
+          "bVII": { "i": 2, "bIII": 3, "bVI": 1 },
+          "bIII": { "bVI": 2, "iv": 2, "ii": 1, "bVII": 1 },
+          "v": { "i": 3, "bVI": 2, "iv": 1 },
+          "V": { "i": 4 },
+          "ii": { "V": 4 },
+          "bII": { "i": 3, "V": 1 }
+        }
+      }
+    }
+  },
+  "playback": {
+    "feel": "shuffle",
+    "swing": 0.35,
+    "groove": "neo-soul-pocket",
+    "voicing": "open",
+    "tempo": { "default": 84, "min": 65, "max": 100 }
+  },
+  "scalePreference": {
+    "major": ["majorPentatonic", "major", "dorian", "lydian"],
+    "minor": ["dorian", "minorPentatonic", "naturalMinor"]
+  }
+}

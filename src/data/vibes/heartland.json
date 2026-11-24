@@ -1,0 +1,66 @@
+{
+  "id": "heartland",
+  "name": "Heartland",
+  "descriptor": "Open chords, long roads, driving eighths",
+  "references": ["The War On Drugs", "The Paper Kites", "John Mayer"],
+  "params": {
+    "lengths": [4, 8],
+    "harmonicRhythm": [{ "bars": 1, "w": 3 }, { "bars": 2, "w": 3 }, { "bars": 4, "w": 1 }],
+    "minChords": 2,
+    "allowRepeats": false,
+    "loop": "closed",
+    "modes": {
+      "major": {
+        "vocabulary": {
+          "I": { "": 2, "add9": 3, "maj7": 1, "sus2": 1 },
+          "IV": { "": 2, "add9": 2, "maj7": 2, "sus2": 1 },
+          "V": { "": 2, "sus4": 2, "add9": 1 },
+          "vi": { "m": 2, "m7": 2, "madd9": 1 },
+          "ii": { "m7": 2 },
+          "iii": { "m7": 1, "m": 1 },
+          "bVII": { "": 1, "add9": 1 }
+        },
+        "starts": { "I": 5, "vi": 2, "IV": 2 },
+        "transitions": {
+          "I": { "V": 3, "IV": 3, "vi": 3, "iii": 1, "bVII": 1 },
+          "V": { "vi": 3, "IV": 3, "I": 2 },
+          "vi": { "IV": 4, "V": 2, "ii": 1, "iii": 1 },
+          "IV": { "I": 3, "V": 2, "vi": 1, "ii": 1 },
+          "ii": { "IV": 2, "V": 2 },
+          "iii": { "IV": 2, "vi": 2 },
+          "bVII": { "IV": 3, "I": 1 }
+        }
+      },
+      "minor": {
+        "vocabulary": {
+          "i": { "m": 2, "m7": 2, "madd9": 1 },
+          "bVI": { "": 2, "add9": 1, "maj7": 1 },
+          "bIII": { "": 2, "add9": 1 },
+          "bVII": { "": 2, "sus2": 1 },
+          "iv": { "m7": 2, "m": 1 },
+          "v": { "m7": 1 }
+        },
+        "starts": { "i": 4, "bVI": 2 },
+        "transitions": {
+          "i": { "bVI": 3, "bIII": 2, "bVII": 3, "iv": 1, "v": 1 },
+          "bVI": { "bIII": 2, "bVII": 3, "i": 1, "iv": 1 },
+          "bIII": { "bVII": 3, "bVI": 1, "iv": 1 },
+          "bVII": { "i": 3, "bVI": 2, "bIII": 1 },
+          "iv": { "bVI": 2, "i": 2, "bVII": 1 },
+          "v": { "bVI": 2, "i": 1 }
+        }
+      }
+    }
+  },
+  "playback": {
+    "feel": "straight",
+    "swing": 0,
+    "groove": "driving-eighths",
+    "voicing": "open",
+    "tempo": { "default": 116, "min": 88, "max": 148 }
+  },
+  "scalePreference": {
+    "major": ["majorPentatonic", "major", "mixolydian"],
+    "minor": ["minorPentatonic", "naturalMinor", "dorian"]
+  }
+}

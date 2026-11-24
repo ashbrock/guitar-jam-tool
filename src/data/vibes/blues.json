@@ -1,0 +1,99 @@
+{
+  "id": "blues",
+  "name": "Blues",
+  "descriptor": "Dominant 7ths, shuffle and turnarounds",
+  "references": ["BB King", "Christone \"Kingfish\" Ingram", "Marcus King", "Jimi Hendrix"],
+  "params": {
+    "lengths": [4, 8, 12],
+    "harmonicRhythm": [{ "bars": 1, "w": 4 }, { "bars": 2, "w": 2 }, { "bars": 0.5, "w": 1 }],
+    "minChords": 2,
+    "allowRepeats": true,
+    "loop": "closed",
+    "modes": {
+      "major": {
+        "vocabulary": {
+          "I": { "7": 3, "9": 2, "13": 1 },
+          "IV": { "7": 3, "9": 2, "13": 1 },
+          "V": { "7": 3, "9": 2, "7#9": 1 },
+          "#iv": { "dim7": 1 },
+          "V/ii": { "7": 2, "7#9": 1 },
+          "ii": { "m7": 1 },
+          "bVI": { "7": 1, "9": 1 }
+        },
+        "starts": { "I": 6, "IV": 1 },
+        "transitions": {
+          "I": { "IV": 4, "I": 2, "V": 2, "V/ii": 1 },
+          "IV": { "I": 3, "#iv": 1, "IV": 1, "V": 1 },
+          "#iv": { "I": 3 },
+          "V": { "IV": 3, "I": 3, "bVI": 1 },
+          "V/ii": { "ii": 3, "V": 1 },
+          "ii": { "V": 4 },
+          "bVI": { "V": 4 }
+        },
+        "templates": {
+          "12": {
+            "markov": 0,
+            "forms": [
+              { "w": 3, "degrees": ["I", "I", "I", "I", "IV", "IV", "I", "I", "V", "IV", "I", "V"] },
+              { "w": 3, "degrees": ["I", "IV", "I", "I", "IV", "IV", "I", "I", "V", "IV", "I", "V"] },
+              { "w": 1, "degrees": ["I", "IV", "I", "I", "IV", "#iv", "I", "V/ii", "ii", "V", "I", "V"] }
+            ]
+          },
+          "8": {
+            "markov": 1,
+            "forms": [
+              { "w": 2, "degrees": ["I", "V", "IV", "IV", "I", "V", "I", "V"] },
+              { "w": 1, "degrees": ["I", "I", "IV", "IV", "I", "V", "I", "V"] }
+            ]
+          }
+        }
+      },
+      "minor": {
+        "vocabulary": {
+          "i": { "m7": 3, "m9": 2, "m6": 1 },
+          "iv": { "m7": 3, "m9": 2 },
+          "v": { "m7": 1 },
+          "V": { "7": 2, "7#9": 2 },
+          "bVI": { "7": 2, "maj7": 1 },
+          "bVII": { "7": 1 }
+        },
+        "starts": { "i": 6, "iv": 1 },
+        "transitions": {
+          "i": { "iv": 4, "i": 2, "bVI": 1, "V": 1, "bVII": 1 },
+          "iv": { "i": 3, "iv": 1, "bVI": 1, "V": 1 },
+          "v": { "i": 2, "iv": 1 },
+          "V": { "i": 4, "iv": 1 },
+          "bVI": { "V": 3, "v": 1, "bVII": 1 },
+          "bVII": { "i": 3 }
+        },
+        "templates": {
+          "12": {
+            "markov": 0,
+            "forms": [
+              { "w": 3, "degrees": ["i", "i", "i", "i", "iv", "iv", "i", "i", "bVI", "V", "i", "V"] },
+              { "w": 2, "degrees": ["i", "i", "i", "i", "iv", "iv", "i", "i", "bVI", "V", "i", "i"] },
+              { "w": 1, "degrees": ["i", "iv", "i", "i", "iv", "iv", "i", "i", "v", "iv", "i", "V"] }
+            ]
+          },
+          "8": {
+            "markov": 1,
+            "forms": [
+              { "w": 1, "degrees": ["i", "i", "iv", "iv", "i", "V", "i", "V"] }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "playback": {
+    "feel": "shuffle",
+    "swing": 0.66,
+    "groove": "shuffle",
+    "voicing": "shell",
+    "tempo": { "default": 76, "min": 55, "max": 130 }
+  },
+  "scalePreference": {
+    "major": ["minorBlues", "minorPentatonic", "majorBlues", "majorPentatonic", "mixolydian"],
+    "minor": ["minorBlues", "minorPentatonic", "dorian", "naturalMinor"]
+  }
+}
