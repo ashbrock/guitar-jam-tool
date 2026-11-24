@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audio engine check (dev only)</title>
+</head>
+<body>
+  <!-- Dev-only test page for the audio engine. Deliberately unstyled: it is not product UI. -->
+  <h1>Audio engine check</h1>
+  <p>Dev only. Run <code>npm run dev</code> and open <code>/dev/audio.html</code>.</p>
+  <p>
+    <label>Progression <input id="prog" size="40" value="| Em9 | A13 | Dmaj7 | Bm7 |" /></label>
+    <span id="progError" role="alert"></span>
+  </p>
+  <p>
+    <label>Vibe <select id="vibe"><option value="">Plain (Solo default)</option></select></label>
+    <label>Tempo <input id="tempo" type="number" min="40" max="240" value="90" /></label>
+  </p>
+  <p>
+    <button id="play">Play / Pause</button>
+    <button id="restart">Restart</button>
+    <button id="reroll">Re-roll (jump to bar 1)</button>
+    <button id="preview">Preview first chord</button>
+  </p>
+  <fieldset>
+    <legend>Parts</legend>
+    <label><input type="checkbox" id="chords" checked /> Chords</label>
+    <label><input type="checkbox" id="bass" checked /> Bass</label>
+    <label><input type="checkbox" id="click" checked /> Click</label>
+    <label><input type="checkbox" id="drums" /> Drums</label>
+    <label><input type="checkbox" id="countIn" checked /> Count-in</label>
+  </fieldset>
+  <pre id="status" aria-live="off"></pre>
+  <script type="module" src="./audio.ts"></script>
+</body>
+</html>

@@ -386,6 +386,8 @@ The exact weights are tuned by ear during the build, and each vibe gets test fix
 | Same chord repeated in Solo | Allowed (songs do this). The strip shows each repeat. |
 | Enharmonic input (`A#` in the key of F) | Keep the user's spelling on the chip. The fretboard labels follow the key's spelling. |
 | Rotate during playback | Layout changes, playback is unaffected, and the fretboard scroll position is kept where possible. |
+| Device or browser stalls (busy page, slow phone) | Sounds are scheduled 150 ms ahead on the audio clock, so short stalls are inaudible. After a longer stall, the missed notes are skipped and playback continues on the beat. It never plays a burst of late notes, and the loop never drifts. |
+| Background tab | The scheduler's timer runs in a Web Worker, which browsers throttle far less than the page, so playback usually continues. If the browser suspends audio anyway, playback pauses (as for interruptions). |
 | Reduced motion | All motion is replaced as DESIGN.md §10.3 sets out. No functional difference. |
 | Page refresh, phone lock, tab discarded | The session is restored from `localStorage` (§10.5). |
 | Very narrow screens (≤ 340px) | Jam cards drop to 1 per row. Every control stays ≥ 48 px. |

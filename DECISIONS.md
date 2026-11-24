@@ -33,6 +33,13 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 ## Technical
 - **Plain Web Audio, no Tone.js (confirmed).** Synth voices, click and simple drums don't justify a dependency.
 - **Fonts self-hosted as WOFF2 (confirmed).** No third-party font requests and no package dependency. Works offline once cached.
+- **Audio uses a look-ahead scheduler on the audio clock (150 ms ahead, timer every 25 ms).** Timers are imprecise; the audio clock isn't. Each beat's time is computed on a fixed grid, so tests show zero drift over 10 simulated minutes at 40 and 240 BPM.
+- **The transport takes an injected clock, timer and output.** The timing logic is tested with a fake clock in milliseconds, and the Web Audio code stays a thin, dumb layer.
+- **After a stall, skip missed notes instead of catching up.** A burst of late notes sounds worse than a dropped beat. Verified in Chromium with a 400 ms main-thread block.
+- **The scheduler timer runs in a Web Worker.** Browsers throttle page timers in background tabs, which would starve the scheduler.
+- **Edits to the playing chord wait for the next bar line.** A chord swapping mid-bar sounds like a mistake.
+- **All instruments are synthesised (FM electric piano, triangle bass, noise drums).** No sample files to download, which matters on a phone at rehearsal.
+- **Gain staging checked in a real browser.** The first version peaked at 1.2 (clipping) at 240 BPM with drums. A fast compressor plus a master trim now peak at about 0.62.
 - **Generator is a pure, seeded function; vibes are JSON data.** Testable, deterministic, and v2 can map free text onto the same parameters.
 - **Vite + TypeScript + Vitest (three dev dependencies, no runtime dependencies).** Typed vibe files catch data mistakes early, and Vite keeps the static build simple.
 - **Roman numerals measured against the major scale (i, ♭III, ♭VI, ♭VII in minor).** One convention for every vibe and mode. Spelling comes from letter steps, so ♭VII in E minor is D, never C𝄪.
