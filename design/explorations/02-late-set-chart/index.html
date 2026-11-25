@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jam redesign mockup</title>
+<link rel="stylesheet" href="styles/tokens.css" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: var(--text-body); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  .caption { font-size: var(--text-caption); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- Top bar ---------- */
+  .top { display: flex; align-items: center; justify-content: space-between; height: var(--top-bar); padding: 0 var(--space-1); }
+  .tabs { display: flex; }
+  .tab { min-height: var(--target-min); padding: 0 var(--space-1); margin: 0 var(--space-1); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; }
+  .tab.on { color: var(--text); border-color: var(--accent); }
+  .tab .led { display: inline-block; width: 6px; height: 6px; margin-left: 6px; vertical-align: 3px; border-radius: 99px; background: var(--accent); }
+  .iconbtn { width: var(--target-min); height: var(--target-min); display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); border-radius: var(--radius-m); }
+  .hints { display: none; }
+
+  /* ---------- The set line ---------- */
+  .setline { padding: var(--space-2) var(--space-2) 0; font-family: var(--font-display); font-size: var(--text-headline); line-height: 1.22; font-weight: 500; color: var(--text-muted); }
+  .setline .w { color: var(--text); font-weight: 600; text-decoration: underline dotted var(--border-strong); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+  .setline .held { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; vertical-align: 0.9em; font-family: var(--font-ui); font-size: var(--text-caption); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .setline .held svg { width: 14px; height: 14px; }
+  .setline .num { font-family: var(--font-display); font-variant-numeric: lining-nums tabular-nums; }
+
+  /* ---------- Chart ---------- */
+  .stage { position: relative; margin: var(--space-4) var(--space-2) 0; }
+  .line { display: flex; position: relative; }
+  .line + .line { margin-top: var(--space-1); }
+  .bar { position: relative; flex: 1 1 0; min-width: 0; height: 132px; padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2); border-left: 1px solid var(--border-strong); display: flex; flex-direction: column; justify-content: space-between; }
+  .bar:last-child { border-right: 1px solid var(--border-strong); }
+  .bar.split .chords { display: flex; }
+  .bar.split .chords > * { flex: 1; }
+  .bar.split .chord { --size: var(--text-chord-sm); }
+  /* Repeat signs: ‖: at the start, :‖ at the end. The chart is a loop. */
+  .rep-start { border-left: 0; }
+  .rep-start::before, .rep-end::after { content: ''; position: absolute; top: 0; bottom: 0; width: 7px; border-left: 4px solid var(--text-muted); border-right: 1px solid var(--text-muted); }
+  .rep-start::before { left: 0; }
+  .rep-end { border-right: 0 !important; }
+  .rep-end::after { right: 0; border-left-width: 1px; border-right-width: 4px; }
+  .dots-start, .dots-end { position: absolute; top: 50%; translate: 0 -50%; display: flex; flex-direction: column; gap: 10px; }
+  .dots-start { left: 13px; } .dots-end { right: 13px; }
+  .dots-start i, .dots-end i { width: 5px; height: 5px; border-radius: 99px; background: var(--text-muted); }
+  .rep-start { padding-left: 28px; } .rep-end { padding-right: 28px; }
+
+  .chord { --size: var(--text-chord-md); font-family: var(--font-display); font-size: var(--size); font-weight: 600; line-height: 1; white-space: nowrap; }
+  .chord .acc { font-size: .7em; vertical-align: calc(var(--size) * .3); }
+  .chord .m { font-size: .7em; }
+  .chord .q { font-size: .55em; font-weight: 500; vertical-align: calc(var(--size) * .38); margin-left: .04em; }
+
+  /* Beat slashes, as on a real chart. */
+  .slashes { display: flex; gap: 14px; }
+  .slashes span { width: 3px; height: 16px; background: var(--border-strong); transform: skewX(-24deg); border-radius: 1px; }
+  .slashes span.on { background: var(--accent); }
+
+  /* The spotlight: light falls on the bar being played, from above. */
+  .bar.now::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 90% 100% at 50% -10%, color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--oxblood) 6%, transparent) 55%, transparent 80%); pointer-events: none; }
+  .bar.now { box-shadow: inset 0 -2px 0 var(--accent); }
+  .stage.playing .bar:not(.now) .chord { color: var(--text-muted); }
+
+  /* ---------- Shapes ---------- */
+  .shapes { display: flex; gap: var(--space-1); margin: var(--space-3) var(--space-2) 0; }
+  .shape { flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--space-half); padding: var(--space-1) 0; border-radius: var(--radius-m); }
+  .shape .name { font-family: var(--font-display); font-weight: 600; font-size: var(--text-body); }
+  .shape.now { background: var(--surface-accent); }
+  .shapes-label { display: none; }
+
+  /* ---------- Transport ---------- */
+  .transport { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: var(--space-1); padding: var(--space-3) var(--space-2) var(--space-3); background: linear-gradient(to top, var(--bg) 75%, transparent); }
+  .btn-back { width: var(--target-primary); height: var(--target-primary); border-radius: var(--radius-full); display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); border: 1px solid var(--border-strong); }
+  .stomp { flex: 1; height: var(--target-primary); border-radius: var(--radius-m); background: var(--accent); color: var(--on-accent); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); font-size: var(--text-body-lg); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .play { width: var(--target-primary); height: var(--target-primary); border-radius: var(--radius-full); background: var(--text); color: var(--on-accent); display: inline-flex; align-items: center; justify-content: center; }
+  .play svg { width: 28px; height: 28px; }
+
+  .phone { position: relative; width: 390px; height: 844px; overflow: hidden; }
+
+  /* ---------- Chord sheet ---------- */
+  .scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 70%, transparent); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 var(--space-2) var(--space-4); background: var(--surface-3); border-radius: var(--radius-l) var(--radius-l) 0 0; box-shadow: var(--shadow-sheet); }
+  .handle { height: var(--target-min); display: flex; align-items: center; justify-content: center; }
+  .handle span { width: 32px; height: 4px; border-radius: 99px; background: var(--border-strong); }
+  .sheet-head { display: flex; align-items: flex-start; justify-content: space-between; }
+  .sheet-head .chord { --size: var(--text-chord-lg); }
+  .sheet-sub { margin-top: var(--space-1); color: var(--text-muted); font-size: var(--text-small); }
+  .sheet-body { display: grid; grid-template-columns: 1fr; justify-items: center; margin-top: var(--space-2); }
+  .alts { display: flex; gap: var(--space-1); justify-content: center; margin-top: var(--space-2); }
+  .alt { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-1); border-radius: var(--radius-m); border: 1px solid transparent; min-width: 88px; }
+  .alt.on { border-color: var(--accent); background: var(--surface-accent); }
+  .alt .caption { font-size: 11px; }
+  .listen { margin-top: var(--space-3); width: 100%; height: var(--target-primary); border-radius: var(--radius-m); border: 1px solid var(--border-strong); background: var(--surface-2); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); }
+
+  /* ---------- Desktop ---------- */
+  .desktop { width: 1440px; height: 900px; position: relative; overflow: hidden; }
+  .desktop .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-4); }
+  .desktop .top { height: 72px; padding: 0; }
+  .desktop .hints { display: flex; align-items: center; gap: var(--space-3); color: var(--text-muted); font-size: var(--text-small); }
+  .desktop kbd { font-family: var(--font-mono); font-size: var(--text-caption); padding: 2px 6px; border-radius: var(--radius-s); border: 1px solid var(--border-strong); color: var(--text); margin-right: 6px; }
+  .desktop .hero { margin-top: var(--space-5); }
+  .desktop .hero .actions { margin-top: var(--space-3); }
+  .desktop .actions kbd { margin: 0 0 0 var(--space-1); border-color: color-mix(in srgb, var(--on-accent) 40%, transparent); color: var(--on-accent); }
+  .desktop .play kbd { display: none; }
+  .desktop .setline { padding: 0; font-size: var(--text-chord-lg); line-height: 1.1; white-space: nowrap; }
+  .desktop .actions { display: flex; gap: var(--space-1); align-items: center; flex: none; }
+  .desktop .stomp { flex: none; width: 220px; }
+  .desktop .stage { margin: var(--space-6) 0 0; }
+  .desktop .bar { height: 184px; padding: var(--space-3) var(--space-4) var(--space-3); }
+  .desktop .chord { --size: var(--text-chord-lg); }
+  .desktop .bar.split .chord { --size: var(--text-chord-md); }
+  .desktop .rep-start { padding-left: 40px; } .desktop .rep-end { padding-right: 40px; }
+  .desktop .slashes { gap: 22px; }
+  .desktop .slashes span { height: 20px; }
+  .desktop .shapes-label { display: block; margin-top: var(--space-5); }
+  .desktop .shapes { margin: var(--space-2) 0 0; gap: var(--space-3); justify-content: flex-start; }
+  .desktop .shape { flex: none; width: 140px; padding: var(--space-1) 0 var(--space-2); }
+  .desktop .shape .name { font-size: var(--text-title); }
+  .desktop .shape .notes { font-size: var(--text-caption); color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  // ---------- Tiny helpers for the mockup ----------
+  const I = {
+    sliders: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+    play: '<svg class="i" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
+    pause: '<svg class="i" viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13" stroke-width="3"/></svg>',
+    reroll: '<svg class="i" viewBox="0 0 24 24"><path d="M4.5 10a7.5 7.5 0 0 1 13.2-3.6L19.5 8.5"/><path d="M19.5 4v4.5H15"/><path d="M19.5 14a7.5 7.5 0 0 1-13.2 3.6L4.5 15.5"/><path d="M4.5 20v-4.5H9"/></svg>',
+    back: '<svg class="i" viewBox="0 0 24 24"><path d="M9 14.5 4.5 10 9 5.5"/><path d="M4.5 10h9a6 6 0 0 1 0 12H11"/></svg>',
+    close: '<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 4 4H6l4-4z"/><path d="M12 14v6"/></svg>',
+    speaker: '<svg class="i" viewBox="0 0 24 24"><path d="M5 9.5h3l5-4v13l-5-4H5z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg>',
+  };
+  // Chord name: [letter, accidental, minor m, raised quality]
+  const C = (l, a, m, q) => `<span class="chord">${l}${a ? `<span class="acc">${a}</span>` : ''}${m ? '<span class="m">m</span>' : ''}${q ? `<span class="q">${q}</span>` : ''}</span>`;
+
+  // Chord diagram: strings low→high, -1 muted, 0 open. Roots drawn as squares (same as the fretboard roles).
+  function diagram(s, { w = 64, fingers = false } = {}) {
+    const strings = 6, frets = 5;
+    const top = w * 0.32, left = w * 0.16, right = w * 0.08, bottom = w * 0.06;
+    const gw = w - left - right, gs = gw / (strings - 1);
+    const fh = gs * 1.25, h = top + fh * frets + bottom;
+    const base = s.base || 1;
+    const r = gs * 0.38;
+    let o = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">`;
+    for (let i = 0; i < strings; i++) o += `<line x1="${left + i * gs}" y1="${top}" x2="${left + i * gs}" y2="${top + fh * frets}" stroke="var(--fret-string)" stroke-width="${1 + (5 - i) * 0.18}"/>`;
+    for (let f = 0; f <= frets; f++) o += `<line x1="${left}" y1="${top + f * fh}" x2="${left + gw}" y2="${top + f * fh}" stroke="${f === 0 && base === 1 ? 'var(--fret-nut)' : 'var(--fret-wire)'}" stroke-width="${f === 0 && base === 1 ? w * 0.05 : 1}"/>`;
+    if (base > 1) o += `<text x="${left - w * 0.05}" y="${top + fh * 0.62}" text-anchor="end" font-family="var(--font-mono)" font-size="${w * 0.12}" fill="var(--text-muted)">${base}</text>`;
+    if (s.barre) {
+      const [fret, from, to] = s.barre, y = top + (fret - base + 0.5) * fh;
+      o += `<rect x="${left + from * gs - r}" y="${y - r}" width="${(to - from) * gs + 2 * r}" height="${2 * r}" rx="${r}" fill="var(--role-chord)"/>`;
+    }
+    s.frets.forEach((f, i) => {
+      const x = left + i * gs, isRoot = s.roots.includes(i);
+      if (f === -1) { const d = r * 0.7, y = top - fh * 0.45; o += `<path d="M${x - d} ${y - d}L${x + d} ${y + d}M${x + d} ${y - d}L${x - d} ${y + d}" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round"/>`; return; }
+      if (f === 0) { const y = top - fh * 0.45; o += isRoot ? `<rect x="${x - r * 0.75}" y="${y - r * 0.75}" width="${r * 1.5}" height="${r * 1.5}" rx="${r * 0.3}" fill="none" stroke="var(--role-root)" stroke-width="1.75"/>` : `<circle cx="${x}" cy="${y}" r="${r * 0.72}" fill="none" stroke="var(--text-muted)" stroke-width="1.5"/>`; return; }
+      const y = top + (f - base + 0.5) * fh;
+      if (s.barre && f === s.barre[0] && i >= s.barre[1] && i <= s.barre[2] && !isRoot) return;
+      o += isRoot ? `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="${r * 0.3}" fill="var(--role-root)"/>` : `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--role-chord)"/>`;
+      if (fingers && s.fingers && s.fingers[i]) o += `<text x="${x}" y="${y + r * 0.42}" text-anchor="middle" font-family="var(--font-mono)" font-weight="600" font-size="${r * 1.15}" fill="var(--on-accent)">${s.fingers[i]}</text>`;
+    });
+    return o + '</svg>';
+  }
+
+  const SHAPES = {
+    Gmaj7: { frets: [3, -1, 0, 0, 0, 2], roots: [0, 3], fingers: [2, 0, 0, 0, 0, 1] },
+    Gmaj7b: { frets: [3, -1, 4, 4, 3, -1], base: 3, roots: [0, 3], fingers: [1, 0, 3, 4, 2, 0] },
+    Gmaj7c: { frets: [-1, 10, 12, 11, 12, 10], base: 10, roots: [1], fingers: [0, 1, 3, 2, 4, 1], barre: [10, 1, 5] },
+    'F#m7': { frets: [2, 4, 2, 2, 2, 2], base: 2, roots: [0, 5], barre: [2, 0, 5], fingers: [1, 3, 1, 1, 1, 1] },
+    Em7: { frets: [0, 2, 2, 0, 3, 0], roots: [0, 2, 5] },
+    A7: { frets: [-1, 0, 2, 0, 2, 0], roots: [1] },
+    Dmaj7: { frets: [-1, -1, 0, 2, 2, 2], roots: [2] },
+  };
+
+  const chart = (desktop, playing) => {
+    const bars = [
+      { c: [C('G', '', '', 'maj7')], s: 'Gmaj7' },
+      { c: [C('F', '♯', 'm', '7')] },
+      { c: [C('E', '', 'm', '7'), C('A', '', '', '7')], split: true },
+      { c: [C('D', '', '', 'maj7')] },
+    ];
+    const now = playing ? 1 : -1, beat = 2;
+    const bar = (b, i) => `<div class="bar ${b.split ? 'split' : ''} ${i === 0 ? 'rep-start' : ''} ${i === 3 ? 'rep-end' : ''} ${i === now ? 'now' : ''}">
+        ${i === 0 ? '<span class="dots-start"><i></i><i></i></span>' : ''}${i === 3 ? '<span class="dots-end"><i></i><i></i></span>' : ''}
+        <div class="chords">${b.c.join('')}</div>
+        <div class="slashes">${[0, 1, 2, 3].map((k) => `<span class="${i === now && k <= beat ? 'on' : ''}"></span>`).join('')}</div>
+      </div>`;
+    const lines = desktop ? [bars] : [bars.slice(0, 2), bars.slice(2)];
+    let idx = 0;
+    return `<div class="stage ${playing ? 'playing' : ''}">${lines.map((l) => `<div class="line">${l.map((b) => bar(b, idx++)).join('')}</div>`).join('')}</div>`;
+  };
+
+  const shapes = (desktop, playing) => {
+    const list = [['Gmaj7', C('G', '', '', 'maj7'), 'G B D F♯'], ['F#m7', C('F', '♯', 'm', '7'), 'F♯ A C♯ E'], ['Em7', C('E', '', 'm', '7'), 'E G B D'], ['A7', C('A', '', '', '7'), 'A C♯ E G'], ['Dmaj7', C('D', '', '', 'maj7'), 'D F♯ A C♯']];
+    return `<p class="caption shapes-label">Shapes · tap to hear</p><div class="shapes">${list.map(([k, n, notes], i) =>
+      `<button class="shape ${playing && i === 1 ? 'now' : ''}">${diagram(SHAPES[k], { w: desktop ? 84 : 62 })}<span class="name">${n.replace('class="chord"', 'class="chord" style="--size:' + (desktop ? '24px' : '17px') + '"')}</span>${desktop ? `<span class="notes mono">${notes}</span>` : ''}</button>`).join('')}</div>`;
+  };
+
+  const setline = (desktop) => desktop
+    ? `<h1 class="setline"><span class="w">Neo-soul</span> in <span class="w">D major</span><span class="held">${I.pin}Held</span> at <span class="w num">84</span> bpm</h1>`
+    : `<h1 class="setline"><span class="w">Neo-soul</span><br>in <span class="w">D major</span><br>at <span class="w num">84</span> bpm</h1>`;
+
+  const topBar = (desktop, playing) => `<header class="top"><nav class="tabs"><button class="tab on">Jam${playing ? '<span class="led"></span>' : ''}</button><button class="tab">Solo</button></nav>
+    <div style="display:flex;align-items:center;gap:8px">${desktop ? '<div class="hints"><span><kbd>Space</kbd>Play / pause</span><span><kbd>←</kbd><kbd>→</kbd>Chords</span></div>' : ''}<button class="iconbtn" aria-label="Sound">${I.sliders}</button></div></header>`;
+
+  const transport = (playing) => `<div class="transport"><button class="btn-back" aria-label="Previous">${I.back}</button><button class="stomp">${I.reroll}<span>Re-roll</span></button><button class="play">${playing ? I.pause : I.play}</button></div>`;
+
+  const view = new URLSearchParams(location.search).get('view') || 'phone';
+  const root = document.getElementById('root');
+  if (view === 'desktop' || view === 'desktop-playing') {
+    const playing = view === 'desktop-playing';
+    root.innerHTML = `<div class="desktop"><div class="wrap">${topBar(true, playing)}
+      <div class="hero">${setline(true)}<div class="actions"><button class="play">${playing ? I.pause : I.play}</button><button class="stomp">${I.reroll}<span>Re-roll</span><kbd>R</kbd></button><button class="btn-back" aria-label="Previous">${I.back}</button></div></div>
+      ${chart(true, playing)}${shapes(true, playing)}</div></div>`;
+  } else {
+    const playing = view === 'phone-playing' || view === 'phone-sheet';
+    root.innerHTML = `<div class="phone">${topBar(false, playing)}${setline(false)}${chart(false, playing)}${shapes(false, playing)}${transport(playing)}
+      ${view === 'phone-sheet' ? `<div class="scrim"></div><div class="sheet"><div class="handle"><span></span></div>
+        <div class="sheet-head"><div><div style="--size:var(--text-chord-lg)">${C('G', '', '', 'maj7').replace('class="chord"', 'class="chord" style="--size:var(--text-chord-lg)"')}</div><p class="sheet-sub">G major 7 · <span class="mono">G B D F♯</span></p></div><button class="iconbtn">${I.close}</button></div>
+        <div class="sheet-body">${diagram(SHAPES.Gmaj7, { w: 200, fingers: true })}</div>
+        <div class="alts"><button class="alt on">${diagram(SHAPES.Gmaj7, { w: 48 })}<span class="caption">Open</span></button><button class="alt">${diagram(SHAPES.Gmaj7b, { w: 48 })}<span class="caption">3rd fret</span></button><button class="alt">${diagram(SHAPES.Gmaj7c, { w: 48 })}<span class="caption">10th fret</span></button></div>
+        <button class="listen">${I.speaker}<span>Hear it</span></button></div>` : ''}</div>`;
+  }
+</script>
+</body>
+</html>

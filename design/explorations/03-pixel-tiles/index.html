@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" /><title>Jam mockup v3</title>
+<style>
+  @font-face { font-family: 'DM Sans'; src: url('fonts/dm-sans.woff2') format('woff2'); font-weight: 100 1000; }
+  @font-face { font-family: 'NM'; src: url('fonts/noto-music-accidentals.woff2') format('woff2'); unicode-range: U+266D-266F; }
+  :root {
+    --bg: #0d0d0d; --pad: #1c1c1c; --border-strong: #6e6a64;
+    --dot-off: #1d1d1d; --dot-dim: #4d4b48;
+    --text: #f4f0e8; --muted: #a8a39a; --ink: #121110;
+    --major: #ff5c2b; --minor: #f59ac2; --dim: #ffd23f; --sus: #e8d9bd; --go: #33a066;
+    --font: 'DM Sans', 'NM', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-weight: 400; -webkit-font-smoothing: antialiased; font-optical-sizing: auto; }
+  button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+  svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .cap { font-size: 13px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+
+  .phone { width: 390px; height: 844px; padding: 0 16px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .top { height: 56px; flex: none; display: flex; align-items: center; justify-content: space-between; }
+  .tabs { display: flex; margin-left: -12px; }
+  .tab { height: 48px; padding: 0 12px; font-weight: 500; font-size: 17px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+  .tab.on { color: var(--text); }
+  .tab .sq { width: 7px; height: 7px; background: var(--text); }
+  .tab .sq.live { background: var(--go); }
+  .iconbtn { width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); margin-right: -12px; }
+
+  .display { margin: 8px 0 4px; }
+  .display svg.dots { display: block; width: 100%; height: auto; }
+
+  .strip { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-top: 16px; }
+  .chip { height: 48px; padding: 0 12px; border-radius: 12px; background: var(--pad); font-weight: 500; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .chip .k { color: var(--muted); }
+  .chip .held { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 6px; background: var(--text); color: var(--ink); font-size: 11px; font-weight: 500; letter-spacing: .06em; }
+  .chip .held svg { width: 11px; height: 11px; }
+  .chip.grow { justify-content: space-between; }
+  .chip .u { color: var(--muted); font-size: 13px; }
+
+  /* Tiles: equal size, one per bar, coloured by chord quality. */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .tile { aspect-ratio: 1; border-radius: 14px; padding: 10px; color: var(--ink); text-align: left; display: flex; flex-direction: column; justify-content: space-between; }
+  .tile .name { font-size: 24px; font-weight: 500; line-height: 1; letter-spacing: -0.01em; white-space: nowrap; }
+  .tile .name sup { font-size: 13px; vertical-align: 10px; margin-left: 1px; letter-spacing: 0; }
+  .tile .name .acc { font-size: 16px; vertical-align: 6px; }
+  .tile .deg { font-size: 14px; font-weight: 400; }
+  .progress { display: flex; gap: 3px; height: 8px; margin-top: 14px; }
+  .progress .seg { position: relative; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--c) 28%, var(--bg)); }
+  .progress .seg i { position: absolute; inset: 0 auto 0 0; background: var(--c); }
+  .desk .progress { height: 10px; gap: 4px; margin-top: 20px; }
+  .ticks { display: flex; gap: 3px; }
+  .ticks i { width: 6px; height: 6px; border: 1.5px solid var(--ink); }
+  .ticks i.on { background: var(--ink); }
+  .tile.now { outline: 3px solid var(--text); outline-offset: 3px; }
+
+  .bottom { margin-top: auto; padding-bottom: 20px; }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  .bottom .strip { margin-top: 8px; }
+  .reroll { flex: 1; height: 56px; border-radius: 14px; background: var(--text); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+  .back { width: 56px; height: 56px; border-radius: 14px; background: var(--pad); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; }
+  .play { width: 56px; height: 56px; border-radius: 999px; background: var(--go); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+  kbd { font-family: var(--font); font-size: 12px; font-weight: 500; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--border-strong); color: var(--muted); }
+
+  /* Sheet */
+  .scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 72%, transparent); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 20px; background: #161616; border-radius: 24px 24px 0 0; }
+  .handle { height: 36px; display: flex; align-items: center; justify-content: center; }
+  .handle span { width: 36px; height: 4px; background: var(--border-strong); }
+  .sh-head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .sh-name { font-size: 52px; font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
+  .sh-name sup { font-size: 26px; vertical-align: 22px; letter-spacing: 0; }
+  .sh-name .acc { font-size: 36px; vertical-align: 12px; }
+  .sh-sub { display: flex; gap: 12px; align-items: center; margin-top: 10px; color: var(--muted); font-size: 15px; }
+  .sh-sub .q { display: inline-flex; align-items: center; gap: 6px; }
+  .sh-sub .q i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .sh-sub .notes { color: var(--text); }
+  .sh-chart { display: flex; justify-content: center; margin-top: 4px; }
+  .sh-alts { display: flex; gap: 8px; margin-top: 12px; }
+  .alt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 14px; background: var(--pad); color: var(--muted); }
+  .alt.on { box-shadow: inset 0 0 0 2px var(--text); color: var(--text); }
+  .hear { margin-top: 12px; width: 100%; height: 56px; border-radius: 14px; background: var(--text); color: var(--ink); font-weight: 500; font-size: 16px; letter-spacing: .08em; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* Desktop */
+  .desk { width: 1440px; height: 900px; overflow: hidden; }
+  .desk .wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+  .desk .top { height: 80px; }
+  .desk .hints { display: flex; gap: 24px; color: var(--muted); font-size: 15px; align-items: center; }
+  .desk .hints span { display: inline-flex; gap: 8px; align-items: center; }
+  .desk .display { margin: 24px 0 8px; }
+  .desk .tiles { grid-template-columns: repeat(8, 1fr); gap: 12px; margin-top: 20px; }
+  .desk .tile { padding: 14px; border-radius: 16px; }
+  .desk .tile .name { font-size: 30px; }
+  .desk .tile .name sup { font-size: 16px; vertical-align: 13px; }
+  .desk .tile .name .acc { font-size: 20px; vertical-align: 8px; }
+  .desk .tile .deg { font-size: 15px; }
+  .desk .controls { display: flex; align-items: center; gap: 8px; margin-top: 32px; }
+  .desk .actions { margin: 0 0 0 auto; padding: 0; }
+  .desk .reroll { flex: none; width: 200px; }
+</style></head>
+<body><div id="root"></div>
+<script>
+// ---------- 5×7 pixel font (drawn for this app) ----------
+const G = {
+  A: ['.###.','#...#','#...#','#####','#...#','#...#','#...#'],
+  B: ['####.','#...#','#...#','####.','#...#','#...#','####.'],
+  C: ['.###.','#...#','#....','#....','#....','#...#','.###.'],
+  D: ['####.','#...#','#...#','#...#','#...#','#...#','####.'],
+  E: ['#####','#....','#....','####.','#....','#....','#####'],
+  F: ['#####','#....','#....','####.','#....','#....','#....'],
+  G: ['.###.','#...#','#....','#.###','#...#','#...#','.####'],
+  N: ['#...#','##..#','#.#.#','#.#.#','#..##','#...#','#...#'],
+  R: ['####.','#...#','#...#','####.','#.#..','#..#.','#...#'],
+  T: ['#####','..#..','..#..','..#..','..#..','..#..','..#..'],
+  X: ['#...#','#...#','.#.#.','..#..','.#.#.','#...#','#...#'],
+  '#': ['.#.#.','#####','.#.#.','.#.#.','#####','.#.#.','.....'],
+  b: ['#....','#....','#.##.','##..#','#...#','#..#.','###..'],
+  m: ['.....','.....','##.#.','#.#.#','#.#.#','#.#.#','#.#.#'],
+  a: ['.....','.....','.###.','....#','.####','#...#','.####'],
+  j: ['....#','.....','...##','....#','....#','#...#','.###.'],
+  s: ['.....','.....','.####','#....','.###.','....#','####.'],
+  u: ['.....','.....','#...#','#...#','#...#','#..##','.##.#'],
+  1: ['..#..','.##..','..#..','..#..','..#..','..#..','.###.'],
+  2: ['.###.','#...#','....#','...#.','..#..','.#...','#####'],
+  3: ['####.','....#','....#','.###.','....#','....#','####.'],
+  4: ['...#.','..##.','.#.#.','#..#.','#####','...#.','...#.'],
+  7: ['#####','....#','...#.','..#..','.#...','.#...','.#...'],
+  '/': ['....#','....#','...#.','..#..','.#...','#....','#....'],
+  '>': ['.....','..#..','...#.','#####','...#.','..#..','.....'],
+  ' ': ['...','...','...','...','...','...','...'],
+  d: ['....#','....#','.####','#...#','#...#','#...#','.####'],
+  i: ['..#..','.....','.##..','..#..','..#..','..#..','.###.'],
+};
+
+function grid(w, h) { return { w, h, c: Array.from({ length: h }, () => Array(w).fill(null)) }; }
+function set(g, x, y, col) { if (x >= 0 && y >= 0 && x < g.w && y < g.h) g.c[y][x] = col; }
+function block(g, x, y, s, col) { for (let i = 0; i < s; i++) for (let j = 0; j < s; j++) set(g, x + i, y + j, col); }
+function text(g, str, x, y, s, col) {
+  for (const ch of str) {
+    const gl = G[ch]; if (!gl) continue;
+    gl.forEach((row, r) => [...row].forEach((p, c) => p === '#' && block(g, x + c * s, y + r * s, s, col)));
+    x += (gl[0].length + 1) * s;
+  }
+  return x;
+}
+// Chord name: root big, accidental and quality raised and small, like a lead sheet.
+function chordName(g, root, acc, quality, x, y, rs, qs, col) {
+  x = text(g, root, x, y, rs, col);
+  if (acc) x = text(g, acc, x - qs, y, qs, col) + qs;
+  return text(g, quality, x, y, qs, col);
+}
+// Fretboard: player's view, headstock at left, low E at the bottom (matches the Solo fretboard).
+function fretboard(g, shape, x, y, cell, gap, rootCol) {
+  const frets = 5, strings = 6, base = shape.base || 1;
+  const W = frets * cell, H = (strings - 1) * gap;
+  for (let s = 0; s < strings; s++) for (let i = 0; i <= W; i++) set(g, x + i, y + s * gap, 'dim');
+  for (let f = 0; f <= frets; f++) for (let j = 0; j <= H; j++) set(g, x + f * cell, y + j, f === 0 && base === 1 ? 'text' : 'dim');
+  if (base === 1) for (let j = 0; j <= H; j++) set(g, x - 1, y + j, 'text');
+  else text(g, String(base), x + Math.floor(cell / 2) - 2, y - 9, 1, 'muted');
+  const r = Math.max(1, Math.floor(gap / 2));
+  shape.frets.forEach((fr, idx) => {
+    const sy = y + (strings - 1 - idx) * gap; // low E at the bottom
+    const isRoot = shape.roots.includes(idx);
+    if (fr === -1) { [[-2,-1],[0,1],[-1,0],[-2,1],[0,-1]].forEach(([dx,dy]) => set(g, x - 5 + dx + 1, sy + dy, 'muted')); return; }
+    if (fr === 0) { const cx = x - 4; [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]].forEach(([dx,dy]) => set(g, cx + dx, sy + dy, isRoot ? rootCol : 'text')); return; }
+    const cx = x + (fr - base) * cell + Math.floor(cell / 2);
+    for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+      if (!isRoot && Math.abs(dx) === r && Math.abs(dy) === r) continue; // round corners: circle-ish = chord tone
+      set(g, cx + dx, sy + dy, isRoot ? rootCol : 'text');
+    }
+  });
+}
+function beats(g, x, y, n, on, col, w = 4, h = 2, gap = 3) {
+  for (let b = 0; b < n; b++) for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) set(g, x + b * (w + gap) + i, y + j, b < on ? col : 'dim');
+}
+const COL = { text: 'var(--text)', muted: 'var(--muted)', dim: 'var(--dot-dim)', major: 'var(--major)', minor: 'var(--minor)', dim7: 'var(--dim)', sus: 'var(--sus)' };
+function render(g, pitch) {
+  const d = pitch * 0.78;
+  let o = `<svg class="dots" viewBox="0 0 ${g.w * pitch} ${g.h * pitch}">`;
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) {
+    const c = g.c[y][x];
+    o += `<rect x="${x * pitch}" y="${y * pitch}" width="${d}" height="${d}" rx="${d * 0.22}" fill="${c ? COL[c] : 'var(--dot-off)'}"/>`;
+  }
+  return o + '</svg>';
+}
+
+// Flat chord diagram for the sheet: nut at the top, low E on the left (standard chord-chart orientation).
+function chart(sh, { w = 200, fingers = true, role = 'home' } = {}) {
+  const strings = 6, frets = 5, top = w * 0.16, left = w * 0.2, right = w * 0.06;
+  const gw = w - left - right, gs = gw / 5, fh = gs * 1.2, h = top + fh * frets + w * 0.04, base = sh.base || 1, r = gs * 0.36;
+  let o = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  for (let i = 0; i < strings; i++) o += `<rect x="${left + i * gs - 1}" y="${top}" width="2" height="${fh * frets}" fill="var(--dot-dim)"/>`;
+  for (let f = 0; f <= frets; f++) o += `<rect x="${left - 1}" y="${top + f * fh - (f === 0 && base === 1 ? 4 : 1)}" width="${gw + 2}" height="${f === 0 && base === 1 ? 7 : 2}" fill="${f === 0 && base === 1 ? 'var(--text)' : 'var(--dot-dim)'}"/>`;
+  if (base > 1 && fingers) o += `<text x="${left - r - 10}" y="${top + fh * 0.62}" text-anchor="end" font-family="DM Sans" font-weight="500" font-size="${w * 0.07}" fill="var(--muted)">${base}fr</text>`;
+  if (sh.barre) {
+    const [bf, from, to] = sh.barre, by = top + (bf - base + 0.5) * fh;
+    o += `<rect x="${left + from * gs - r}" y="${by - r}" width="${(to - from) * gs + 2 * r}" height="${2 * r}" rx="${r}" fill="var(--text)"/>`;
+  }
+  sh.frets.forEach((fr, i) => {
+    const x = left + i * gs, root = sh.roots.includes(i);
+    const onBarre = sh.barre && fr === sh.barre[0] && i >= sh.barre[1] && i <= sh.barre[2];
+    const yTop = top - fh * 0.5;
+    if (fr === -1) { const d = r * 0.6; o += `<path d="M${x-d} ${yTop-d}L${x+d} ${yTop+d}M${x+d} ${yTop-d}L${x-d} ${yTop+d}" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="square"/>`; return; }
+    if (fr === 0) { o += root ? `<rect x="${x-r*0.7}" y="${yTop-r*0.7}" width="${r*1.4}" height="${r*1.4}" fill="none" stroke="var(--${role})" stroke-width="3"/>` : `<circle cx="${x}" cy="${yTop}" r="${r*0.7}" fill="none" stroke="var(--text)" stroke-width="2.5"/>`; return; }
+    const y = top + (fr - base + 0.5) * fh;
+    if (root) o += `<rect x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}" rx="3" fill="var(--${role})"/>`;
+    else if (!onBarre) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--text)"/>`;
+    if (onBarre && !root && i !== sh.barre[1]) return; // one finger number per barre
+    if (fingers && sh.fingers && sh.fingers[i]) o += `<text x="${x}" y="${y + r*0.4}" text-anchor="middle" font-family="DM Sans" font-weight="500" font-size="${r*1.1}" fill="var(--ink)">${sh.fingers[i]}</text>`;
+  });
+  return o + '</svg>';
+}
+
+const I = {
+  sliders: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><rect x="14" y="5" width="4" height="4"/><rect x="8" y="15" width="4" height="4"/></svg>',
+  play: '<svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z" fill="currentColor" stroke="none"/></svg>',
+  pause: '<svg class="i" viewBox="0 0 24 24"><path d="M6.5 5h4v14h-4zM13.5 5h4v14h-4z" fill="currentColor" stroke="none"/></svg>',
+  reroll: '<svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>',
+  back: '<svg class="i" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 2h8l-1.5 7L19 13v2H5v-2l4.5-4z"/><path d="M11 15h2v7h-2z"/></svg>',
+  chev: '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m6 9 6 6 6-6"/></svg>',
+  close: '<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  speaker: '<svg class="i" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg>',
+};
+const PIX = { '♯': '#', '♭': 'b' };
+function measure(str, sc) { let w = 0; for (const ch of str) { const gl = G[ch]; if (gl) w += (gl[0].length + 1) * sc; } return Math.max(0, w - sc); }
+const QUAL = { major: 'Major', minor: 'Minor', dim7: 'Diminished', sus: 'Sus' };
+const CSS = { major: 'var(--major)', minor: 'var(--minor)', dim7: 'var(--dim)', sus: 'var(--sus)' };
+const four = [
+  { root: 'G', acc: '', q: 'maj7', deg: 'IV', kind: 'major', beats: 4 },
+  { root: 'F', acc: '♯', q: 'm7', deg: 'iii', kind: 'minor', beats: 4 },
+  { root: 'E', acc: '', q: 'm7', deg: 'ii', kind: 'minor', beats: 2 },
+  { root: 'A', acc: '', q: '7', deg: 'V', kind: 'major', beats: 2 },
+  { root: 'D', acc: '', q: 'maj7', deg: 'I', kind: 'major', beats: 4 },
+];
+const eight = [
+  { root: 'D', acc: '', q: 'maj7', deg: 'I', kind: 'major', beats: 4 },
+  { root: 'B', acc: '', q: 'm7', deg: 'vi', kind: 'minor', beats: 4 },
+  { root: 'E', acc: '', q: 'm7', deg: 'ii', kind: 'minor', beats: 2 },
+  { root: 'A', acc: '', q: 'sus4', deg: 'V', kind: 'sus', beats: 2 },
+  { root: 'G', acc: '', q: 'maj7', deg: 'IV', kind: 'major', beats: 4 },
+  { root: 'F', acc: '♯', q: 'm7', deg: 'iii', kind: 'minor', beats: 4 },
+  { root: 'C', acc: '♯', q: 'dim', deg: 'vii°', kind: 'dim7', beats: 2 },
+  { root: 'F', acc: '♯', q: '7', deg: 'V/vi', kind: 'major', beats: 2 },
+];
+// Basic shapes only (open where possible, else the lowest barre): never more than 5 frets.
+const BASIC = {
+  'Dmaj7': { frets: [-1, -1, 0, 2, 2, 2], roots: [2] },
+  'Bm7': { frets: [-1, 2, 4, 2, 3, 2], base: 2, roots: [1], barre: [2, 1, 5] },
+  'Em7': { frets: [0, 2, 0, 0, 0, 0], roots: [0, 5] },
+  'Asus4': { frets: [-1, 0, 2, 2, 3, 0], roots: [1, 3] },
+  'Gmaj7': { frets: [3, -1, 0, 0, 0, 2], roots: [0, 3] },
+  'F#m7': { frets: [2, 4, 2, 2, 2, 2], base: 2, roots: [0, 5], barre: [2, 0, 5] },
+  'C#dim': { frets: [-1, 4, 5, 6, 5, -1], base: 4, roots: [1, 3] },
+  'F#7': { frets: [2, 4, 2, 3, 2, 2], base: 2, roots: [0, 5], barre: [2, 0, 5] },
+  'A7': { frets: [-1, 0, 2, 0, 2, 0], roots: [1] },
+};
+const keyOf = (s) => s.root + (s.acc === '♯' ? '#' : s.acc === '♭' ? 'b' : '') + s.q;
+
+// Pixel chord chart: vertical, nut at the top, low E on the left.
+function pixelChart(g, sh, x0, y0, sx, fy, kind) {
+  const strings = 6, frets = 5, base = sh.base || 1, H = frets * fy, W = (strings - 1) * sx;
+  for (let i = 0; i < strings; i++) for (let y = 0; y <= H; y++) set(g, x0 + i * sx, y0 + y, 'dim');
+  for (let f = 0; f <= frets; f++) for (let x = 0; x <= W; x++) set(g, x0 + x, y0 + f * fy, 'dim');
+  if (base === 1) for (let x = -1; x <= W + 1; x++) { set(g, x0 + x, y0, 'text'); set(g, x0 + x, y0 - 1, 'text'); }
+  else text(g, String(base), x0 - 9, y0 + Math.floor(fy / 2) - 3, 1, 'muted');
+  const r = Math.floor((Math.min(sx, fy) - 3) / 2);
+  if (sh.barre) {
+    const [bf, from, to] = sh.barre, y = y0 + (bf - base) * fy + Math.floor(fy / 2);
+    for (let x = x0 + from * sx - r; x <= x0 + to * sx + r; x++) for (let dy = -r + 1; dy <= r - 1; dy++) set(g, x, y + dy, 'text');
+  }
+  sh.frets.forEach((fr, i) => {
+    const cx = x0 + i * sx, root = sh.roots.includes(i), col = root ? kind : 'text';
+    const my = y0 - 5;
+    if (fr === -1) { for (let d = -2; d <= 2; d++) { set(g, cx + d, my + d, 'muted'); set(g, cx + d, my - d, 'muted'); } return; }
+    if (fr === 0) { for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) if (Math.abs(dx) === 2 || Math.abs(dy) === 2) set(g, cx + dx, my + dy, col); return; }
+    const cy = y0 + (fr - base) * fy + Math.floor(fy / 2);
+    for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+      if (!root && Math.abs(dx) === r && Math.abs(dy) === r) continue;
+      set(g, cx + dx, cy + dy, col);
+    }
+  });
+}
+function centredName(g, slot, y, rs, qs, w0) {
+  const acc = PIX[slot.acc] || '';
+  const w = measure(slot.root, rs) + rs + (acc ? measure(acc, qs) + qs : 0) + measure(slot.q, qs);
+  chordName(g, slot.root, acc, slot.q, Math.floor((w0 - w) / 2), y, rs, qs, 'text');
+}
+function phoneDisplay(slot, playing, beat) {
+  const N = 88, g = grid(N, N);
+  centredName(g, slot, 3, 3, 2, N);                               // name: one line across the top
+  pixelChart(g, BASIC[keyOf(slot)], 16, 37, 11, 10, slot.kind);  // chart: 6 strings × 5 frets below
+  return g;
+}
+function deskDisplay(slot, playing, beat) {
+  const g = grid(150, 50);
+  centredName(g, slot, 7, 5, 3, 96);
+  pixelChart(g, BASIC[keyOf(slot)], 98, 8, 8, 7, slot.kind);
+  return g;
+}
+const name = (s) => `<span class="name">${s.root}${s.acc ? `<span class="acc">${s.acc}</span>` : ''}${s.q ? `<sup>${s.q}</sup>` : ''}</span>`;
+const ticks = (s, filled) => `<span class="ticks" aria-hidden="true">${Array.from({ length: s.beats }, (_, i) => `<i class="${i < filled ? 'on' : ''}"></i>`).join('')}</span>`;
+const tile = (s, now) => `<button class="tile ${now ? 'now' : ''}" style="background:${CSS[s.kind]}">${name(s)}<span class="deg">${s.deg}</span></button>`;
+// Progress bar: the whole loop as a timeline. Segment width = chord length; played time fills in the chord's colour.
+const progress = (list, cur, frac) => `<div class="progress" role="progressbar" aria-label="Position in the loop">${list.map((s, i) => {
+  const fill = i < cur ? 100 : i === cur ? frac * 100 : 0;
+  return `<span class="seg" style="flex:${s.beats};--c:${CSS[s.kind]}"><i style="width:${fill}%"></i></span>`; }).join('')}</div>`;
+const strip = `<div class="strip"><button class="chip grow">Neo-soul ${I.chev}</button><button class="chip">D major <span class="held">${I.pin}HELD</span></button><button class="chip" style="width:84px;justify-content:center">84 <span class="u">BPM</span></button></div>`;
+const actions = (playing) => `<div class="actions"><button class="back">${I.back}</button><button class="reroll">${I.reroll}Re-roll</button><button class="play">${playing ? I.pause : I.play}</button></div>`;
+const topBar = (playing) => `<header class="top"><nav class="tabs"><button class="tab on"><i class="sq ${playing ? 'live' : ''}"></i>Jam</button><button class="tab">Solo</button></nav><button class="iconbtn">${I.sliders}</button></header>`;
+
+const view = new URLSearchParams(location.search).get('view') || 'phone';
+const R = document.getElementById('root');
+if (view === 'desk') {
+  const cur = 2;
+  R.innerHTML = `<div class="desk"><div class="wrap">
+    <header class="top"><nav class="tabs"><button class="tab on"><i class="sq live"></i>Jam</button><button class="tab">Solo</button></nav>
+    <div class="hints"><span><kbd>Space</kbd>Play</span><span><kbd>R</kbd>Re-roll</span><span><kbd>←</kbd><kbd>→</kbd>Chords</span><button class="iconbtn" style="margin:0">${I.sliders}</button></div></header>
+    <div class="display">${render(deskDisplay(eight[cur], true, 1), 7.73)}</div>
+    ${progress(eight, cur, 0.5)}
+    <div class="tiles">${eight.map((s, i) => tile(s, i === cur)).join('')}</div>
+    <div class="controls"><button class="chip">Neo-soul ${I.chev}</button><button class="chip"><span class="k">Key</span> D major <span class="held">${I.pin}HELD</span></button><button class="chip"><span class="k">Tempo</span> 84 bpm</button>
+      ${actions(true).replace('class="actions"', 'class="actions"')}</div></div></div>`;
+} else {
+  const playing = view !== 'phone';
+  const list = view === 'phone' ? four : eight;
+  const cur = playing ? 2 : 0;
+  R.innerHTML = `<div class="phone">${topBar(playing)}
+    <div class="display">${render(phoneDisplay(list[cur], playing, 1), 358 / 88)}</div>
+    ${progress(list, playing ? cur : -1, 0.5)}
+    <div class="tiles">${list.map((s, i) => tile(s, playing && i === cur)).join('')}</div>
+    <div class="bottom">${actions(playing)}${strip}</div>
+    ${view === 'phone-sheet' ? `<div class="scrim"></div><div class="sheet"><div class="handle"><span></span></div>
+      <div class="sh-head"><div><div class="sh-name">F<span class="acc">♯</span><sup>m7</sup></div>
+      <div class="sh-sub"><span class="q"><i style="background:var(--minor)"></i>Minor 7</span><span>iii</span><span class="notes">F♯ · A · C♯ · E</span></div></div><button class="iconbtn">${I.close}</button></div>
+      <div class="sh-chart">${chart({ frets: [2, 4, 2, 2, 2, 2], base: 2, roots: [0, 5], fingers: [1, 3, 1, 1, 1, 1], barre: [2, 0, 5] }, { w: 220, role: 'minor' })}</div>
+      <div class="sh-alts">${[
+        [{ frets: [2, 4, 2, 2, 2, 2], base: 2, roots: [0, 5], barre: [2, 0, 5] }, '2nd fret'],
+        [{ frets: [-1, 9, 11, 9, 10, 9], base: 9, roots: [1, 5], barre: [9, 1, 5] }, '9th fret'],
+        [{ frets: [2, -1, 2, 2, 2, -1], base: 2, roots: [0] }, 'Shell'],
+      ].map(([sh, l], i) => `<button class="alt ${i === 0 ? 'on' : ''}">${chart(sh, { w: 60, fingers: false, role: 'minor' })}<span class="cap">${l}</span></button>`).join('')}</div>
+      <button class="hear">${I.speaker}Hear it</button></div>` : ''}
+  </div>`;
+}
+</script></body></html>

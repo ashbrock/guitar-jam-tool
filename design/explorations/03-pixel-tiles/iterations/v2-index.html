@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Jam mockup v2</title>
+<style>
+  @font-face { font-family: 'AHN'; src: url('fonts/atkinson-hyperlegible-next.woff2') format('woff2'); font-weight: 200 800; }
+  @font-face { font-family: 'AHM'; src: url('fonts/atkinson-hyperlegible-mono.woff2') format('woff2'); font-weight: 200 800; }
+  @font-face { font-family: 'NM'; src: url('fonts/noto-music-accidentals.woff2') format('woff2'); unicode-range: U+266D-266F; }
+  :root {
+    --bg: #0d0d0d; --panel: #181818; --pad: #1f1f1f; --raised: #2a2a2a; --border: #3d3d3d; --border-strong: #6e6a64;
+    --display: #121212; --dot-off: #222222; --dot-dim: #4d4b48;
+    --text: #f4f0e8; --muted: #a8a39a; --faint: #6b6862; --ink: #121110;
+    --home: #ff5c2b; --away: #ffd23f; --tension: #f59ac2; --outside: #e8d9bd; --go: #33a066;
+    --font: 'AHN', 'NM', system-ui, sans-serif; --mono: 'AHM', 'NM', monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+  svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .cap { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+  .phone { width: 390px; height: 844px; padding: 0 16px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .top { height: 56px; flex: none; display: flex; align-items: center; justify-content: space-between; }
+  .tabs { display: flex; gap: 4px; margin-left: -12px; }
+  .tab { height: 48px; padding: 0 12px; font-weight: 700; font-size: 17px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+  .tab.on { color: var(--text); }
+  .tab .sq { width: 8px; height: 8px; background: var(--text); }
+  .tab .sq.live { background: var(--go); }
+  .iconbtn { width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); margin-right: -12px; }
+
+  /* Dot-matrix display */
+  .display { position: relative; background: var(--display); border-radius: 20px; padding: 14px; border: 1px solid #1c1c1c; }
+  .phone .display { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+  .display svg.dots { display: block; width: 100%; height: auto; }
+.dfoot { display: flex; align-items: center; justify-content: space-between; min-height: 48px; margin: 10px -6px -8px; padding: 0 6px; border-top: 1px solid #1f1f1f; color: var(--muted); }
+  .dfoot .n { font-family: var(--mono); color: var(--text); }
+  .dfoot b { color: var(--text); font-weight: 700; font-size: 15px; letter-spacing: 0; text-transform: none; margin-left: 6px; }
+  .dfoot sup { font-size: 10px; }
+  .dfoot .navs { display: flex; gap: 4px; margin-right: -8px; }
+  .navbtn { width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); border-radius: 12px; }
+
+  /* Strip */
+  .strip { display: flex; gap: 8px; margin-top: 12px; }
+  .chip { height: 48px; padding: 0 14px; border-radius: 12px; background: var(--pad); font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .chip .k { color: var(--muted); font-weight: 600; }
+  .chip .held { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 6px; background: var(--text); color: var(--ink); font-size: 11px; letter-spacing: .06em; }
+  .chip .held svg { width: 11px; height: 11px; }
+  .chip.grow { flex: 1; justify-content: space-between; }
+
+  /* Pads */
+  .pads { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .pad { position: relative; flex: 1 0 calc((100% - 16px) / 3); height: 112px; border-radius: 14px; background: var(--pad); padding: 12px; text-align: left; display: flex; flex-direction: column; justify-content: space-between; }
+  .pad .deg { position: absolute; top: 12px; right: 14px; font-family: var(--mono); font-weight: 700; font-size: 17px; }
+  .pad .name { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; }
+  .pad .name sup { font-size: 16px; font-weight: 700; vertical-align: 11px; margin-left: 1px; letter-spacing: 0; }
+  .pad .name .acc { font-size: 20px; vertical-align: 7px; }
+  .pad .meta { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+  .pad .meta .num { font-family: var(--mono); letter-spacing: 0; color: var(--text); }
+  .pad.now { color: var(--ink); }
+  .pad.now .meta, .pad.now .meta .num { color: var(--ink); }
+  .pad.sel { box-shadow: inset 0 0 0 2px var(--text); }
+
+  /* Actions */
+  .actions { display: flex; gap: 8px; margin-top: auto; padding: 12px 0 20px; }
+  .reroll { flex: 1; height: 72px; border-radius: 14px; background: var(--text); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 20px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .back { width: 72px; height: 72px; border-radius: 14px; background: var(--pad); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; }
+  .play { width: 72px; height: 72px; border-radius: 999px; background: var(--go); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+  .play svg { width: 30px; height: 30px; }
+  kbd { font-family: var(--mono); font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--border-strong); color: var(--muted); }
+  .reroll kbd { border-color: color-mix(in srgb, var(--ink) 35%, transparent); color: var(--ink); }
+
+  /* Chord sheet */
+  .scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 72%, transparent); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 20px; background: var(--panel); border-radius: 24px 24px 0 0; border-top: 1px solid var(--border); }
+  .handle { height: 40px; display: flex; align-items: center; justify-content: center; }
+  .handle span { width: 36px; height: 4px; background: var(--border-strong); }
+  .sh-head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .sh-name { font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+  .sh-name sup { font-size: 30px; vertical-align: 22px; letter-spacing: 0; }
+  .sh-name .acc { font-size: 40px; vertical-align: 12px; }
+  .sh-sub { display: flex; gap: 10px; align-items: baseline; margin-top: 10px; color: var(--muted); }
+  .sh-sub .deg { font-family: var(--mono); font-weight: 700; }
+  .sh-sub .notes { font-family: var(--mono); color: var(--text); font-size: 15px; }
+  .sh-chart { display: flex; justify-content: center; margin-top: 4px; }
+  .sh-alts { display: flex; gap: 8px; margin-top: 16px; }
+  .alt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 14px; background: var(--pad); color: var(--muted); }
+  .alt.on { box-shadow: inset 0 0 0 2px var(--text); color: var(--text); }
+  .hear { margin-top: 12px; width: 100%; height: 64px; border-radius: 14px; background: var(--text); color: var(--ink); font-weight: 800; font-size: 18px; letter-spacing: .04em; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+
+  /* Desktop */
+  .desk { width: 1440px; height: 900px; overflow: hidden; }
+  .desk .wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+  .desk .top { height: 80px; }
+  .desk .hints { display: flex; gap: 24px; color: var(--muted); font-size: 15px; align-items: center; }
+  .desk .hints span { display: inline-flex; gap: 8px; align-items: center; }
+  .desk .display { padding: 22px; border-radius: 28px; }
+  .desk .pads { flex-wrap: nowrap; margin-top: 16px; }
+  .desk .pad { flex: var(--bars) 1 0; height: 164px; padding: 16px; border-radius: 18px; }
+  .desk .pad .name { font-size: 40px; }
+  .desk .pad .name sup { font-size: 22px; vertical-align: 16px; }
+  .desk .pad .name .acc { font-size: 28px; vertical-align: 10px; }
+  .desk .pad .deg { top: 16px; right: 18px; font-size: 20px; }
+  .desk .controls { display: flex; align-items: center; gap: 8px; margin-top: 28px; }
+  .desk .legend { display: flex; gap: 24px; margin-top: 14px; color: var(--muted); }
+  .desk .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .desk .legend i { width: 12px; height: 12px; display: inline-block; }
+  .desk .actions { margin: 0 0 0 auto; padding: 0; }
+  .desk .reroll { flex: none; width: 260px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ---------- 5×7 pixel font (drawn for this app) ----------
+const G = {
+  A: ['.###.','#...#','#...#','#####','#...#','#...#','#...#'],
+  B: ['####.','#...#','#...#','####.','#...#','#...#','####.'],
+  C: ['.###.','#...#','#....','#....','#....','#...#','.###.'],
+  D: ['####.','#...#','#...#','#...#','#...#','#...#','####.'],
+  E: ['#####','#....','#....','####.','#....','#....','#####'],
+  F: ['#####','#....','#....','####.','#....','#....','#....'],
+  G: ['.###.','#...#','#....','#.###','#...#','#...#','.####'],
+  N: ['#...#','##..#','#.#.#','#.#.#','#..##','#...#','#...#'],
+  R: ['####.','#...#','#...#','####.','#.#..','#..#.','#...#'],
+  T: ['#####','..#..','..#..','..#..','..#..','..#..','..#..'],
+  X: ['#...#','#...#','.#.#.','..#..','.#.#.','#...#','#...#'],
+  '#': ['.#.#.','#####','.#.#.','.#.#.','#####','.#.#.','.....'],
+  b: ['#....','#....','#.##.','##..#','#...#','#..#.','###..'],
+  m: ['.....','.....','##.#.','#.#.#','#.#.#','#.#.#','#.#.#'],
+  a: ['.....','.....','.###.','....#','.####','#...#','.####'],
+  j: ['....#','.....','...##','....#','....#','#...#','.###.'],
+  s: ['.....','.....','.####','#....','.###.','....#','####.'],
+  u: ['.....','.....','#...#','#...#','#...#','#..##','.##.#'],
+  1: ['..#..','.##..','..#..','..#..','..#..','..#..','.###.'],
+  2: ['.###.','#...#','....#','...#.','..#..','.#...','#####'],
+  3: ['####.','....#','....#','.###.','....#','....#','####.'],
+  4: ['...#.','..##.','.#.#.','#..#.','#####','...#.','...#.'],
+  7: ['#####','....#','...#.','..#..','.#...','.#...','.#...'],
+  '/': ['....#','....#','...#.','..#..','.#...','#....','#....'],
+  '>': ['.....','..#..','...#.','#####','...#.','..#..','.....'],
+  ' ': ['...','...','...','...','...','...','...'],
+};
+
+function grid(w, h) { return { w, h, c: Array.from({ length: h }, () => Array(w).fill(null)) }; }
+function set(g, x, y, col) { if (x >= 0 && y >= 0 && x < g.w && y < g.h) g.c[y][x] = col; }
+function block(g, x, y, s, col) { for (let i = 0; i < s; i++) for (let j = 0; j < s; j++) set(g, x + i, y + j, col); }
+function text(g, str, x, y, s, col) {
+  for (const ch of str) {
+    const gl = G[ch]; if (!gl) continue;
+    gl.forEach((row, r) => [...row].forEach((p, c) => p === '#' && block(g, x + c * s, y + r * s, s, col)));
+    x += (gl[0].length + 1) * s;
+  }
+  return x;
+}
+// Chord name: root big, accidental and quality raised and small, like a lead sheet.
+function chordName(g, root, acc, quality, x, y, rs, qs, col) {
+  x = text(g, root, x, y, rs, col);
+  if (acc) x = text(g, acc, x - qs, y, qs, col) + qs;
+  return text(g, quality, x, y, qs, col);
+}
+// Fretboard: player's view, headstock at left, low E at the bottom (matches the Solo fretboard).
+function fretboard(g, shape, x, y, cell, gap, rootCol) {
+  const frets = 5, strings = 6, base = shape.base || 1;
+  const W = frets * cell, H = (strings - 1) * gap;
+  for (let s = 0; s < strings; s++) for (let i = 0; i <= W; i++) set(g, x + i, y + s * gap, 'dim');
+  for (let f = 0; f <= frets; f++) for (let j = 0; j <= H; j++) set(g, x + f * cell, y + j, f === 0 && base === 1 ? 'text' : 'dim');
+  if (base === 1) for (let j = 0; j <= H; j++) set(g, x - 1, y + j, 'text');
+  else text(g, String(base), x + Math.floor(cell / 2) - 2, y - 9, 1, 'muted');
+  const r = Math.max(1, Math.floor(gap / 2));
+  shape.frets.forEach((fr, idx) => {
+    const sy = y + (strings - 1 - idx) * gap; // low E at the bottom
+    const isRoot = shape.roots.includes(idx);
+    if (fr === -1) { [[-2,-1],[0,1],[-1,0],[-2,1],[0,-1]].forEach(([dx,dy]) => set(g, x - 5 + dx + 1, sy + dy, 'muted')); return; }
+    if (fr === 0) { const cx = x - 4; [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]].forEach(([dx,dy]) => set(g, cx + dx, sy + dy, isRoot ? rootCol : 'text')); return; }
+    const cx = x + (fr - base) * cell + Math.floor(cell / 2);
+    for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+      if (!isRoot && Math.abs(dx) === r && Math.abs(dy) === r) continue; // round corners: circle-ish = chord tone
+      set(g, cx + dx, sy + dy, isRoot ? rootCol : 'text');
+    }
+  });
+}
+function beats(g, x, y, n, on, col, w = 4, h = 2) {
+  for (let b = 0; b < n; b++) for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) set(g, x + b * (w + 2) + i, y + j, b < on ? col : 'dim');
+}
+const COL = { text: 'var(--text)', muted: 'var(--muted)', dim: 'var(--dot-dim)', home: 'var(--home)', away: 'var(--away)', tension: 'var(--tension)', outside: 'var(--outside)' };
+function render(g, pitch) {
+  const d = pitch * 0.78;
+  let o = `<svg class="dots" viewBox="0 0 ${g.w * pitch} ${g.h * pitch}">`;
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) {
+    const c = g.c[y][x];
+    o += `<rect x="${x * pitch}" y="${y * pitch}" width="${d}" height="${d}" rx="${d * 0.22}" fill="${c ? COL[c] : 'var(--dot-off)'}"/>`;
+  }
+  return o + '</svg>';
+}
+
+const SHAPES = {
+  Gmaj7: { frets: [3, -1, 0, 0, 0, 2], roots: [0, 3] },
+  Gm7: { frets: [3, 5, 3, 3, 3, 3], base: 3, roots: [0, 3, 5] },
+  'F#m7': { frets: [2, 4, 2, 2, 2, 2], base: 2, roots: [0, 5] },
+  Em7: { frets: [0, 2, 2, 0, 3, 0], roots: [0, 2, 5] },
+  A7: { frets: [-1, 0, 2, 0, 2, 0], roots: [1] },
+};
+const SLOTS = [
+  { root: 'G', acc: '', q: 'maj7', key: 'Gmaj7', deg: 'IV', role: 'away', bars: 1 },
+  { root: 'G', acc: '', q: 'm7', key: 'Gm7', deg: 'iv', role: 'outside', bars: 1 },
+  { root: 'F', acc: '♯', q: 'm7', key: 'F#m7', deg: 'iii', role: 'home', bars: 1 },
+  { root: 'E', acc: '', q: 'm7', key: 'Em7', deg: 'ii', role: 'away', bars: 0.5 },
+  { root: 'A', acc: '', q: '7', key: 'A7', deg: 'V', role: 'tension', bars: 0.5 },
+];
+const ROLE = { home: 'Home', away: 'Away', tension: 'Tension', outside: 'Outside' };
+const PIX = { '♯': '#', '♭': 'b' };
+
+// Measure a string's width in dots at a scale (glyph width + 1 dot spacing, minus the trailing space).
+function measure(str, sc) { let w = 0; for (const ch of str) { const gl = G[ch]; if (gl) w += (gl[0].length + 1) * sc; } return Math.max(0, w - sc); }
+// The marquee: just the chord, centred and as big as fits. Quality drops a size if it would overflow.
+function marquee(g, slot, rs, qsMax, top) {
+  const acc = PIX[slot.acc] || '';
+  let qs = qsMax, w;
+  for (; qs >= 1; qs--) {
+    w = measure(slot.root, rs) + rs + (acc ? measure(acc, qs) + qs : 0) + measure(slot.q, qs);
+    if (w <= g.w - 4) break;
+  }
+  const x0 = Math.floor((g.w - w) / 2);
+  chordName(g, slot.root, acc, slot.q, x0, top, rs, qs, 'text');
+}
+function display(slot, { desk, playing, beat }) {
+  if (desk) {
+    const g = grid(150, 40);
+    marquee(g, slot, 5, 3, 2);
+    if (playing) beats(g, Math.floor((150 - (4 * 10 - 4)) / 2), 37, 4, beat, slot.role, 8, 2);
+    return g;
+  }
+  // Phone: a square display with fixed lines, so nothing moves when the chord changes:
+  // root (and accidental) on line 1 at scale 4, quality on line 2 at scale 2, beats at the bottom.
+  const N = 64, g = grid(N, N), RS = 4, QS = 2;
+  const top = slot.root + (PIX[slot.acc] || '');
+  text(g, top, Math.floor((N - measure(top, RS)) / 2), 6, RS, 'text');
+  if (slot.q) text(g, slot.q, Math.floor((N - measure(slot.q, QS)) / 2), 6 + 7 * RS + 5, QS, 'text');
+  if (playing) beats(g, Math.floor((N - (4 * 8 - 2)) / 2), N - 7, 4, beat, slot.role, 6, 2);
+  return g;
+}
+// Footer under the dot matrix: plain UI text, so small information stays legible.
+const footer = (playing) => playing
+  ? `<div class="dfoot"><span class="cap">Bar <span class="n">3</span> of <span class="n">4</span></span><span class="cap">Next <b>Em<sup>7</sup></b></span></div>`
+  : `<div class="dfoot"><span class="cap">4 bars · 5 chords</span><span class="cap">Tap a chord for its shape</span></div>`;
+
+const I = {
+  sliders: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><rect x="14" y="5" width="4" height="4"/><rect x="8" y="15" width="4" height="4"/></svg>',
+  play: '<svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z" fill="currentColor" stroke="none"/></svg>',
+  pause: '<svg class="i" viewBox="0 0 24 24"><path d="M6.5 5h4v14h-4zM13.5 5h4v14h-4z" fill="currentColor" stroke="none"/></svg>',
+  reroll: '<svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>',
+  back: '<svg class="i" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 2h8l-1.5 7L19 13v2H5v-2l4.5-4z"/><path d="M11 15h2v7h-2z"/></svg>',
+  close: '<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  speaker: '<svg class="i" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg>',
+  chev: '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m6 9 6 6 6-6"/></svg>',
+  left: '<svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>',
+  right: '<svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
+};
+const padName = (s) => `<span class="name">${s.root}${s.acc ? `<span class="acc">${s.acc}</span>` : ''}${s.q ? `<sup>${s.q}</sup>` : ''}</span>`;
+const pad = (s, i, now, sel) => `<button class="pad ${now ? 'now' : ''} ${sel ? 'sel' : ''}" style="--bars:${s.bars};${now ? `background:var(--${s.role})` : ''}">
+  <span class="deg" style="color:${now ? 'var(--ink)' : `var(--${s.role})`}">${s.deg}</span>${padName(s)}
+  <span class="meta"><span>${ROLE[s.role].toUpperCase()}</span><span class="num">${s.bars === 0.5 ? '½ BAR' : ''}</span></span></button>`;
+
+// Flat chord diagram for the sheet: nut at the top, low E on the left (standard chord-chart orientation).
+function chart(sh, { w = 200, fingers = true, role = 'home' } = {}) {
+  const strings = 6, frets = 5, top = w * 0.16, left = w * 0.2, right = w * 0.06;
+  const gw = w - left - right, gs = gw / 5, fh = gs * 1.2, h = top + fh * frets + w * 0.04, base = sh.base || 1, r = gs * 0.36;
+  let o = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  for (let i = 0; i < strings; i++) o += `<rect x="${left + i * gs - 1}" y="${top}" width="2" height="${fh * frets}" fill="var(--dot-dim)"/>`;
+  for (let f = 0; f <= frets; f++) o += `<rect x="${left - 1}" y="${top + f * fh - (f === 0 && base === 1 ? 4 : 1)}" width="${gw + 2}" height="${f === 0 && base === 1 ? 7 : 2}" fill="${f === 0 && base === 1 ? 'var(--text)' : 'var(--dot-dim)'}"/>`;
+  if (base > 1 && fingers) o += `<text x="${left - r - 10}" y="${top + fh * 0.62}" text-anchor="end" font-family="AHM" font-weight="700" font-size="${w * 0.07}" fill="var(--muted)">${base}fr</text>`;
+  if (sh.barre) {
+    const [bf, from, to] = sh.barre, by = top + (bf - base + 0.5) * fh;
+    o += `<rect x="${left + from * gs - r}" y="${by - r}" width="${(to - from) * gs + 2 * r}" height="${2 * r}" rx="${r}" fill="var(--text)"/>`;
+  }
+  sh.frets.forEach((fr, i) => {
+    const x = left + i * gs, root = sh.roots.includes(i);
+    const onBarre = sh.barre && fr === sh.barre[0] && i >= sh.barre[1] && i <= sh.barre[2];
+    const yTop = top - fh * 0.5;
+    if (fr === -1) { const d = r * 0.6; o += `<path d="M${x-d} ${yTop-d}L${x+d} ${yTop+d}M${x+d} ${yTop-d}L${x-d} ${yTop+d}" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="square"/>`; return; }
+    if (fr === 0) { o += root ? `<rect x="${x-r*0.7}" y="${yTop-r*0.7}" width="${r*1.4}" height="${r*1.4}" fill="none" stroke="var(--${role})" stroke-width="3"/>` : `<circle cx="${x}" cy="${yTop}" r="${r*0.7}" fill="none" stroke="var(--text)" stroke-width="2.5"/>`; return; }
+    const y = top + (fr - base + 0.5) * fh;
+    if (root) o += `<rect x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}" rx="3" fill="var(--${role})"/>`;
+    else if (!onBarre) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--text)"/>`;
+    if (onBarre && !root && i !== sh.barre[1]) return; // one finger number per barre
+    if (fingers && sh.fingers && sh.fingers[i]) o += `<text x="${x}" y="${y + r*0.4}" text-anchor="middle" font-family="AHM" font-weight="700" font-size="${r*1.1}" fill="var(--ink)">${sh.fingers[i]}</text>`;
+  });
+  return o + '</svg>';
+}
+const SHEET_SHAPES = [
+  { frets: [2, 4, 2, 2, 2, 2], base: 2, roots: [0, 5], fingers: [1, 3, 1, 1, 1, 1], barre: [2, 0, 5], label: '2nd fret' },
+  { frets: [-1, 9, 11, 9, 10, 9], base: 9, roots: [1, 5], fingers: [0, 1, 3, 1, 2, 1], barre: [9, 1, 5], label: '9th fret' },
+  { frets: [2, -1, 2, 2, 2, -1], base: 2, roots: [0], fingers: [2, 0, 3, 3, 3, 0], label: 'Shell' },
+];
+const view = new URLSearchParams(location.search).get('view') || 'phone';
+const root = document.getElementById('root');
+const playing = view.includes('playing') || view.includes('sheet');
+const cur = playing ? 2 : 0;
+
+if (view.startsWith('desk')) {
+  const g = display(SLOTS[cur], { desk: true, playing, beat: 2 });
+  root.innerHTML = `<div class="desk"><div class="wrap">
+    <header class="top"><nav class="tabs"><button class="tab on"><i class="sq ${playing ? 'live' : ''}"></i>Jam</button><button class="tab">Solo</button></nav>
+      <div class="hints"><span><kbd>Space</kbd>Play</span><span><kbd>R</kbd>Re-roll</span><span><kbd>←</kbd><kbd>→</kbd>Chords</span><button class="iconbtn" style="margin:0">${I.sliders}</button></div></header>
+    <div class="display">${render(g, 7.46)}</div>
+    <div class="pads">${SLOTS.map((s, i) => pad(s, i, playing && i === cur, !playing && i === cur)).join('')}</div>
+    <div class="legend cap">${Object.keys(ROLE).map((r) => `<span><i style="background:var(--${r})"></i>${ROLE[r]}</span>`).join('')}<span style="margin-left:auto">Colour = the chord's job in the key</span></div>
+    <div class="controls">
+      <button class="chip">Neo-soul ${I.chev}</button>
+      <button class="chip"><span class="k">Key</span> D major <span class="held">${I.pin}HELD</span></button>
+      <button class="chip"><span class="k">Tempo</span> <span style="font-family:var(--mono)">84</span></button>
+      <div class="actions"><button class="back">${I.back}</button><button class="reroll">${I.reroll}Re-roll</button><button class="play">${playing ? I.pause : I.play}</button></div>
+    </div></div></div>`;
+} else {
+  const g = display(SLOTS[cur], { desk: false, playing, beat: 2 });
+  root.innerHTML = `<div class="phone">
+    <header class="top"><nav class="tabs"><button class="tab on"><i class="sq ${playing ? 'live' : ''}"></i>Jam</button><button class="tab">Solo</button></nav><button class="iconbtn">${I.sliders}</button></header>
+    <div class="display">${render(g, 5.15)}</div>
+    <div class="strip"><button class="chip grow">Neo-soul ${I.chev}</button><button class="chip">D major <span class="held">${I.pin}HELD</span></button><button class="chip" style="font-family:var(--mono)">84</button></div>
+    <div class="pads">${SLOTS.map((s, i) => pad(s, i, playing && i === cur, !playing && i === cur)).join('')}</div>
+    <div class="actions"><button class="back">${I.back}</button><button class="reroll">${I.reroll}Re-roll</button><button class="play">${playing ? I.pause : I.play}</button></div>
+    ${view === 'phone-sheet' ? `<div class="scrim"></div><div class="sheet">
+      <div class="handle"><span></span></div>
+      <div class="sh-head"><div><div class="sh-name">F<span class="acc">♯</span><sup>m7</sup></div>
+        <div class="sh-sub"><span class="deg" style="color:var(--home)">iii</span><span class="cap">Home</span><span class="notes">F♯ · A · C♯ · E</span></div></div>
+        <button class="iconbtn">${I.close}</button></div>
+      <div class="sh-chart">${chart(SHEET_SHAPES[0], { w: 230, role: 'home' })}</div>
+      <div class="sh-alts">${SHEET_SHAPES.map((sh, i) => `<button class="alt ${i === 0 ? 'on' : ''}">${chart(sh, { w: 64, fingers: false, role: 'home' })}<span class="cap">${sh.label}</span></button>`).join('')}</div>
+      <button class="hear">${I.speaker}Hear it</button>
+    </div>` : ''}
+  </div>`;
+}
+</script>
+</body>
+</html>
