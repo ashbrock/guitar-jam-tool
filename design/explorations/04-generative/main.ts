@@ -12,6 +12,7 @@ import { resolveDegreeChord } from '../../../src/theory/degrees';
 import { generate, type DegreeSlot } from '../../../src/theory/generator';
 import { KEY_TONICS, formatKey, type Key, type Mode } from '../../../src/theory/keys';
 import { pc } from '../../../src/theory/notes';
+import { basicQuality, basicShape, STRING_NAMES, type PlacedShape } from '../../../src/theory/shapes';
 import { newSeed } from '../../../src/theory/random';
 import type { Vibe } from '../../../src/theory/vibe';
 
@@ -284,31 +285,78 @@ function splitSuffix(suffix: string): [string, string] {
 function chordHTML(c: Chord): string {
   const { root, suffix } = chordParts(c);
   const [m, q] = splitSuffix(suffix);
-  return `${root[0]}${root.length > 1 ? `<span class="acc">${root.slice(1)}</span>` : ''}${m ? `<span class="m">m</span>` : ''}${q ? `<span class="q">${q}</span>` : ''}`;
+  return `${root[0]}${root.length > 1 ? `<span class="acc">${root.slice(1)}</span>` : ''}${m}${q ? `<sup>${q}</sup>` : ''}`;
+}
+
+/** Chord chart: nut at the top, low E on the left. Roots are squares in the chord's colour. */
+function chartSVG(shape: PlacedShape, kind: Kind, w: number, fingers: boolean): string {
+  const top = w * 0.17, left = w * 0.13, right = w * 0.07, gs = (w - left - right) / 5, fh = gs * 1.18;
+  const frets = 5, gridH = fh * frets, h = top + gridH + (fingers ? w * 0.13 : w * 0.05);
+  const r = gs * 0.4, line = 'rgb(244 240 232 / 0.45)';
+  const base = shape.baseFret;
+  let o = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">`;
+  for (let i = 0; i < 6; i++) o += `<rect x="${left + i * gs - 0.6}" y="${top}" width="1.2" height="${gridH}" fill="${line}"/>`;
+  for (let f = 0; f <= frets; f++) {
+    const nut = f === 0 && base === 1;
+    o += `<rect x="${left - 0.6}" y="${top + f * fh - (nut ? 2.5 : 0.6)}" width="${gs * 5 + 1.2}" height="${nut ? 5 : 1.2}" rx="${nut ? 1.5 : 0}" fill="${nut ? 'var(--text)' : line}"/>`;
+  }
+  if (base > 1) o += `<text x="${left - gs * 0.45}" y="${top + fh * 0.62}" text-anchor="end" font-family="DM Sans" font-weight="500" font-size="${Math.max(10, w * 0.075)}" fill="var(--muted)">${base}</text>`;
+  if (shape.barre) {
+    const [bf, from, to] = shape.barre;
+    const y = top + (bf - base + 0.5) * fh;
+    o += `<rect x="${left + from * gs - r}" y="${y - r}" width="${(to - from) * gs + 2 * r}" height="${2 * r}" rx="${r}" fill="var(--text)"/>`;
+  }
+  shape.frets.forEach((f, i) => {
+    const x = left + i * gs, root = shape.roots.includes(i), col = root ? KIND_DOT[kind] : 'var(--text)';
+    const yTop = top - fh * 0.55;
+    if (f < 0) { const d = r * 0.6; o += `<path d="M${x - d} ${yTop - d}L${x + d} ${yTop + d}M${x + d} ${yTop - d}L${x - d} ${yTop + d}" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"/>`; return; }
+    if (f === 0) { o += root ? `<rect x="${x - r * 0.62}" y="${yTop - r * 0.62}" width="${r * 1.24}" height="${r * 1.24}" rx="2" fill="none" stroke="${col}" stroke-width="1.8"/>` : `<circle cx="${x}" cy="${yTop}" r="${r * 0.62}" fill="none" stroke="var(--text)" stroke-width="1.6"/>`; return; }
+    const y = top + (f - base + 0.5) * fh;
+    const onBarre = shape.barre && f === shape.barre[0] && i >= shape.barre[1] && i <= shape.barre[2];
+    if (root) o += `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="${r * 0.3}" fill="${col}"/>`;
+    else if (!onBarre) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--text)"/>`;
+    const showFinger = fingers && shape.fingers[i] && (!onBarre || root || i === shape.barre![1]);
+    if (showFinger) o += `<text x="${x}" y="${y + r * 0.36}" text-anchor="middle" font-family="DM Sans" font-weight="500" font-size="${r * 1.05}" fill="var(--ink)">${shape.fingers[i]}</text>`;
+  });
+  if (fingers) STRING_NAMES.forEach((n, i) => (o += `<text x="${left + i * gs}" y="${h - 2}" text-anchor="middle" font-family="DM Sans" font-size="${Math.max(9, w * 0.055)}" fill="var(--muted)">${n}</text>`));
+  return o + '</svg>';
 }
 
 function renderChord(): void {
-  const p = engine.playhead();
-  const s = p.slotIndex !== null ? slots[p.slotIndex] : slots[0];
-  if (!s) return;
-  const el = $('chord');
-  el.innerHTML = chordHTML(s.chord);
-  el.setAttribute('aria-label', spokenChord(s.chord));
-  $('sub').textContent = `${vibe().name} · ${formatKey(key)}`;
+  $('sub').textContent = `${vibe().name} · ${formatKey(key)} · ${tempo} bpm`;
 }
 
+// ---------- Carousel ----------
+
+let selected = 0;
+let lastRel: number[] = [];
+const wide = () => window.innerWidth >= 900;
+const SIZES = () => (wide() ? { now: 290, other: 170, gap: 32 } : { now: 170, other: 104, gap: 14 });
+
 function renderPanel(): void {
-  const prog = $('prog');
-  prog.innerHTML = slots
+  const list = $('carousel');
+  list.innerHTML = slots
     .map((s, i) => {
-      const { root, suffix } = chordParts(s.chord);
-      const [m, q] = splitSuffix(suffix);
-      return `<button class="pill" data-i="${i}" aria-label="${spokenChord(s.chord)}"><span class="dot" style="background:${KIND_DOT[s.kind]}"></span><span class="nm">${root}${m}${q ? `<sup>${q}</sup>` : ''}</span></button>`;
+      const q = basicQuality(s.chord);
+      const shape = q !== null ? basicShape(s.chord, q) : null;
+      return `<li class="card" data-i="${i}" role="button" tabindex="0" aria-label="${spokenChord(s.chord)}">
+        <span class="chart" data-now="${shape ? chartSVG(shape, s.kind, SIZES().now, true).replace(/"/g, '&quot;') : ''}" data-other="${shape ? chartSVG(shape, s.kind, SIZES().other, false).replace(/"/g, '&quot;') : ''}"></span>
+        <span class="cname">${chordHTML(s.chord)}</span>
+        <span class="bar"><i></i></span></li>`;
     })
     .join('');
-  prog.querySelectorAll<HTMLButtonElement>('.pill').forEach((b) =>
-    b.addEventListener('click', () => void engine.previewChord(slots[Number(b.dataset.i)]!.chord)),
-  );
+  list.querySelectorAll<HTMLElement>('.card').forEach((el) => {
+    const go = () => {
+      const i = Number(el.dataset.i);
+      if (!isPlaying()) selected = i;
+      void engine.previewChord(slots[i]!.chord);
+      layout(true);
+    };
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), go()));
+  });
+  lastRel = [];
+  if (!isPlaying()) selected = 0;
   $('settings').innerHTML = `
     <button class="chip grow" id="vibe">${vibe().name}<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="chip" id="key" aria-pressed="${keyHeld}">${formatKey(key)}${keyHeld ? '<span class="held">HELD</span>' : ''}</button>
@@ -319,24 +367,59 @@ function renderPanel(): void {
   });
   $('key').addEventListener('click', () => ((keyHeld = !keyHeld), renderPanel()));
   $('tempo').addEventListener('click', () => ((tempoHeld = !tempoHeld), renderPanel()));
-  lastSlot = -1; // refresh the chord
+  lastSlot = -1;
   renderChord();
+  layout(false);
 }
 
-let lastPill = -2;
-function updateLoop(slotIndex: number | null, playing: boolean): void {
-  if (slotIndex !== lastPill) {
-    lastPill = slotIndex ?? -1;
-    document.querySelectorAll('.pill').forEach((el, i) => el.setAttribute('aria-current', String(playing && i === slotIndex)));
-  }
-  // Approximate loop position from the playing slot (good enough for an exploration).
-  const total = slots.reduce((a, s) => a + s.bars, 0);
-  let before = 0;
-  for (let i = 0; i < (slotIndex ?? 0); i++) before += slots[i]!.bars;
-  const cur = slotIndex !== null ? slots[slotIndex]!.bars : 0;
+const isPlaying = () => { const p = engine.playhead().phase; return p === 'playing' || p === 'count-in'; };
+
+/** Positions every card relative to the current chord. Cards that wrap around the loop jump without animating. */
+function layout(animate: boolean): void {
+  const n = slots.length;
   const p = engine.playhead();
-  const within = p.phase === 'playing' ? Math.min(1, (p.beat + 1) / Math.max(1, cur * 4)) : 0;
-  ($('loop') as HTMLElement).style.width = playing && total ? `${((before + within * cur) / total) * 100}%` : '0%';
+  const cur = isPlaying() && p.slotIndex !== null ? p.slotIndex : selected;
+  const behind = n >= 5 ? 2 : n >= 3 ? 1 : 0;
+  const { now, other, gap } = SIZES();
+  document.querySelectorAll<HTMLElement>('.card').forEach((el, i) => {
+    let rel = (((i - cur) % n) + n) % n;
+    if (rel >= n - behind) rel -= n;
+    const visible = rel >= -2 && rel <= 3;
+    const dist = rel === 0 ? 0 : Math.sign(rel) * (now / 2 + gap + other / 2 + (Math.abs(rel) - 1) * (other + gap));
+    const wrapped = lastRel[i] !== undefined && Math.abs(lastRel[i]! - rel) > 1;
+    if (!animate || wrapped) el.style.transition = 'none';
+    el.style.transform = `translate(calc(-50% + ${dist}px), -50%)`;
+    el.classList.toggle('now', rel === 0);
+    el.classList.toggle('past', rel < 0);
+    el.classList.toggle('hidden', !visible);
+    el.setAttribute('aria-current', String(rel === 0));
+    const chart = el.querySelector<HTMLElement>('.chart')!;
+    const want = rel === 0 ? 'now' : 'other';
+    if (chart.dataset.shown !== want) { chart.innerHTML = chart.dataset[want] ?? ''; chart.dataset.shown = want; }
+    (el.querySelector('.cname') as HTMLElement).style.fontSize = rel === 0 ? (wide() ? '52px' : '36px') : (wide() ? '28px' : '20px');
+    if (!animate || wrapped) { void el.offsetWidth; el.style.transition = ''; }
+    lastRel[i] = rel;
+  });
+}
+window.addEventListener('resize', () => renderPanel());
+
+let lastCur = -2;
+function updateLoop(slotIndex: number | null, playing: boolean): void {
+  const cur = playing && slotIndex !== null ? slotIndex : selected;
+  if (cur !== lastCur) {
+    lastCur = cur;
+    layout(true);
+  }
+  // Progress through the current chord, on its card.
+  const p = engine.playhead();
+  const bar = document.querySelector<HTMLElement>('.card.now .bar i');
+  if (!bar) return;
+  if (!playing || slotIndex === null || p.phase !== 'playing') { bar.style.width = '0%'; return; }
+  let start = 0;
+  for (let i = 0; i < slotIndex; i++) start += slots[i]!.bars * 4;
+  const beats = slots[slotIndex]!.bars * 4;
+  const elapsed = p.bar * 4 + p.beat - start + 1;
+  bar.style.width = `${Math.max(0, Math.min(1, elapsed / beats)) * 100}%`;
 }
 
 const PLAY = '<svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z" fill="currentColor" stroke="none"/></svg>';

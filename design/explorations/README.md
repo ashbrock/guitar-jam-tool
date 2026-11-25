@@ -59,7 +59,7 @@ Nothing here is wired into the app on `main` unless noted.
 
 ## 04 · Generative visuals (prototype; exploring)
 
-**What it is:** full-screen, music-driven visuals with a minimal UI: the chord huge and centred, and a floating glass panel at the bottom (progression, Back / Re-roll / Play, then vibe, key and tempo).
+**What it is:** full-screen, music-driven visuals with a minimal UI. The progression sits in the centre as a **carousel of chord charts**: the current chord on a highlighted card with its own progress bar, past chords dimmed (50%), upcoming chords at full opacity, sliding on each change and looping round. A floating glass panel at the bottom holds only playback (Back, Re-roll, Play) and settings (vibe, key, tempo).
 
 **Run it:** `npm run dev`, then open `/design/explorations/04-generative/`. It plays real audio through the app's engine. Space plays, R re-rolls. Tap the vibe chip to cycle vibes; tap key or tempo to hold them. The Lines/Dots switch at the top right is exploration-only. Stills are in `screens/`.
 
@@ -75,4 +75,4 @@ Nothing here is wired into the app on `main` unless noted.
 ### Ideas noted, not built
 - **Solo mode:** the notes you play (microphone pitch detection, no recording) could feed extra harmonics into the strings, so the visuals answer your solo.
 - **Accidentals:** at display size the Noto ♭/♯ look thin beside DM Sans; we'd draw our own.
-- **Chord shapes** need a home in this direction (e.g. in the panel or on tap).
+- **Chord charts:** basic shapes from `src/theory/shapes.ts` (open where possible, else the lower E- or A-shape barre), with tests. Finger numbers and string names show on the current card; roots are squares in the chord's quality colour.
