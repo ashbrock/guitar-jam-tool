@@ -43,7 +43,7 @@ describe('first load', () => {
   it('only uses the simple chord set', () => {
     for (let i = 0; i < 20; i++) {
       jam.reroll();
-      for (const c of jam.chords.value) expect(['major', 'minor', 'dim', 'sus']).toContain(c.kind);
+      for (const c of jam.playChords.value) expect(['major', 'minor', 'dim', 'sus']).toContain(c.kind);
     }
   });
 });
@@ -119,11 +119,11 @@ describe('vibe, length and key', () => {
   it('a tonic change transposes without re-rolling or a new history entry, and keeps the loop position', () => {
     const slots = jam.slots.value;
     const h = jam.history.value.length;
-    const before = jam.chords.value.map((c) => pc(c.chord.root));
+    const before = jam.playChords.value.map((c) => pc(c.chord.root));
     jam.chooseTonic(KEY_TONICS.major.find((t) => t.letter === 'E' && t.acc === 0)!);
     expect(jam.slots.value).toBe(slots);
     expect(jam.history.value.length).toBe(h);
-    expect(jam.chords.value.map((c) => pc(c.chord.root))).toEqual(before.map((p) => (p + 2) % 12));
+    expect(jam.playChords.value.map((c) => pc(c.chord.root))).toEqual(before.map((p) => (p + 2) % 12));
     expect(calls.progression.at(-1)!.fromTop).toBe(false);
   });
 
@@ -158,39 +158,34 @@ describe('verse and chorus', () => {
     }
   });
 
-  it('loops the chosen section; switching jumps to its top (at the next bar line)', () => {
-    expect(jam.section.value).toBe('verse');
-    expect(jam.playList.value.every((it) => it.section === 'verse')).toBe(true);
-    jam.chooseSection('chorus');
-    expect(jam.slots.value).toBe(jam.song.value.chorus);
-    expect(jam.playList.value.every((it) => it.section === 'chorus')).toBe(true);
-    expect(calls.progression.at(-1)!.fromTop).toBe(true);
-    expect(calls.progression.at(-1)!.slots).toHaveLength(jam.song.value.chorus.length);
+  it('plays straight through: the whole verse, then the whole chorus, on a loop', () => {
+    const { verse, chorus } = jam.song.value;
+    const list = jam.playList.value;
+    expect(list).toHaveLength(verse.length + chorus.length);
+    expect(list.slice(0, verse.length).every((it, i) => it.section === 'verse' && it.index === i)).toBe(true);
+    expect(list.slice(verse.length).every((it, i) => it.section === 'chorus' && it.index === i)).toBe(true);
+    expect(jam.itemAt(verse.length)).toEqual({ section: 'chorus', index: 0, bars: chorus[0]!.bars });
+    expect(jam.itemAt(null)).toBeUndefined();
+    // The engine gets the whole song.
+    expect(calls.progression.at(-1)!.slots).toHaveLength(list.length);
+    expect(jam.playChords.value).toHaveLength(list.length);
   });
 
-  it('song form plays verse ×2 then chorus ×2, starting from the chosen section', () => {
-    jam.setForm(true);
-    const n = jam.song.value.verse.length;
-    const m = jam.song.value.chorus.length;
-    const list = jam.playList.value;
-    expect(list).toHaveLength(2 * n + 2 * m);
-    expect(list.slice(0, 2 * n).every((it) => it.section === 'verse')).toBe(true);
-    expect(list.slice(2 * n).every((it) => it.section === 'chorus')).toBe(true);
-    expect(jam.itemAt(n)).toEqual({ section: 'verse', index: 0, bars: jam.song.value.verse[0]!.bars });
-    expect(calls.progression.at(-1)!.slots).toHaveLength(list.length);
-    jam.chooseSection('chorus');
-    expect(jam.playList.value[0]!.section).toBe('chorus');
+  it('length is bars per section', () => {
+    jam.chooseLength(8);
+    const sum = (xs: readonly { bars: number }[]) => xs.reduce((a, x) => a + x.bars, 0);
+    expect(sum(jam.song.value.verse)).toBe(8);
+    expect(sum(jam.song.value.chorus)).toBe(8);
+    expect(sum(calls.progression.at(-1)!.slots)).toBe(16);
   });
 
   it('re-roll, transpose and back keep both sections together', () => {
-    jam.chooseSection('chorus');
     jam.reroll();
     const before = jam.song.value;
     jam.reroll();
     expect(jam.song.value).not.toBe(before);
     jam.back();
     expect(jam.song.value).toBe(before);
-    expect(jam.section.value).toBe('chorus');
     const roots = jam.songChords.value.chorus.map((c) => pc(c.chord.root));
     const t = KEY_TONICS[jam.key.value.mode].find((x) => pc(x) === (pc(jam.key.value.tonic) + 1) % 12)!;
     jam.chooseTonic(t);

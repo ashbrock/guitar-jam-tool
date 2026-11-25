@@ -260,7 +260,7 @@ Targets are at least 6 px apart.
 ### 5.4 Radii
 | Token | Value | Use |
 |---|---|---|
-| `--r-pill` | 999 px | Buttons, chips, pills, switches, progress bars |
+| `--r-pill` | 999 px | Buttons, chips, pills, switches, timeline bars |
 | `--r-panel` | 28 px | The floating panel |
 | `--r-picker` | 24 px | Pickers |
 | `--r-card` | 22 px | Chord cards |
@@ -276,10 +276,14 @@ Everything is soft and round: it reads as an instrument, not a form.
 1. **Mode tabs (Jam · Solo):** plain text buttons, 48 px tall, `--t-body` 500. Current: `--text`; other: `--muted`. No underline or pill. *(Solo isn't designed yet: SPEC A13.)*
    **Settings button** (top right): 48 px pill, `--glass`, sliders icon + "Settings" in `--t-chip`. Open: `--fill-open`. Its picker drops down below the top bar (right-aligned, 420 px on desktop, full width minus gutters on phones).
 2. **Carousel card:** a fixed width (chart + 28 px), `--r-card`, `--card` with blur. Chart above, chord name below, progress bar at the bottom.
-   - **Current:** scale 1, `--card-now`, 1 px `--edge-now`, the progress bar visible.
+   - **Current:** scale 1, `--card-now`, 1 px `--edge-now`.
    - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
    - The card is a button (`role="button"`, focusable); its name is the spoken chord.
-3. **Progress bar:** 3 px tall, `--r-pill`, `--track` at 0.14, filled with `--text`.
+3. **Bar timeline:** under the carousel, on a `--glass` strip (blur 20 px, `--r-option`, padding 12 / 16 / 14 px), up to 560 px wide with 24 px side margins.
+   - **Head row:** the section on the left in `--t-caption` 500, uppercase, tracking +0.1em, `--text`; the next section on the right in `--muted`, with an arrow.
+   - **Chord row:** names in `--t-caption` 500, each placed at the start of its chord (as a share of the section's bars). Playing: `--text`. Next: `--text` at 75%. Past: 45% opacity. Others: `--muted`.
+   - **Bar row:** one 3 px dash per bar (`--track`, `--r-pill`, 6 px apart). Fills with `--text` as the bar plays, from the audio clock, never a CSS animation.
+   - **Count-in:** the head reads "Count-in" with four 6 px dots that fill one per beat.
 4. **Chord chart:** see §7.
 5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
 6. **Action row (icon buttons):** five 56 px circles, spread across the row: **Mute** (speaker; `--fill-2`, `--muted`; when on, inverted with a crossed-out speaker), **Re-roll** (two arrows; inverted: `--text` fill, `--ink` icon), **Play / Pause** (`--go` fill, `--ink` icon; the centre), **Tempo** (metronome icon) and **Key** (# icon), both `--fill-2`, `--muted`, opening their pickers (open: `--fill-open`, `--text`). Each has an accessible name that includes its value ("Tempo, 84 BPM", "Key, D major, held").
@@ -292,8 +296,8 @@ Everything is soft and round: it reads as an instrument, not a form.
 12. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
 13. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
 14. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.
-12a. **Settings views:** the main view lists a **nav row** (like a switch row, with the label, a hint and a `--muted` right chevron) for Sound, then the Count-in, Metronome and Song form switch rows, 6 px apart. The Sound view replaces it in place: a 48 px **back control** (left chevron + "Sound" in `--t-body` 500, no fill until hover) instead of a title, then the part switches and credits. No slide animation between views.
-12b. **Section switch:** "Verse | Chorus" above the carousel. A glass segmented control (`--glass`, blur 20 px, 3 px inset, `--r-pill`) holding two 42 px buttons inside a 48 px control (`--t-small` 500). The section on screen is inverted (`--text` fill, `--ink` label); the other is `--muted`, with `--hover` on pointer. With the song form on, a "Song form" caption (`--t-caption`, `--muted`) sits beside it. It's a radio group named "Section".
+12a. **Settings views:** the main view lists a **nav row** (like a switch row, with the label, a hint and a `--muted` right chevron) for Sound, then the Count-in and Metronome switch rows, 6 px apart. The Sound view replaces it in place: a 48 px **back control** (left chevron + "Sound" in `--t-body` 500, no fill until hover) instead of a title, then the part switches and credits. No slide animation between views.
+
 15. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Sound.
 
 ### 6.1 Icons
@@ -335,7 +339,7 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 |---|---|---|---|
 | **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord centred. | Hidden. |
 | **Stopped** | Play icon. | First (or last tapped) chord centred; empty bar. | Hidden. |
-| **Count-in** (if on) | Pause icon. | First chord centred; its progress bar is four segments (`--track-card`, 6 px apart) that fill with `--text` one per beat. | Hidden until beat 1. |
+| **Count-in** (if on) | Pause icon. | First chord centred; the timeline head reads "Count-in" with four dots filling one per beat. | Hidden until beat 1. |
 | **Playing** | Pause icon. | Current chord centred, bar filling, cards sliding on each change. | Visible, moving. |
 | **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Frozen, still visible. |
 
@@ -362,7 +366,7 @@ The visuals use continuous rates, not durations (§3.3).
 
 ### 9.2 Rules
 - **The carousel moves on the chord change,** never before it. When the loop wraps, cards jumping from one end to the other move without animation, so nothing flies across the screen.
-- **The progress bar is never animated by CSS;** it's set each frame from the audio clock.
+- **The timeline's bars are never animated by CSS;** they're set each frame from the audio clock.
 - Everything beat-related follows the audio clock, minus output latency, so visuals never lead the sound.
 
 ### 9.3 Reduced motion (`prefers-reduced-motion: reduce`)
@@ -373,7 +377,7 @@ The visuals use continuous rates, not durations (§3.3).
 | Picker rises | Appears without animation |
 | Pressed scale | Fill change only |
 
-The progress bar keeps moving: it shows position, not decoration.
+The timeline keeps filling: it shows position, not decoration.
 
 ---
 

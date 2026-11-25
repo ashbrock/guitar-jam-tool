@@ -1,6 +1,6 @@
 // Jam mode state and rules (SPEC.md §4–5). A roll is a song: a verse and a contrasting chorus (§5.9),
 // stored as key-relative degree slots, so a tonic change transposes and never re-rolls. What the
-// engine plays is a play list: the chosen section looping, or the song form (verse ×2, chorus ×2).
+// engine plays the song straight through: verse, then chorus, on a loop (a play list).
 // The engine and randomness are injected, so these rules are tested without audio (jam.test.ts).
 import { batch, computed, signal } from '@preact/signals';
 import { VIBES, vibeById } from '../../data/vibes/index';
@@ -35,15 +35,17 @@ interface Roll {
   key: Key;
   tempo: number;
   song: Song;
-  section: Section;
 }
 
-/** One chord in what the engine plays: which section it's from, and its place in that section. */
+/** One chord in what the engine plays: which section it's from, its place there, and where the section starts in the list. */
 export interface PlayItem {
   section: Section;
   index: number;
   bars: DegreeSlot['bars'];
 }
+
+/** The order sections play in. */
+export const FORM: readonly Section[] = ['verse', 'chorus'];
 
 const EMPTY_SONG: Song = { verse: [], chorus: [] };
 
@@ -67,15 +69,11 @@ export const keyHeld = signal(false);
 export const tempoHeld = signal(false);
 export const lengthBars = signal(DEFAULT_LENGTH);
 export const song = signal<Song>(EMPTY_SONG);
-/** The section that loops (or, with the song form on, where the form starts). */
-export const section = signal<Section>('verse');
-/** Song form: verse twice, then chorus twice, on repeat (instead of looping one section). */
-export const formOn = signal(false);
 export const history = signal<Roll[]>([]);
 
 export const vibe = computed<Vibe>(() => vibeById(vibeId.value) ?? VIBES[0]!);
-/** The chosen section's slots. */
-export const slots = computed<DegreeSlot[]>(() => song.value[section.value]);
+/** The verse's slots (each section has the same length in bars). */
+export const slots = computed<DegreeSlot[]>(() => song.value.verse);
 
 const toChords = (ss: readonly DegreeSlot[], k: Key) => ss.map((s) => simplify(resolveDegreeChord(s.degree, s.quality, k, s.bassDegree)));
 /** Both sections as Jam shows and plays them: the simple chord set (SPEC.md §5.6). */
@@ -83,16 +81,13 @@ export const songChords = computed<Record<Section, SimpleChord[]>>(() => ({
   verse: toChords(song.value.verse, key.value),
   chorus: toChords(song.value.chorus, key.value),
 }));
-/** The chosen section's chords. */
-export const chords = computed<SimpleChord[]>(() => songChords.value[section.value]);
+/** What the engine plays, in order: the verse, then the chorus. */
+export const playList = computed<PlayItem[]>(() =>
+  FORM.flatMap((sec) => song.value[sec].map((s, index) => ({ section: sec, index, bars: s.bars }))),
+);
 
-/** What the engine plays, in order: the chosen section, or the form starting from it. */
-export const playList = computed<PlayItem[]>(() => {
-  const items = (sec: Section) => song.value[sec].map((s, index) => ({ section: sec, index, bars: s.bars }));
-  if (!formOn.value) return items(section.value);
-  const other: Section = section.value === 'verse' ? 'chorus' : 'verse';
-  return [...items(section.value), ...items(section.value), ...items(other), ...items(other)];
-});
+/** Every chord in play order (the carousel's cards). */
+export const playChords = computed<SimpleChord[]>(() => playList.value.map((it) => songChords.value[it.section][it.index]!));
 
 /** The play-list item at an engine slot index (null before playing). */
 export function itemAt(slotIndex: number | null): PlayItem | undefined {
@@ -122,7 +117,7 @@ function describe(): string {
 }
 
 function remember(): void {
-  const h = [...history.value, { vibeId: vibeId.value, key: key.value, tempo: tempo.value, song: song.value, section: section.value }];
+  const h = [...history.value, { vibeId: vibeId.value, key: key.value, tempo: tempo.value, song: song.value }];
   history.value = h.slice(-HISTORY_LIMIT);
 }
 
@@ -174,7 +169,6 @@ export function back(): boolean {
     key.value = prev.key;
     tempo.value = prev.tempo;
     song.value = prev.song;
-    section.value = prev.section;
     lengthBars.value = prev.song.verse.reduce((a, s) => a + s.bars, 0);
     sendFeel();
     sink.setTempo(tempo.value);
@@ -223,23 +217,6 @@ export function chooseMode(m: Mode): void {
   });
 }
 
-/**
- * Verse or chorus (SPEC.md §5.9): loop that section (or, with the form on, start the form there).
- * While playing, the switch lands on the next bar line.
- */
-export function chooseSection(s: Section): void {
-  if (s === section.value) return;
-  section.value = s;
-  sendProgression(true);
-}
-
-/** Song form on or off (SPEC.md §5.9). Takes effect at the next bar line, from the chosen section. */
-export function setForm(on: boolean): void {
-  if (on === formOn.value) return;
-  formOn.value = on;
-  sendProgression(true);
-}
-
 /** Tempo picker (SPEC.md §4.4). Clamped to 40–240. */
 export function setTempo(bpm: number): void {
   const t = clampTempo(bpm);
@@ -258,8 +235,6 @@ export function resetJam(): void {
     tempoHeld.value = false;
     lengthBars.value = DEFAULT_LENGTH;
     song.value = EMPTY_SONG;
-    section.value = 'verse';
-    formOn.value = false;
     history.value = [];
   });
 }

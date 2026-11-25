@@ -21,21 +21,28 @@
 .chord-name { font-size: var(--t-chord); font-weight: 500; line-height: 1; letter-spacing: -0.02em; white-space: nowrap; }
 .chord-name .acc { font-size: 0.72em; vertical-align: 0.28em; }
 .chord-name sup { font-size: 0.55em; vertical-align: 0.75em; margin-left: 0.04em; line-height: 0; }
-.card .bar { width: 100%; height: 3px; border-radius: var(--r-pill); background: var(--track-card); overflow: hidden; opacity: 0; transition: opacity var(--dur-bar) ease; }
-.card .bar i { display: block; height: 100%; width: 0; background: var(--text); }
-.card-slot.now .bar { opacity: 1; }
-/* Count-in: the bar splits into four beats that fill one per beat (shows without sound). */
-.beats { width: 100%; height: 3px; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
-.beats i { border-radius: var(--r-pill); background: var(--track-card); }
-.beats i.on { background: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   .card-slot { transition: opacity var(--dur-reduced) ease; }
 }
 
-/* Verse | Chorus (DESIGN.md §6, "Section switch"): a glass segmented control above the cards. */
-.sections-wrap { display: flex; align-items: center; gap: var(--s-8); margin-bottom: var(--s-8); }
-.sections { display: flex; padding: 3px; border-radius: var(--r-pill); background: var(--glass); backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill); }
-.sections button { height: 42px; padding: 0 var(--s-16); border-radius: var(--r-pill); font-size: var(--t-small); font-weight: 500; color: var(--muted); }
-.sections button[aria-checked='true'] { background: var(--text); color: var(--ink); }
-@media (hover: hover) { .sections button:not([aria-checked='true']):hover { background: var(--hover); color: var(--text); } }
-.form-tag { font-size: var(--t-caption); color: var(--muted); }
+
+/* The bar timeline (DESIGN.md §6, "Bar timeline"): one dash per bar, chord names above where each starts. */
+.timeline {
+  width: min(100% - 2 * var(--s-24), 560px); margin-top: var(--s-16); padding: var(--s-12) var(--s-16) var(--s-14);
+  border-radius: var(--r-option); background: var(--glass); backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill);
+}
+.tl-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s-10); font-size: var(--t-caption); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+.tl-section { color: var(--text); display: inline-flex; align-items: center; gap: var(--s-8); }
+.tl-next { color: var(--muted); }
+.tl-beats { display: inline-flex; gap: 4px; }
+.tl-beats i { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--track); }
+.tl-beats i.on { background: var(--text); }
+.tl-chords { position: relative; height: 18px; margin-bottom: var(--s-8); }
+.tl-chord { position: absolute; bottom: 0; font-size: var(--t-caption); font-weight: 500; color: var(--muted); white-space: nowrap; transition: color var(--dur-switch) ease, opacity var(--dur-switch) ease; }
+.tl-chord.now { color: var(--text); }
+.tl-chord.next { color: var(--text); opacity: 0.75; }
+.tl-chord.past { opacity: 0.45; }
+.tl-bars { display: flex; gap: var(--gap); }
+.tl-bar { flex: 1; height: 3px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; }
+.tl-bar i { display: block; height: 100%; width: 0; background: var(--text); }
+@media (prefers-reduced-motion: reduce) { .tl-chord { transition: none; } }

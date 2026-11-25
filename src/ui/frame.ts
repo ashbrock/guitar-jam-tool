@@ -4,12 +4,20 @@
 import { useEffect } from 'preact/hooks';
 import type { RefObject } from 'preact';
 import { Visuals } from '../visuals/index';
+import { barFill } from './bars';
 import { itemAt, playList, songChords, vibe } from './state/jam';
 import type { Section } from '../theory/song';
 import { engine, syncPlayhead } from './state/playback';
 
 /** The current card's progress fill, registered by the carousel. */
-export const progressBar: { el: HTMLElement | null; slot: number; section: Section } = { el: null, slot: 0, section: 'verse' };
+/** The bar timeline, registered by its component: which section it shows, its length, and where it starts. */
+export const timeline: { el: HTMLElement | null; section: Section; bars: number; startBeats: number } = {
+  el: null,
+  section: 'verse',
+  bars: 0,
+  startBeats: 0,
+};
+
 
 export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanvas: RefObject<HTMLCanvasElement | null>): void {
   useEffect(() => {
@@ -50,19 +58,15 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
         levels: engine.levels(),
       });
 
-      // Smooth progress through the current chord, from the audio clock. Held while paused.
-      const bar = progressBar.el;
-      if (bar && p.phase !== 'paused') {
-        let fraction = 0;
+      // The bar timeline fills smoothly from the audio clock. Held while paused; empty when stopped.
+      const tl = timeline.el;
+      if (tl && p.phase !== 'paused') {
         const now = itemAt(p.slotIndex);
-        if (p.phase === 'playing' && p.slotIndex !== null && now && now.index === progressBar.slot && now.section === progressBar.section) {
-          const list = playList.value;
-          let start = 0;
-          for (let i = 0; i < p.slotIndex; i++) start += list[i]!.bars * 4;
-          const beats = now.bars * 4;
-          fraction = Math.max(0, Math.min(1, (p.bar * 4 + p.beat + p.beatFraction - start) / beats));
-        }
-        bar.style.width = `${fraction * 100}%`;
+        const playing = p.phase === 'playing' && now?.section === timeline.section;
+        const barsIn = playing ? (p.bar * 4 + p.beat + p.beatFraction - timeline.startBeats) / 4 : 0;
+        tl.querySelectorAll<HTMLElement>('.tl-bar i').forEach((el, k) => {
+          el.style.width = `${barFill(k, barsIn) * 100}%`;
+        });
       }
       raf = requestAnimationFrame(frame);
     };

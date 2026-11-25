@@ -4,9 +4,8 @@ import { signal } from '@preact/signals';
 import { useLayoutEffect, useRef, useState, useEffect } from 'preact/hooks';
 import { spokenChord } from '../../theory/chords';
 import { basicQuality, basicShape } from '../../theory/shapes';
-import { itemAt, section, songChords } from '../state/jam';
+import { playChords } from '../state/jam';
 import { engine, playhead } from '../state/playback';
-import { progressBar } from '../frame';
 import { ChordChart } from './ChordChart';
 import { ChordName } from './ChordName';
 
@@ -28,12 +27,10 @@ export function Carousel() {
   const wide = useWide();
   const p = playhead.value;
   const live = p.phase !== 'stopped' && p.slotIndex !== null;
-  const item = live ? itemAt(p.slotIndex) : undefined;
-  // The section on screen: the one playing (it follows the song form), else the chosen one.
-  const shown = item?.section ?? section.value;
-  const cs = songChords.value[shown];
+  // The whole song, verse then chorus: the cards slide straight from one section into the next.
+  const cs = playChords.value;
   const n = cs.length;
-  const cur = Math.min(n - 1, Math.max(0, live && item ? item.index : selected.value));
+  const cur = Math.min(n - 1, Math.max(0, live ? p.slotIndex! : selected.value));
   const chartW = wide ? 210 : 156;
 
   const list = useRef<HTMLOListElement>(null);
@@ -68,10 +65,7 @@ export function Carousel() {
       lastRel.current[i] = rel;
     });
     lastCur.current = cur;
-    progressBar.el = el.querySelector<HTMLElement>('li.now .bar i');
-    progressBar.slot = cur;
-    progressBar.section = shown;
-  }, [cur, n, wide, cs, shown, p.phase === 'count-in']);
+  }, [cur, n, wide, cs]);
 
   // A new progression: start the layout fresh (no slide from the old one).
   useLayoutEffect(() => {
@@ -100,17 +94,6 @@ export function Carousel() {
             >
               {shape && <ChordChart shape={shape} width={chartW} />}
               <ChordName chord={c.chord} />
-              {isNow && p.phase === 'count-in' ? (
-                <span class="beats" aria-hidden="true">
-                  {[1, 2, 3, 4].map((b) => (
-                    <i class={p.countInBeat !== null && b <= p.countInBeat ? 'on' : ''} />
-                  ))}
-                </span>
-              ) : (
-                <span class="bar" aria-hidden="true">
-                  <i />
-                </span>
-              )}
             </button>
           </li>
         );
