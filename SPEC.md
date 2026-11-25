@@ -201,7 +201,7 @@ The picture is specified in DESIGN.md §3. Its behavioural rules:
 - **Never flashes:** no brightness steps on the beat; changes are continuous. Safe at 240 BPM (WCAG 2.3.1).
 - **Reduced motion:** the picture holds still (no drift, no swell). Chord changes still change the shape and colour, without the crossfade.
 - **Decorative to assistive technology:** the canvas is hidden from screen readers. Everything it shows (the chord, the beat) is available in text.
-- **Each vibe has its own visualisation** (style, palette, density, orientation, motion). There's no switch. **[A14]**
+- **Each vibe has its own visualisation:** Neo-soul ribbons, Blues smoke, Soul & Roots record grooves, Heartland open road, Dreamy aurora, Desert Groove dunes (DESIGN.md §3.2). There's no switch. **[A14]**
 - Rendering runs on its own frame loop; the audio scheduler is independent, so a slow frame can't disturb timing.
 
 ---
@@ -424,7 +424,7 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A11** | Count-in and metronome are switches in Settings, both off by default. The count-in shows on the first chord card. | ✅ Decided. |
 | **A12** | Settings (top right) → Sound holds Chords, Bass and Drums switches and the credits. | ✅ Decided. |
 | **A13** | **Solo mode layout** in the generative style, including where "Solo over this" lives. | **Open: next design task.** |
-| **A14** | Each vibe has its own visualisation; no style switch. Paused visuals freeze and stay visible. | ✅ Decided. Currently each vibe uses lines or dots with its own look; making all six clearly distinct is the next visuals task. |
+| **A14** | Each vibe has its own visualisation; no style switch. Paused visuals freeze and stay visible. | ✅ Decided and built (DESIGN.md §3.2). |
 | **A15** | Mic-reactive visuals in Solo. | Stretch goal, after v1. |
 | **A16** | Move each vibe's visual look into the vibe data files. | Working default for the rebuild. |
 | **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |

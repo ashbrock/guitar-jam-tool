@@ -1,9 +1,12 @@
-// Draws "sympathetic strings" (DESIGN.md §3) on a canvas. It's given what's playing each frame and
+// Draws the generative visuals (DESIGN.md §3) on a canvas, in the vibe's own style. It's given what's playing each frame and
 // keeps its own easing state; it never touches audio, and the audio never waits for it.
 import { pc } from '../theory/notes';
 import type { SimpleChord } from '../theory/simplify';
 import type { VibeLook } from '../theory/vibe';
-import { approach, baseCycles, beatSwell, chordRatios, field, type Layer } from './harmony';
+import { approach, baseCycles, beatSwell, chordRatios, type Layer } from './harmony';
+import type { Scene } from './scene';
+import { drawStyle, resolutionFor } from './styles/index';
+import type { VisualStyle } from '../theory/vibe';
 
 export interface VisualInput {
   look: VibeLook;
@@ -14,12 +17,13 @@ export interface VisualInput {
   phase: 'stopped' | 'count-in' | 'playing' | 'paused';
   /** 0–1 through the current beat, from the audio clock. */
   beatFraction: number;
+  /** Beats from the start of the loop (bar × 4 + beat + fraction), from the audio clock. */
+  beatPosition: number;
   tempo: number;
   reducedMotion: boolean;
 }
 
 const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const rgb = (c: number[]) => `rgb(${c.map(Math.round).join(' ')})`;
 
 // Rates from DESIGN.md §3.3 (per second).
 const FADE_IN = 2.2;
@@ -43,6 +47,9 @@ export class Visuals {
   private lastSlot: number | null = -2;
   private lastTime = 0;
   private coloured = false;
+  private changeAge = 10;
+  private beatPos = 0;
+  private style: VisualStyle | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -54,9 +61,9 @@ export class Visuals {
     this.resize();
   }
 
-  /** Match the canvas to its CSS size, at device pixel ratio (capped at 2). */
+  /** Match the canvas to its CSS size, at the resolution the current style wants. */
   resize(): void {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = this.style ? resolutionFor(this.style, window.devicePixelRatio) : Math.min(2, window.devicePixelRatio || 1);
     this.w = this.canvas.clientWidth;
     this.h = this.canvas.clientHeight;
     this.canvas.width = Math.round(this.w * dpr);
@@ -72,6 +79,10 @@ export class Visuals {
     const paused = f.phase === 'paused';
     const still = f.reducedMotion;
     const look = f.look;
+    if (look.style !== this.style) {
+      this.style = look.style;
+      this.resize();
+    }
 
     // Paused: everything holds exactly where it was (DESIGN.md §3.3).
     const fdt = paused ? 0 : dt;
@@ -82,7 +93,10 @@ export class Visuals {
       for (const l of this.layers) l.target = 0;
       this.layers.push({ ratios: chordRatios(f.chord), w: still ? 1 : 0, target: 1 });
       this.baseTarget = baseCycles(look.cycles, f.chord ? pc(f.chord.chord.root) : 0);
+      this.changeAge = 0;
     }
+    this.changeAge += fdt;
+    if (playing) this.beatPos = f.beatPosition;
     if (!playing && !paused) this.lastSlot = -2;
     for (const l of this.layers) l.w = still ? l.target : approach(l.w, l.target, fdt, CROSSFADE);
     this.layers = this.layers.filter((l) => l.target > 0 || l.w > 0.002);
@@ -112,59 +126,24 @@ export class Visuals {
     ctx.globalAlpha = 1;
     ctx.fillStyle = this.background;
     ctx.fillRect(0, 0, this.w, this.h);
-    if (this.presence > 0.003) this.draw(look);
-  }
-
-  private draw(look: VibeLook): void {
-    const { ctx, w: W, h: H } = this;
-    const vertical = look.orientation === 'vertical';
-    const t = this.phase + look.sway * Math.sin(this.phase * 1.7) * 0.6;
-    const grad = vertical ? ctx.createLinearGradient(0, 0, 0, H) : ctx.createLinearGradient(0, 0, W, 0);
-    grad.addColorStop(0, rgb(this.colA));
-    grad.addColorStop(1, rgb(this.colB));
-    const n = look.lines;
-    const along = vertical ? H : W;
-    const across = vertical ? W : H;
-    const spacing = across / (n + 1);
-    const a = spacing * look.amp * (1 + this.swell);
-
-    if (look.style === 'lines') {
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = look.width;
-      ctx.lineCap = 'round';
-      const step = 6;
-      for (let i = 0; i < n; i++) {
-        // Lines near the centre are richest, where the chord card sits.
-        const edge = 1 - Math.abs((i + 1) / (n + 1) - 0.5) * 1.1;
-        ctx.globalAlpha = (0.35 + 0.65 * edge) * this.presence;
-        ctx.beginPath();
-        const c0 = spacing * (i + 1);
-        for (let s = 0; s <= along + step; s += step) {
-          const d = field(this.layers, this.base, s / along, i, t) * a * (0.55 + 0.45 * Math.sin((Math.PI * s) / along));
-          const x = vertical ? c0 + d : s;
-          const y = vertical ? s : c0 + d;
-          if (s === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-    } else {
-      ctx.fillStyle = grad;
-      const gap = 14;
-      for (let cy = gap / 2; cy < H; cy += gap) {
-        for (let cx = gap / 2; cx < W; cx += gap) {
-          const al = vertical ? cy : cx;
-          const c = vertical ? cx : cy;
-          const v = field(this.layers, this.base, al / along, c / spacing, t);
-          const e = Math.abs(v) ** 0.7;
-          const size = 1.5 + 6 * e * (0.75 + this.swell);
-          const edge = 1 - Math.abs(c / across - 0.5) * 0.9;
-          ctx.globalAlpha = (0.18 + 0.82 * e) * (0.55 + 0.45 * edge) * this.presence;
-          const d = v * a * 0.5;
-          ctx.fillRect((vertical ? cx + d : cx) - size / 2, (vertical ? cy : cy + d) - size / 2, size, size);
-        }
-      }
+    if (this.presence > 0.003) {
+      const scene: Scene = {
+        w: this.w,
+        h: this.h,
+        look,
+        layers: this.layers,
+        base: this.base,
+        t: this.phase + look.sway * Math.sin(this.phase * 1.7) * 0.6,
+        swell: this.swell,
+        presence: this.presence,
+        colA: this.colA,
+        colB: this.colB,
+        changeAge: still ? 10 : this.changeAge,
+        beatPos: still ? 0 : this.beatPos,
+      };
+      ctx.save();
+      drawStyle(look.style, ctx, scene, this.background);
+      ctx.restore();
     }
-    ctx.globalAlpha = 1;
   }
 }

@@ -52,16 +52,19 @@ export interface VibePlayback {
  * How the vibe looks in the generative visuals (DESIGN.md §3). Plain data, so a v2 can map free text
  * onto it just like the generator params.
  */
+/** The six visual styles, one per vibe (DESIGN.md §3.2). */
+export const VISUAL_STYLES = ['ribbons', 'smoke', 'grooves', 'road', 'aurora', 'dunes'] as const;
+export type VisualStyle = (typeof VISUAL_STYLES)[number];
+
 export interface VibeLook {
-  /** Flowing strings, or the same field drawn as a halftone of dots. */
-  style: 'lines' | 'dots';
-  orientation: 'horizontal' | 'vertical';
+  /** Which visualisation this vibe uses. */
+  style: VisualStyle;
   /** Gradient pairs: warmer for major-family chords, cooler for minor and diminished. */
   major: [string, string];
   minor: [string, string];
-  /** Number of strings across the screen. */
+  /** How many elements the style draws (smoke streams, record rings, road lines, dune ridges). */
   lines: number;
-  /** Line width in CSS px (lines style). */
+  /** Stroke width in CSS px (ribbons: thickness factor). */
   width: number;
   /** Wave amplitude as a multiple of the line spacing. */
   amp: number;
@@ -157,8 +160,7 @@ export function vibeProblems(v: Vibe): string[] {
   const look = v.look;
   if (!look) at('look', 'missing');
   else {
-    if (!['lines', 'dots'].includes(look.style)) at('look.style', 'must be lines or dots');
-    if (!['horizontal', 'vertical'].includes(look.orientation)) at('look.orientation', 'must be horizontal or vertical');
+    if (!(VISUAL_STYLES as readonly string[]).includes(look.style)) at('look.style', `must be one of ${VISUAL_STYLES.join(', ')}`);
     for (const k of ['major', 'minor'] as const) {
       const pair = look[k];
       if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((c) => /^#[0-9a-f]{6}$/i.test(c))) at(`look.${k}`, 'must be two #rrggbb colours');

@@ -102,29 +102,42 @@ No purple gradients. Blues is the only cool-blue vibe, on purpose.
 ## 3. The visuals
 
 ### 3.1 How the picture is made
-- **Strings:** evenly spaced lines (horizontal or vertical, per vibe) across the whole screen. Each line is a wave.
-- **Harmony → shape:** a line's wave is the sum of sines at the current chord's **just-intonation ratios**, the first weighted most:
+Every style is driven by the same harmony (`src/visuals/harmony.ts`), so the music always shows, whatever the vibe:
+- **Harmony → shape:** waves are sums of sines at the current chord's **just-intonation ratios**, the first weighted most:
   - major `1 : 5/4 : 3/2`; minor `1 : 6/5 : 3/2`; sus2 third `9/8`; sus4 `4/3`;
   - diminished fifth `64/45` (a tritone, so it looks restless);
   - major 7th `15/8`; minor 7th `9/5` on minor chords, `7/4` on dominant chords.
 
-  Consonant chords make smooth, regular interference; tense ones look busier.
-- **Chord root → base frequency:** the wave's base cycles shift slightly with the root, so a new root changes the picture even when the quality doesn't.
-- **Colour:** a gradient along the lines from the vibe's pair (§2.5), major or minor pair by chord quality, easing to the new pair over about 0.4 s.
-- **Depth:** lines near the centre are more opaque than those at the edges (35% → 100%), so the middle, where the chord card sits, is the richest area.
-- **Style per vibe:** each vibe is drawn as **strings** (lines) or as **dots**: the same field sampled on a 14 px grid, with dot size (1.5–7.5 px) and opacity following the wave's strength, like a moving halftone. There's no switch. Making all six vibes clearly distinct (more than two styles) is the next visuals task.
+  Consonant chords make smooth, regular shapes; tense ones look busier.
+- **Chord root → base frequency:** the base cycles shift slightly with the root, so a new root changes the picture even when the quality doesn't.
+- **Colour:** gradients from the vibe's pair (§2.5), major or minor pair by chord quality, easing to the new pair over about 0.4 s.
+- **Layers:** a chord change adds a layer that fades in while the old ones fade out, so nothing snaps. Styles can also read how present a 4th chord tone or a dominant 7th is from the layers.
+- **Shared inputs** (`src/visuals/scene.ts`): the layers, base cycles, drift time, beat swell, presence, colours, seconds since the last chord change, and the beat position from the audio clock.
 
-### 3.2 Per-vibe looks
-| Vibe | Style | Lines | Line width | Amplitude | Speed | Cycles | Orientation | Sway |
-|---|---|---|---|---|---|---|---|---|
-| Neo-soul | strings | 30 | 1.6 | 2.4 | 0.55 | 1.4 | horizontal | 0.35 |
-| Blues | strings | 16 | 3.2 | 1.6 | 0.40 | 0.9 | horizontal | 0.6 |
-| Soul & Roots | dots | 22 | 2.2 | 1.8 | 0.60 | 1.1 | vertical | 0.15 |
-| Heartland | strings | 26 | 2.0 | 1.4 | 0.90 | 1.6 | vertical | 0 |
-| Dreamy | dots | 20 | 1.4 | 3.2 | 0.25 | 0.7 | horizontal | 0 |
-| Desert Groove | dots | 34 | 1.3 | 1.2 | 0.75 | 2.6 | vertical | 0.1 |
+### 3.2 One style per vibe
+| Vibe | Style | What you see | How the music shows |
+|---|---|---|---|
+| Neo-soul | **Velvet ribbons** | Up to four soft, glowing ribbons drifting lazily across the middle of the screen | One ribbon per chord tone: a 7th chord grows a fourth ribbon, fading in with the crossfade. Thickness breathes with each ribbon's own harmonic. A lazy, behind-the-beat sway. |
+| Blues | **Smoke** | Translucent plumes rising and widening, with a bright wisp through each | The chord curls the plumes. Dominant 7ths make the edges waver (smoothly). The shuffle sways them. |
+| Soul & Roots | **Record grooves** | Concentric rings, like a record, slowly turning | The chord ripples the rings (each ring closes on itself). Every chord change sends a soft bright ring outward from the centre over about 3 s. |
+| Heartland | **Open road** | A horizon with a sky glow, lanes converging on it, and cross lines rushing toward you | Cross lines move one place per **eighth note**, locked to the audio clock. The chord shapes the horizon ridge and ripples the road. |
+| Dreamy | **Aurora** | Three curtains of light: a bright wavy edge with streaks hanging from it and fading out | The chord shapes the folds. Streak widths and spacing vary (three widths, jittered positions) so it reads as light, not a chart. |
+| Desert Groove | **Dunes** | Stacked ridgelines, far ones low and faint with a heat shimmer, near ones tall | Each ridge follows the chord's waves. The modal vamp rocks them gently side to side. Nearer dunes hide the ones behind. |
 
-Amplitude is a multiple of the line spacing; speed scales with tempo (`bpm / 90`). **Sway** adds a slow side-to-side lilt to shuffle vibes. These values belong in the vibe data files (SPEC A16).
+| Vibe | `lines` | `width` | `amp` | `speed` | `cycles` | `sway` |
+|---|---|---|---|---|---|---|
+| Neo-soul | 4 | 1.6 | 2.4 | 0.55 | 1.4 | 0.35 |
+| Blues | 16 (8 plumes) | 3.2 | 1.6 | 0.40 | 0.9 | 0.6 |
+| Soul & Roots | 22 rings | 1.4 | 1.8 | 0.60 | 1.1 | 0.15 |
+| Heartland | 14 cross lines | 2.0 | 1.4 | 0.90 | 1.6 | 0 |
+| Dreamy | 20 | 1.4 | 1.6 | 0.25 | 0.7 | 0 |
+| Desert Groove | 16 ridges | 1.3 | 1.2 | 0.75 | 2.6 | 0.1 |
+
+These live in each vibe's JSON (`look`), validated with the rest of the vibe (SPEC A16). Speed scales with tempo (`bpm / 90`).
+
+**Resolution:** the hazy styles (smoke, aurora) draw at 1× and are scaled up by the browser: a quarter of the pixels on a retina phone, and the softness suits them. The others draw at device resolution, capped at 2×.
+
+**Performance (measured):** in headless Chromium at 390 × 844, every style holds 60 fps. With the CPU slowed 4× (a stand-in for a mid-range phone), they run at 17–35 fps, Dreamy the slowest. Check on real phones.
 
 ### 3.3 Motion rules
 | Event | Treatment |
@@ -136,7 +149,7 @@ Amplitude is a multiple of the line spacing; speed scales with tempo (`bpm / 90`
 | **Beat** | A swell in amplitude: `0.12 × (0.5 + 0.5·cos(2π·beatFraction))`, from the audio clock. Continuous through the beat line: never a step, never a flash. |
 | **Tempo** | Sets the speed of drift. |
 
-All easing is frame-rate independent (`1 − e^(−rate·dt)`). The visuals render at device pixel ratio, capped at 2.
+All easing is frame-rate independent (`1 − e^(−rate·dt)`). On pause, the drift time, the time since the chord change and the beat position all freeze too.
 
 ### 3.4 Safety
 - **No flashing (WCAG 2.3.1):** brightness never steps on the beat. The beat changes amplitude by at most 12%, smoothly.
@@ -364,7 +377,6 @@ To be designed with the Solo layout (SPEC A13). These rules carry over and are f
 | Item | Notes |
 |---|---|
 | Solo layout and fretboard | Next design task (SPEC A13). |
-| Six distinct visualisations | Each vibe its own style, beyond strings vs dots (SPEC A14). |
 | Own accidentals | Replace the thin Noto ♭/♯ (§4.1). |
 | Toasts, blocked-audio message | Visual design pending (§8.3). |
 | Wordmark | No product name yet. Until there is one, the top bar shows only the mode tabs. |

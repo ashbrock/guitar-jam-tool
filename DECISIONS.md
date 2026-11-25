@@ -82,4 +82,8 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **One animation-frame loop reads the audio clock and drives the visuals, the playhead signal and the progress bar.** Components re-render at most once per beat; the 60 fps work writes straight to the canvas and one style property.
 - **Count-in and metronome move into a Settings button (top right), next to a Sound sub-view.** The bottom panel goes back to Back, Re-roll and Play plus the three chips, so it holds only what you reach for every few seconds. Timing options are set once per session, and Re-roll gets room for its icon even at 360 px.
 - **The count-in shows on the first chord card: its bar splits into four beats that fill one per beat.** The lit "1 2 / 3 4" digits went with the button, and the card is where your eyes already are.
+- **Six visualisations, one per vibe: ribbons, smoke, record grooves, open road, aurora, dunes.** Each is a picture of the vibe's feel, and all of them are driven by the same harmony maths. Each also adds one musical tie of its own: a ribbon per chord tone, a ring sent out on each chord change, road lines on the eighth notes.
+- **Styles are separate modules with pure geometry helpers and a test that draws every style onto a recording canvas.** NaN coordinates, out-of-range alphas or drawing while hidden would fail in Node, without a browser.
+- **Hazy styles (smoke, aurora) draw at 1× resolution.** Large translucent fills were the bottleneck: 12 fps with the CPU slowed, against 31 and 17 after. The scaling softness suits haze anyway.
+- **The aurora uses jittered streaks of three widths.** Evenly spaced streaks of one width read as a bar chart.
 

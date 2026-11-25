@@ -77,7 +77,7 @@ describe('vibe looks (visuals)', () => {
 
   it('reports a bad look', () => {
     const v = structuredClone(vibeById('dreamy')!) as Vibe;
-    v.look = { ...v.look, style: 'swirls' as 'lines', major: ['#fff', '#000000'], lines: 0 };
+    v.look = { ...v.look, style: 'swirls' as 'road', major: ['#fff', '#000000'], lines: 0 };
     const problems = vibeProblems(v).join('\n');
     expect(problems).toContain('look.style');
     expect(problems).toContain('look.major');

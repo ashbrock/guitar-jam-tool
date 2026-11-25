@@ -74,8 +74,8 @@
     "minor": ["minorPentatonic", "minorBlues", "naturalMinor", "dorian"]
   },
   "look": {
-    "style": "dots", "orientation": "vertical",
+    "style": "grooves",
     "major": ["#ffb020", "#ff5a1f"], "minor": ["#ff5a1f", "#d2334b"],
-    "lines": 22, "width": 2.2, "amp": 1.8, "speed": 0.6, "cycles": 1.1, "sway": 0.15
+    "lines": 22, "width": 1.4, "amp": 1.8, "speed": 0.6, "cycles": 1.1, "sway": 0.15
   }
 }

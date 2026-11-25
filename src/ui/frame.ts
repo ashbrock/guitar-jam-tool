@@ -31,6 +31,7 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>): void 
         slotIndex: p.slotIndex,
         phase: p.phase,
         beatFraction: p.beatFraction,
+        beatPosition: p.bar * 4 + p.beat + p.beatFraction,
         tempo: engine.tempo,
         reducedMotion: reduced.matches,
       });
