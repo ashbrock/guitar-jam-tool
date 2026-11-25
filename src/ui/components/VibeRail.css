@@ -1,0 +1,104 @@
+.vibe-rail {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--space-2);
+  padding: var(--space-half) var(--space-2) var(--space-half);
+  margin: 0 calc(var(--space-2) * -1);
+  scrollbar-width: none;
+}
+.vibe-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.sleeve {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-half);
+  width: 200px;
+  height: 120px;
+  padding: var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-left-width: 3px;
+  border-radius: var(--radius-l);
+  background: var(--surface-2);
+  text-align: left;
+  scroll-snap-align: start;
+  transition:
+    background-color var(--dur-base) var(--ease-standard),
+    border-color var(--dur-base) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+@media (hover: hover) {
+  .sleeve:hover:not(.is-selected) {
+    background: var(--surface-3);
+  }
+}
+.sleeve:active {
+  transform: translateY(1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sleeve:active {
+    transform: none;
+  }
+}
+/* Selected: surface, 3 px accent left edge and a check (DESIGN.md §9.6). */
+.sleeve.is-selected {
+  background: var(--surface-accent);
+  border-color: var(--border-strong);
+  border-left-color: var(--accent);
+}
+
+.sleeve__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-1);
+}
+.sleeve__name {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.sleeve__check {
+  color: var(--accent);
+}
+.sleeve__descriptor,
+.sleeve__refs {
+  width: 100%;
+  font-size: var(--text-small);
+  line-height: 1.4;
+  /* Phones: one line each, so a sleeve stays 200 × 120 (DESIGN.md §9.6). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sleeve__descriptor {
+  color: var(--text);
+}
+.sleeve__refs {
+  margin-top: auto;
+  color: var(--text-muted);
+}
+
+@media (min-width: 1024px) {
+  .vibe-rail {
+    flex-direction: column;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+  .sleeve {
+    width: 100%;
+    height: auto;
+  }
+  .sleeve__descriptor,
+  .sleeve__refs {
+    white-space: normal;
+  }
+}

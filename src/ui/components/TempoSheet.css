@@ -1,0 +1,94 @@
+.tempo {
+  display: grid;
+  grid-template-columns: var(--target-primary) 1fr var(--target-primary);
+  align-items: center;
+  gap: var(--space-2);
+}
+.tempo__step {
+  width: var(--target-primary);
+  height: var(--target-primary);
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.tempo__readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tempo__value {
+  font-size: var(--text-numeric-xl);
+  font-weight: 500;
+  line-height: 1;
+}
+.tempo__unit {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+}
+.tempo__clamp {
+  min-height: 1.4em;
+  margin-top: var(--space-1);
+  text-align: center;
+  font-size: var(--text-small);
+  color: var(--text-muted);
+}
+
+/* Slider: a 48 px hit area around a slim track. */
+.tempo__slider {
+  display: block;
+  margin-top: var(--space-2);
+}
+.tempo__slider input {
+  width: 100%;
+  height: var(--target-min);
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.tempo__slider input::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+}
+.tempo__slider input::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+}
+.tempo__slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 32px;
+  height: 32px;
+  margin-top: -14px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  border: 2px solid var(--on-accent);
+}
+.tempo__slider input::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  border: 2px solid var(--on-accent);
+}
+.tempo__slider input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-m);
+}
+.tempo__range {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-small);
+  color: var(--text-muted);
+}
+.tempo__tap {
+  width: 100%;
+  min-height: var(--target-primary);
+  margin-top: var(--space-3);
+}

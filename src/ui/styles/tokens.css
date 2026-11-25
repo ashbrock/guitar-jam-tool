@@ -1,0 +1,132 @@
+/* Design tokens: a direct transcription of DESIGN.md. Every colour, size, space, radius and duration
+   used in the UI comes from here. Do not add values that aren't in DESIGN.md. */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('../fonts/fraunces.woff2') format('woff2');
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('../fonts/atkinson-hyperlegible-next.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Mono';
+  src: url('../fonts/atkinson-hyperlegible-mono.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+/* ♭ ♮ ♯ only: none of the three families has them (DESIGN.md §4.1). */
+@font-face {
+  font-family: 'Noto Music';
+  src: url('../fonts/noto-music-accidentals.woff2') format('woff2');
+  unicode-range: U+266D-266F;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+
+  /* §2.1 Surfaces and lines */
+  --bg: #120e0b;
+  --surface-1: #1b1511;
+  --surface-2: #241c17;
+  --surface-3: #2f251e;
+  --surface-locked: #2b1a16;
+  --surface-accent: #3a2a17;
+  --surface-error: #2e1714;
+  --border-subtle: #3a2f27;
+  --border-strong: #8a7765;
+  --shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.55);
+
+  /* §2.2 Text */
+  --text: #f1e7da;
+  --text-muted: #b3a391;
+  --text-faint: #7e6f61;
+
+  /* §2.3 Accent and semantic */
+  --accent: #e9a54a;
+  --accent-hover: #f2b862;
+  --accent-pressed: #c9883a;
+  --on-accent: #1a1009;
+  --oxblood: #8e3b37;
+  --error: #ee8a7a;
+  --success: #a9c48f;
+  --focus: #f1e7da;
+
+  /* §2.4 Fretboard */
+  --fret-wood: #1e1611;
+  --fret-wire: #6b5a4c;
+  --fret-nut: #b3a391;
+  --fret-string: #9c8b7b;
+  --fret-inlay: #3a2f27;
+
+  /* §3 Fretboard roles */
+  --role-root: #e9a54a;
+  --role-chord: #f1e7da;
+  --role-scale: #b3a391;
+  --role-avoid: #e0705f;
+  --role-landing: #8dc0a9;
+
+  /* §4.1 Families */
+  --font-display: 'Fraunces', 'Noto Music', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Atkinson Hyperlegible Next', 'Noto Music', system-ui, sans-serif;
+  --font-mono: 'Atkinson Hyperlegible Mono', 'Noto Music', ui-monospace, monospace;
+
+  /* §4.2 Scale */
+  --text-caption: 0.8125rem;
+  --text-small: 0.9375rem;
+  --text-body: 1.0625rem;
+  --text-body-lg: 1.25rem;
+  --text-title: 1.5rem;
+  --text-headline: 1.875rem;
+  --text-chord-sm: 2rem;
+  --text-chord-md: 2.75rem;
+  --text-chord-lg: 3.75rem;
+  --text-numeric: 1.75rem;
+  --text-numeric-xl: 3.75rem;
+
+  /* §5.1 Spacing (8 px base) */
+  --space-0: 0;
+  --space-half: 4px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+
+  /* §5.2 Tap targets */
+  --target-min: 48px;
+  --target-primary: 64px;
+
+  /* §5.3 Fixed layout heights (phone) */
+  --top-bar: 56px;
+  --context-row: 56px;
+  --transport: 88px;
+  --transport-padding: 12px; /* 64 px controls + 12 px above and below = 88 px */
+
+  /* §5.4 Radii */
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+  --radius-full: 999px;
+
+  /* §10.1 Motion */
+  --dur-instant: 0ms;
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* §10.3 Reduced motion is handled per component (motion replaced, fades kept), not by zeroing tokens. */

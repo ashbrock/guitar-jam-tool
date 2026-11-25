@@ -30,8 +30,15 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **48 px minimum targets, 64 px primary.** Above the WCAG and HIG minimums because users have a guitar on and hold the phone at arm's length.
 - **Beat visuals driven by the audio clock and never allowed to lead the sound.** A visual that arrives early teaches players to rush.
 
+- **Sheets are native `<dialog>` elements.** They give focus trapping, Esc to close, an inert background and focus returning to the trigger for free, with no library and fewer accessibility bugs.
+- **Disabled controls explain themselves.** Re-roll shows "Unlock a chord to re-roll" whenever it's disabled. Back explains itself when tapped, because a permanent line for it would crowd the transport.
+- **Vibe sleeves keep DESIGN's 200 × 120 size on phones, truncating text to one line.** Keeping the chords above the fold mattered more than full descriptors; desktop shows everything.
+- **Count-in shows on the first card (numeral and pips) and around the Play button (ring).** The count is readable without sound and without looking away from the chords.
+
 ## Technical
 - **Plain Web Audio, no Tone.js (confirmed).** Synth voices, click and simple drums don't justify a dependency.
+- **UI in Preact + signals (confirmed).** Two small runtime dependencies (about 5 KB gzipped) for components plus fine-grained updates, so the 60 fps playhead doesn't re-render the page.
+- **None of the three typefaces has ♭ or ♯ (checked with fontTools).** A 2.7 KB Noto Music subset fills just those characters through `unicode-range`, as DESIGN.md planned for.
 - **Fonts self-hosted as WOFF2 (confirmed).** No third-party font requests and no package dependency. Works offline once cached.
 - **Audio uses a look-ahead scheduler on the audio clock (150 ms ahead, timer every 25 ms).** Timers are imprecise; the audio clock isn't. Each beat's time is computed on a fixed grid, so tests show zero drift over 10 simulated minutes at 40 and 240 BPM.
 - **The transport takes an injected clock, timer and output.** The timing logic is tested with a fake clock in milliseconds, and the Web Audio code stays a thin, dumb layer.

@@ -97,7 +97,7 @@ All secondary controls open as **bottom sheets** on phones (thumb-reachable, swi
 ## 4. Shared controls
 
 ### 4.1 Key
-- Root: 12 options shown as a single row in circle-of-fifths order. Mode: **Major / Minor**.
+- Root: 12 options in circle-of-fifths order, in two rows of six (one row of twelve can't keep 48 px targets on a phone). Mode: **Major / Minor**.
 - Spelling follows the conventional key signature: F major uses B♭, not A♯; F♯ minor uses sharps. Ambiguous keys use the signature with fewest accidentals: D♭ and F♯ major, E♭ and B♭ minor (C♯ minor, not D♭ minor). Chromatic notes are spelled by function: in major ♭3, ♭7, ♯4; in minor the leading tone (G♯ in A minor) and the ♭5 blue note (B♭ in E minor). The table lives in `src/theory/` and is tested.
 - **Changing the key transposes the whole progression, locked chords included.** It never re-rolls. Chords are stored relative to the key (Roman numerals) in Jam, and transposed by interval in Solo.
 - Default key (first load): **[A1]**
@@ -380,7 +380,7 @@ The exact weights are tuned by ear during the build, and each vibe gets test fix
 | All Jam slots locked | RE-ROLL disabled, labelled "All locked" (§5.4). |
 | Vibe change with locks | Locked slots stay. Unlocked ones re-generate for the new vibe. |
 | Key change with locks | Everything transposes. Nothing re-rolls. |
-| History at its oldest roll | ⟲ Back is disabled. |
+| History at its oldest roll | ⟲ Back looks disabled. Tapping it shows "No earlier progression yet" in the transport's reason line for 3 s, so the disabled state always comes with a visible reason. |
 | Tempo out of range (typed or tapped) | Clamped to 40–240, with the clamp shown ("Max 240"). |
 | ½-bar chords at 240 BPM | Allowed (that's 2 beats at 240). Timing tests cover it. |
 | Same chord repeated in Solo | Allowed (songs do this). The strip shows each repeat. |
