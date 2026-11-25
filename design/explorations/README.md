@@ -57,6 +57,22 @@ Nothing here is wired into the app on `main` unless noted.
 
 ---
 
-## 04 · Generative visuals (exploring)
+## 04 · Generative visuals (prototype; exploring)
 
-See `04-generative/` once it exists. Full-screen, music-driven visuals (no AI; procedural code driven by vibe, tempo and chord changes), with the chord centred and a floating panel at the bottom.
+**What it is:** full-screen, music-driven visuals with a minimal UI: the chord huge and centred, and a floating glass panel at the bottom (progression, Back / Re-roll / Play, then vibe, key and tempo).
+
+**Run it:** `npm run dev`, then open `/design/explorations/04-generative/`. It plays real audio through the app's engine. Space plays, R re-rolls. Tap the vibe chip to cycle vibes; tap key or tempo to hold them. The Lines/Dots switch at the top right is exploration-only. Stills are in `screens/`.
+
+### Concept: "sympathetic strings"
+- The visuals are **derived from the harmony**, not decoration: each string's wave is built from the current chord's interval ratios (major 1 : 5/4 : 3/2, minor 1 : 6/5 : 3/2, diminished with a 64/45 tritone, plus 7ths). Consonant chords give smooth interference; diminished looks restless.
+- **Chord changes** morph the pattern and colour over 700 ms. **Tempo** sets the speed. **Each beat** is a gentle swell in amplitude, never a brightness flash (safe at 240 BPM). **Shuffle vibes** sway.
+- **Each vibe** has its own palette, string count, weight, orientation and motion. Major-family chords use the warmer end of the palette, minor and diminished the cooler end. No purple gradients.
+- **Dots mode** samples the same field on a grid, like a moving halftone.
+- **No AI:** plain canvas code, no dependencies. The audio scheduler runs separately, so rendering can't disturb timing.
+- **Accessibility:** a dark pool behind the chord keeps text contrast. Reduced motion freezes the movement (chord changes still recolour). The canvas is hidden from screen readers; the chord has a spoken label.
+- **Chord set:** chords are simplified to the default set (triads, 7ths, sus, dim). Re-roll changes key and tempo unless held.
+
+### Ideas noted, not built
+- **Solo mode:** the notes you play (microphone pitch detection, no recording) could feed extra harmonics into the strings, so the visuals answer your solo.
+- **Accidentals:** at display size the Noto ♭/♯ look thin beside DM Sans; we'd draw our own.
+- **Chord shapes** need a home in this direction (e.g. in the panel or on tap).
