@@ -32,9 +32,17 @@ export class Visuals {
     this.show('flat');
   }
 
+  private focusY = 0.5;
+
   resize(): void {
     this.flat.resize();
     this.gl?.resize();
+  }
+
+  /** Where the centre of attention (the chord card) sits, as a fraction of the screen height. */
+  setFocus(y: number): void {
+    this.focusY = y;
+    this.gl?.setFocus(y);
   }
 
   render(now: number, input: VisualInput): void {
@@ -57,6 +65,7 @@ export class Visuals {
     try {
       const { OrbVisuals } = await import('./gl/orb');
       this.gl = new OrbVisuals(this.glCanvas, this.background);
+      this.gl.setFocus(this.focusY);
       this.glStatus = 'ready';
     } catch {
       this.glStatus = 'failed'; // stay on the 2D style

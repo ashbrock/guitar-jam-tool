@@ -16,7 +16,18 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
     const visuals = new Visuals(canvas.current, glCanvas.current, bg);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onResize = () => visuals.resize();
+    // The orb centres on the chord carousel; measure where that sits.
+    const focus = () => {
+      const c = document.querySelector('.carousel');
+      if (!c) return;
+      const r = c.getBoundingClientRect();
+      visuals.setFocus((r.top + r.height / 2) / window.innerHeight);
+    };
+    const onResize = () => {
+      visuals.resize();
+      focus();
+    };
+    focus();
     window.addEventListener('resize', onResize);
     let raf = 0;
 

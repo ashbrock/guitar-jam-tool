@@ -160,18 +160,26 @@ All easing is frame-rate independent (`1 − e^(−rate·dt)`). On pause, the dr
 A vibe can name a WebGL scene in its look (`"gl"`). Where WebGL 2 works, that scene draws instead of the 2D style; the 2D style stays as the fallback (no WebGL 2, Three.js fails to load, or the GL context is lost). Three.js is loaded the first time a scene is needed (on first Play), in its own chunk (about 123 KB gzipped), so the first screen is as fast as before. Both renderers draw the same `Scene` from the shared state (§3.1), so timing, crossfades, pause and reduced motion behave identically.
 
 **Pilot: Neo-soul, "orb"**
-Starting point: Santosh Arron's *audio-visualizer-three-js* (MIT, 2021): a noise-deformed wireframe sphere between two wireframe terrains, reacting to bass and treble. We rebuilt it for current Three.js (the original's geometry APIs no longer exist), moved the deformation to the GPU, and tied it to the harmony as well as the audio.
-- **Picture:** a glowing wireframe sphere (icosahedron, detail 4, radius 18) framing the chord card. Wireframe terrains above and below fade into the dark with distance. Everything turns slowly, at the music's drift speed, so it stops on pause.
-- **Harmony:** the sphere's surface is one noise field per chord tone, each at that tone's ratio and weighted by how present the tone is. Consonant chords swell broadly; tense ones get busier. A chord change crossfades the previous shape into the new one and briefly swells the sphere.
-- **Audio:** the engine's output is analysed into bass, mid and treble (`src/audio/levels.ts`), smoothed (fast attack, slower release, held on pause, off under reduced motion). Bass pushes the sphere and ripples the floor; treble adds fine detail to the sphere and ripples the ceiling. The beat swell breathes it.
-- **Look:**
-  - Lines: additive glow in the vibe's palette (§2.5); peaks lean to the second colour and glow brighter; the far side is dimmer.
-  - Bloom: subtle (strength 0.55, radius 0.2, threshold 0.25).
-  - Anti-aliasing: 4× MSAA on the scene target.
-  - Finish: film grain and a soft vignette, applied last, in display colour.
+Starting point: Santosh Arron's *audio-visualizer-three-js* (MIT, 2021): a noise-deformed wireframe sphere reacting to bass and treble. We rebuilt it for current Three.js (the original's geometry APIs no longer exist), moved the deformation and lighting to the GPU, and tied it to the harmony as well as the audio. The original's floor and ceiling are left out.
+- **Picture:** a greyscale sphere (radius 21) centred on the current chord card, so the chord sits inside it. Two layers:
+  - **Shell:** a dark solid surface (icosahedron, detail 6) that gives the orb its body and hides the lines on the far side.
+  - **Wireframe:** glowing lines on top (detail 4, just outside the shell).
+
+  It turns slowly at the music's drift speed, so it stops on pause.
+- **Lighting:** a soft key light from the upper left, fixed to the camera so the lit and shadow sides stay put as the orb turns, plus a faint rim and a small highlight. Normals come from the deformed surface itself, so every bump the music pushes out catches the light.
+  - **Shell:** `0.008 + 0.16·diffuse + 0.3·specular + 0.03·rim`.
+  - **Lines:** `0.025 + 0.7·diffuse + 0.3·specular + 0.12·rim`.
+- **Centring:** the frame loop measures the carousel's centre, and the camera's view is shifted so the orb's centre lands there, on every screen size.
+- **Harmony:** the surface is one noise field per chord tone, each at that tone's ratio and weighted by how present the tone is. Consonant chords swell broadly; tense ones get busier. A chord change crossfades the previous shape into the new one and briefly swells the orb.
+- **Audio:** the engine's output is analysed into bass, mid and treble (`src/audio/levels.ts`), smoothed (fast attack, slower release, held on pause, off under reduced motion). Bass pushes the surface out; treble adds fine detail. The beat swell breathes it.
+- **Finish:**
+  - Bloom: subtle (strength 0.42, radius 0.22, threshold 0.32).
+  - Anti-aliasing: 4× MSAA.
+  - Grain and vignette: applied last, in display colour.
+  - Greyscale only, so the vibe palette (§2.5) doesn't apply to this scene.
 - **Colour accuracy:**
   - The background is drawn in the scene, so it comes out exactly `--bg`. A clear colour was converted twice and came out grey.
-  - No tone mapping: a filmic curve crushed the near-black background, and the lines are kept dim enough not to clip.
+  - No tone mapping: a filmic curve crushed the near-black background.
 - **Cost:**
   - Draws at up to 1.5× device resolution.
   - If frames keep running long (more than 24 ms for about 45 frames), resolution steps down by 0.2, to a floor of 0.6×.
