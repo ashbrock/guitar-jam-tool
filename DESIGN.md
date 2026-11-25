@@ -1,309 +1,367 @@
-# DESIGN.md: Visual system, "Late Set"
+# DESIGN.md: Visual system, "Sympathetic strings"
 
-> Status: **v1 draft, for review.** Dark only. Every value here is a token. Code must not use a colour, font, size, radius, duration or spacing value that isn't listed here (CLAUDE.md).
-> Contrast ratios were measured with the WCAG 2.x formula against the surfaces named. Behaviour lives in `SPEC.md`.
+> Status: **v2 draft, for review.** Rewritten around the generative direction (prototype 04). Dark only.
+> Every value here is a token. Code must not use a colour, font, size, radius, duration or spacing value that isn't listed here (CLAUDE.md).
+> Values come from the prototype (`design/explorations/04-generative/`). Values marked **NEW** weren't in the prototype; they fill gaps the rules require (hover, pressed, disabled) and need your approval.
+> Contrast ratios use the WCAG 2.x formula. Behaviour lives in `SPEC.md`. The previous system (Late Set) is in git history.
 
 ---
 
 ## 1. Direction
 
-**Late Set** feels like a small club at 11pm: a warm near-black room, tungsten light, a lit music stand. Chord names are set like a lead sheet, large and serif and confident. Everything else stays quiet so the music reads first.
+**Sympathetic strings.** On a sitar, some strings are never plucked: they ring because the played notes make them vibrate. The screen works the same way. It fills with strings that move because the music does: their wave shapes are built from the chord's own interval ratios, so the picture *is* the harmony.
 
-It borrows one idea from a pedalboard: **primary controls are big, solid and plainly labelled**, sitting in the bottom thumb zone like footswitches.
+**Two layers with different jobs:**
+- **The visuals carry all the colour.** Each vibe has its own palette and motion. They're expressive, full-bleed, and appear only while music plays.
+- **The interface is monochrome:** warm off-white on dark glass, so it never competes with the visuals and reads the same over any of them. One exception: Play is green, the universal "go".
 
 **Why it fits the problem**
-- **Dim rooms:** the warm, low-blue palette is comfortable for eyes adjusted to the dark and doesn't flood a dark room with cold light. Text is warm off-white, never pure white, to avoid glare.
-- **Arm's length:** a large type scale, generous targets (48 px minimum, 64 px primary) and one accent colour that always means *now*.
-- **The music:** warm, analogue and unhurried, like the references (D'Angelo, Leon Bridges, Khruangbin, Norah Jones).
+- **Dim rooms:** a near-black screen when stopped; glowing colour only while playing; warm off-white text, never pure white.
+- **Arm's length:** large chord names and charts in the centre, 56 px round controls in the thumb zone, few decisions.
+- **Portfolio:** the visuals are the memorable moment, and they're honest: driven by real harmony, not a screensaver.
 
-**Mood in words:** mid-century jazz record sleeves · a clip-on lamp on a music stand · valve amp glow · handwritten lead sheets · rosewood fretboard under stage light.
+**Mood in words:** strings ringing in sympathy · oscilloscope traces · stage haze lit in colour · a record sleeve that moves.
 
-**Avoid:** gradients used as decoration (the one exception is the playing "spotlight", §8) · glassmorphism · card grids of equal tiles · pure black or pure white · cool greys · more than one accent competing for attention · drop shadows used for decoration.
-
----
-
-## 2. Colour tokens
-
-All tokens are CSS custom properties on `:root`. Hex values are canonical; OKLCH is given for reasoning about lightness and hue.
-
-### 2.1 Surfaces and lines
-| Token | Hex | OKLCH | Use |
-|---|---|---|---|
-| `--bg` | `#120E0B` | oklch(16.8% 0.009 59) | Page background. Warm near-black. |
-| `--surface-1` | `#1B1511` | oklch(20.2% 0.013 56) | Bars (top bar, transport), vibe rail |
-| `--surface-2` | `#241C17` | oklch(23.4% 0.016 54) | Chord cards, chips, buttons (secondary) |
-| `--surface-3` | `#2F251E` | oklch(27.4% 0.020 57) | Sheets, popovers, text inputs |
-| `--surface-locked` | `#2B1A16` | oklch(23.9% 0.028 34) | Locked chord card (an oxblood tint) |
-| `--surface-accent` | `#3A2A17` | oklch(29.9% 0.039 70) | Selected chip or sleeve background, spotlight core |
-| `--surface-error` | `#2E1714` | oklch(23.6% 0.038 28) | Error banner, invalid input background |
-| `--border-subtle` | `#3A2F27` | oklch(31.5% 0.021 58) | Dividers, decorative edges. Never the only boundary of a control. |
-| `--border-strong` | `#8A7765` | oklch(58.2% 0.036 65) | Control boundaries (inputs, secondary buttons, toggles). ≥ 3.49:1 on every surface (WCAG 1.4.11). |
-
-Elevation comes from **lighter surfaces**, not shadows. The one shadow token, `--shadow-sheet` = `0 -8px 32px rgb(0 0 0 / 0.55)`, is for bottom sheets only.
-
-### 2.2 Text
-| Token | Hex | OKLCH | On `--bg` | On `--surface-2` | On `--surface-3` | Use |
-|---|---|---|---|---|---|---|
-| `--text` | `#F1E7DA` | oklch(93.2% 0.020 75) | 15.72 | 13.71 | 12.24 | Primary text, chord names |
-| `--text-muted` | `#B3A391` | oklch(72.4% 0.032 71) | 7.83 | 6.83 | 6.10 | Secondary text, captions, reference artists |
-| `--text-faint` | `#7E6F61` | oklch(55.2% 0.028 65) | 3.96 | 3.46 | 3.09 | **Disabled only** (exempt from WCAG 1.4.3). Never for information. |
-
-### 2.3 Accent and semantic
-| Token | Hex | OKLCH | Contrast | Use |
-|---|---|---|---|---|
-| `--accent` | `#E9A54A` | oklch(77.1% 0.133 71) | 9.10 on bg · 7.93 on surface-2 | Tungsten amber. **Means "live / now / primary".** Primary buttons, the playing chord, selected states, the fretboard root. |
-| `--accent-hover` | `#F2B862` | oklch(81.9% 0.123 75) | 10.80 on bg | Hover on accent fills |
-| `--accent-pressed` | `#C9883A` | oklch(67.8% 0.122 68) | 6.46 on bg | Active / pressed on accent fills |
-| `--on-accent` | `#1A1009` | oklch(18.4% 0.022 56) | 8.86 on accent · 6.30 on pressed | Text and icons on accent fills |
-| `--oxblood` | `#8E3B37` | oklch(46.4% 0.114 25) | 2.59 on bg | **Decorative only:** the lock glyph's fill tint, the outer ring of the spotlight. Never text, never the only signal. |
-| `--error` | `#EE8A7A` | oklch(73.7% 0.125 30) | 7.82 on bg · 6.85 on surface-error | Error text, icons, the invalid-input border |
-| `--success` | `#A9C48F` | oklch(78.7% 0.078 130) | 10.04 on bg | Confirmation ticks (e.g. "Key set") |
-| `--focus` | `#F1E7DA` | oklch(93.2% 0.020 75) | 15.72 on bg | Focus ring (§7.2). Off-white so it never looks like "selected" (amber). |
-
-### 2.4 Fretboard
-| Token | Hex | OKLCH | Use |
-|---|---|---|---|
-| `--fret-wood` | `#1E1611` | oklch(20.8% 0.016 54) | Fingerboard |
-| `--fret-wire` | `#6B5A4C` | oklch(48.0% 0.031 61) | Frets (2.71:1 on wood; decorative structure) |
-| `--fret-nut` | `#B3A391` | oklch(72.4% 0.032 71) | The nut (a thicker line, so position 0 is obvious) |
-| `--fret-string` | `#9C8B7B` | oklch(64.7% 0.031 66) | Strings, 1–2.5 px from high E to low E |
-| `--fret-inlay` | `#3A2F27` | oklch(31.5% 0.021 58) | Position dots (quiet; markers sit above them) |
+**Avoid:** purple-to-blue SaaS gradients · card grids of equal tiles · decorative shadows · colour in the UI chrome (it belongs to the visuals) · any flashing on the beat · bold weights (DM Sans Regular and Medium only).
 
 ---
 
-## 3. Fretboard roles
+## 2. Colour tokens (interface)
 
-**Rule: each role is identifiable in greyscale.** Shape + fill style + label carry the meaning, and colour reinforces it. Contrast is measured against `--fret-wood`.
+All tokens are CSS custom properties on `:root`. Translucent values sit over the visuals, so their contrast depends on what's beneath; §2.4 covers that.
 
-| Role | Shape | Fill / stroke | Colour token | Label colour | Contrast | Legend text |
-|---|---|---|---|---|---|---|
-| **Root** | Rounded **square** (radius 6px) | Solid fill | `--role-root` = `#E9A54A` | `--on-accent` (8.86:1) | 8.44 | "Root" |
-| **Chord tone** | **Circle** | Solid fill | `--role-chord` = `#F1E7DA` | `--on-accent` (15.31:1) | 14.59 | "Chord tone" |
-| **Scale tone** | **Circle** | 2 px **ring**, no fill | `--role-scale` = `#B3A391` | `--text-muted` | 7.27 | "Scale" |
-| **Avoid** | **Circle** | 2 px **dashed** ring + small diagonal slash through the top-right | `--role-avoid` = `#E0705F` | `--role-avoid` | 5.65 | "Avoid" |
-| **Landing** | **Diamond** (square rotated 45°) | 2 px ring; fills solid in the final beat before the change | `--role-landing` = `#8DC0A9` | `--on-accent` when filled (9.13:1) | 8.70 | "Land on" |
-| **Approach** | **Triangle**, point up | 2 px ring, no fill; marker 24 px (smaller than the others, because it's secondary) | `--role-landing` = `#8DC0A9` | `--role-landing` | 8.70 | "Approach" |
+### 2.1 Base
+| Token | Value | Use |
+|---|---|---|
+| `--bg` | `#0b0b0b` | Page and canvas background. Near-black. |
+| `--text` | `#f4f0e8` | Primary text, chord names, chart ink, selected fills. Warm off-white. |
+| `--muted` | `#a8a39a` | Secondary text, captions, unselected tabs, idle icons. |
+| `--ink` | `#121110` | Text and icons on `--text` and `--go` fills. |
+| `--go` | `#33a066` | Play button fill; a switch's "on" track. |
 
-- **Landing is the only cool hue in the system, on purpose.** "Where to go next" should pull the eye forward and stand apart from everything warm.
-- **Approach shares the landing hue** because it belongs to the same idea: a note on its way to a landing note. Shape (hollow triangle vs diamond) and size (24 vs 32 px) tell the two apart, so no new colour token is needed. The triangle has no direction: one note can approach a target above and another below.
-- **Combined roles:** a chord tone that is also a landing note keeps its circle and gains a **landing badge**, an 8 px sage diamond at the top-right. The root is always the square, whatever else it is.
-- **Marker size:** 32 px on phones (vertical neck), 28 px on desktop. Each marker's tap target is the whole string × fret cell (≥ 48 × 48 px on phones).
-- **Labels** inside markers use `--font-mono` at `--text-caption` size, weight 600. If the label is longer than 2 characters (e.g. "♭13"), the marker grows to a pill shape. It never shrinks the text.
-- **Legend:** always visible under the fretboard as one row of the shapes currently in use, with their names (up to six). It isn't hidden in a tooltip.
-- **Avoid colour vs error colour:** both are coral. They never appear on the same component, and avoid notes always carry the dashed ring and slash.
+| Pair | Ratio | Meets |
+|---|---|---|
+| `--text` on `--bg` | 17.32 | AAA |
+| `--muted` on `--bg` | 7.85 | AAA |
+| `--ink` on `--text` | 16.59 | AAA |
+| `--ink` on `--go` | 5.71 | AA (icons and text) |
+| `--go` on `--bg` | 5.96 | Non-text 3:1 ✓ |
+
+### 2.2 Glass and fills
+| Token | Value | Use |
+|---|---|---|
+| `--glass` | `rgb(20 20 20 / 0.72)` + `backdrop-filter: blur(28px) saturate(1.2)` | The floating panel; the loading pill and top segmented control (blur 20px). |
+| `--glass-strong` | `rgb(20 20 20 / 0.92)` + blur 28px | Pickers. More opaque, because they hold small text. |
+| `--card` | `rgb(11 11 11 / 0.55)` + blur 14px | Chord cards that aren't current. |
+| `--card-now` | `rgb(28 28 28 / 0.82)` + blur 14px | The current chord card. |
+| `--line` | `rgb(255 255 255 / 0.08)` | 1 px edge on the panel and pickers. |
+| `--edge-now` | `rgb(255 255 255 / 0.14)` | 1 px edge on the current card. |
+| `--fill-1` | `rgb(255 255 255 / 0.05)` | Picker options, key buttons, switch rows. |
+| `--fill-2` | `rgb(255 255 255 / 0.06)` | Panel buttons and chips. |
+| `--fill-open` | `rgb(255 255 255 / 0.16)` | A chip whose picker is open. |
+| `--track` | `rgb(255 255 255 / 0.12)` | Progress bar track (panel); `0.14` on cards. |
+| `--switch-off` | `rgb(255 255 255 / 0.18)` | Switch track when off. See §2.4. |
+| `--chart-line` | `rgb(244 240 232 / 0.38)` | Chord chart strings and frets (3.23:1 on a card). |
+| `--hover` **NEW** | `rgb(255 255 255 / 0.10)` | Hover on `--fill-1` / `--fill-2` controls. |
+| `--pressed` **NEW** | `rgb(255 255 255 / 0.14)` | Pressed on `--fill-1` / `--fill-2` controls. |
+
+### 2.3 Selected and "on"
+Selected and on states **invert**: `--text` fill, `--ink` content. It reads at any distance and needs no colour. Used by: selected picker options and keys, the Click toggle when on, Lines/Dots, the Re-roll button (always), the current chord's progress fill. Secondary text inside a selected option uses `--ink` at 70% (6.65:1).
+
+### 2.4 Contrast over the visuals
+Measured worst cases, with the glass over the **brightest visual colour** (`#e9f7ff`) and no blur:
+
+| Surface | `--text` | `--muted` |
+|---|---|---|
+| `--glass` (panel) | 6.78 | **3.07** |
+| `--glass-strong` (pickers) | 13.32 | 6.03 |
+| `--card-now` | 8.70 | 3.94 |
+| `--card` (past and upcoming chords) | 4.10 | 1.86 |
+
+Lines are thin and blurred, so real values sit much closer to the over-`--bg` figures (16.55 and 7.50 on the panel). Rules:
+- **Small text in `--muted` never sits on `--glass` or `--card`.** Panel chips use `--muted` only for the "BPM" unit, which is a 15 px label next to the number. **Check during the build** by sampling screenshots across vibes; if any reading falls under 4.5:1, raise the panel glass to 0.8.
+- Chord names on `--card` are ≥ 30 px Medium (large text, 3:1 needed): 4.10 in the worst case ✓.
+- **Known gap:** `--switch-off` is 1.73:1 against `--glass-strong`, under the 3:1 needed for controls. The knob (`--text`, 9.45:1) and its position carry the state, but the track itself fails. **Proposed fix (NEW):** a 1 px `--muted` inset border on the off track. Needs approval.
+
+### 2.5 Visual palettes (decorative)
+Each vibe's look has two gradient pairs, one for major-family chords (warmer) and one for minor and diminished (cooler). These colours are **decorative only**: no text, no state, no information depends on them.
+
+| Vibe | Major pair | Minor pair |
+|---|---|---|
+| Neo-soul | `#ff8a3d` → `#ff4d7e` | `#ff4d7e` → `#c4467a` |
+| Blues | `#2f7bff` → `#36d1ff` | `#1f4fd1` → `#2f7bff` |
+| Soul & Roots | `#ffb020` → `#ff5a1f` | `#ff5a1f` → `#d2334b` |
+| Heartland | `#ffd23f` → `#3ccf7d` | `#3ccf7d` → `#22a7b8` |
+| Dreamy | `#8fe3ff` → `#e9f7ff` | `#4f9dff` → `#8fe3ff` |
+| Desert Groove | `#ff7a3d` → `#ffd23f` | `#e0442b` → `#ff9a3d` |
+
+No purple gradients. Blues is the only cool-blue vibe, on purpose.
+
+---
+
+## 3. The visuals
+
+### 3.1 How the picture is made
+- **Strings:** evenly spaced lines (horizontal or vertical, per vibe) across the whole screen. Each line is a wave.
+- **Harmony → shape:** a line's wave is the sum of sines at the current chord's **just-intonation ratios**, the first weighted most:
+  - major `1 : 5/4 : 3/2`; minor `1 : 6/5 : 3/2`; sus2 third `9/8`; sus4 `4/3`;
+  - diminished fifth `64/45` (a tritone, so it looks restless);
+  - major 7th `15/8`; minor 7th `9/5` on minor chords, `7/4` on dominant chords.
+
+  Consonant chords make smooth, regular interference; tense ones look busier.
+- **Chord root → base frequency:** the wave's base cycles shift slightly with the root, so a new root changes the picture even when the quality doesn't.
+- **Colour:** a gradient along the lines from the vibe's pair (§2.5), major or minor pair by chord quality, easing to the new pair over about 0.4 s.
+- **Depth:** lines near the centre are more opaque than those at the edges (35% → 100%), so the middle, where the chord card sits, is the richest area.
+- **Dots mode:** samples the same field on a 14 px grid. Dot size (1.5–7.5 px) and opacity follow the wave's strength, like a moving halftone.
+
+### 3.2 Per-vibe looks
+| Vibe | Lines | Line width | Amplitude | Speed | Cycles | Orientation | Sway |
+|---|---|---|---|---|---|---|---|
+| Neo-soul | 30 | 1.6 | 2.4 | 0.55 | 1.4 | horizontal | 0.35 |
+| Blues | 16 | 3.2 | 1.6 | 0.40 | 0.9 | horizontal | 0.6 |
+| Soul & Roots | 22 | 2.2 | 1.8 | 0.60 | 1.1 | vertical | 0.15 |
+| Heartland | 26 | 2.0 | 1.4 | 0.90 | 1.6 | vertical | 0 |
+| Dreamy | 20 | 1.4 | 3.2 | 0.25 | 0.7 | horizontal | 0 |
+| Desert Groove | 34 | 1.3 | 1.2 | 0.75 | 2.6 | vertical | 0.1 |
+
+Amplitude is a multiple of the line spacing; speed scales with tempo (`bpm / 90`). **Sway** adds a slow side-to-side lilt to shuffle vibes. These values belong in the vibe data files (SPEC A16).
+
+### 3.3 Motion rules
+| Event | Treatment |
+|---|---|
+| **Play** | The visuals fade in (presence rate 2.2/s, about 0.5 s to full). Motion speeds up with presence. |
+| **Pause / stop** | Fade out (rate 3/s, about 0.3 s). The screen returns to `--bg`. |
+| **Chord change** | A new harmonic layer fades in while the old ones fade out (rate 3.5/s). Layers overlap, so fast changes never snap. |
+| **Beat** | A swell in amplitude: `0.12 × (0.5 + 0.5·cos(2π·beatFraction))`, from the audio clock. Continuous through the beat line: never a step, never a flash. |
+| **Tempo** | Sets the speed of drift. |
+
+All easing is frame-rate independent (`1 − e^(−rate·dt)`). The visuals render at device pixel ratio, capped at 2.
+
+### 3.4 Safety
+- **No flashing (WCAG 2.3.1):** brightness never steps on the beat. The beat changes amplitude by at most 12%, smoothly.
+- **Reduced motion:** no drift and no swell; chord changes switch shape and colour without crossfading. The visuals still appear when playing, but stand still.
+- **Hidden from assistive tech** (`aria-hidden`). The canvas carries no information that isn't in text.
 
 ---
 
 ## 4. Typography
 
 ### 4.1 Families
-| Token | Family | Role | Why |
-|---|---|---|---|
-| `--font-display` | **Fraunces** (variable; `opsz` 9–144, `SOFT` 50, `WONK` 0) | Chord names, headings, vibe names | A warm, high-contrast "old style soft" serif that reads like a lead sheet or record sleeve. The optical-size axis keeps it sharp at 60 px and sturdy at 24 px. |
-| `--font-ui` | **Atkinson Hyperlegible Next** | Interface text, labels, body | Designed for legibility at a distance and in low vision. Its characters are clearly distinct (I/l/1, 0/O), which matters at arm's length. A humanist warmth that sits well with Fraunces. |
-| `--font-mono` | **Atkinson Hyperlegible Mono** | BPM, bar counters, fretboard labels, intervals | Tabular figures, so tempo and counts don't jitter as they change. Same family DNA as the UI face. |
+| Token | Family | Use |
+|---|---|---|
+| `--font` | **DM Sans** (variable), **Regular 400 and Medium 500 only** | Everything. |
+| (fallback for ♭ ♮ ♯) | **Noto Music**, subset to U+266D–266F | Real accidentals. DM Sans has none. |
 
-- **Licence:** all three are SIL OFL. Self-host WOFF2 subsets (Latin + the music symbols below) with `font-display: swap`. (Self-hosting confirmed, SPEC A10.)
-- **Fallbacks:** `Fraunces, "Iowan Old Style", Georgia, serif` · `"Atkinson Hyperlegible Next", system-ui, sans-serif` · `"Atkinson Hyperlegible Mono", ui-monospace, monospace`.
-- **Accidentals (♭ U+266D, ♮ U+266E, ♯ U+266F):** during the build, check that each family has these glyphs. If one doesn't, add a `@font-face` of **Noto Music** restricted with `unicode-range: U+266D-266F` ahead of the fallback. Never show `b` / `#` in display text.
+- Stack: `'DM Sans', 'NM', system-ui, sans-serif` (where `NM` is the Noto Music subset). Self-hosted WOFF2 (SPEC A10). Both are SIL OFL.
+- **No bold.** Hierarchy comes from size, weight 500 vs 400, and the invert.
+- DM Sans has **no tabular figures**, so numbers that change (BPM) sit in fixed-width boxes so the layout doesn't jump.
+- **Known issue:** at display sizes the Noto ♭/♯ look thin next to DM Sans Medium. Plan: draw our own accidentals as an SVG or a small custom font subset.
 
 ### 4.2 Scale
-Base size is **17 px** on phones (larger than the usual 16 for arm's length). Sizes are in rem, assuming a 16 px root. Never set a size below `--text-caption`.
+| Token | Size | Weight | Use |
+|---|---|---|---|
+| `--t-micro` | 11 px | 500 | Click toggle digits, HELD tag (tracking +0.06em) |
+| `--t-fine` | 12 px | 400 | Credits, "BPM" under the tempo readout (tracking +0.1em) |
+| `--t-caption` | 13 px | 400 / 500 | Picker titles (uppercase, tracking +0.1em), option descriptions, loading pill, switch hints |
+| `--t-small` | 14 px | 500 | Top segmented control |
+| `--t-chip` | 15 px | 500 | Settings chips |
+| `--t-button` | 16 px | 500 | Re-roll label (uppercase, tracking +0.08em) |
+| `--t-body` | 17 px | 400 / 500 | Mode tabs, picker options, key buttons, body text |
+| `--t-step` | 24 px | 400 | Tempo − / + glyphs |
+| `--t-chord` | 34 px phone · 30 px desktop | 500 | Chord name on a card (tracking −0.02em, line height 1) |
+| `--t-readout` | 48 px | 500 | Tempo readout |
 
-| Token | Size | Line height | Family / weight | Use |
-|---|---|---|---|---|
-| `--text-caption` | 13 px / 0.8125rem | 1.35 | UI 600, **UPPERCASE, tracking +0.08em** | Silk-screen labels ("LOCKED", "BPM", legend) |
-| `--text-small` | 15 px / 0.9375rem | 1.4 | UI 400 | Helper text, reference artists, toasts |
-| `--text-body` | 17 px / 1.0625rem | 1.5 | UI 400 / 600 for emphasis | Default body, sheet content, buttons |
-| `--text-body-lg` | 20 px / 1.25rem | 1.4 | UI 600 | Primary button labels (RE-ROLL), important prompts |
-| `--text-title` | 24 px / 1.5rem | 1.25 | Display 600, opsz auto | Sheet titles, vibe names |
-| `--text-headline` | 30 px / 1.875rem | 1.2 | Display 500 | Empty-state headline, count-in numerals (phone) |
-| `--text-chord-sm` | 32 px / 2rem | 1.0 | Display 600 | Solo strip chips |
-| `--text-chord-md` | 44 px / 2.75rem | 1.0 | Display 600 | Jam cards (phone) |
-| `--text-chord-lg` | 60 px / 3.75rem | 1.0 | Display 600 | Jam cards (desktop), count-in numerals (desktop) |
-| `--text-numeric` | 28 px / 1.75rem | 1.0 | Mono 600, tabular | BPM readout in chips and the tempo sheet header |
-| `--text-numeric-xl` | 60 px / 3.75rem | 1.0 | Mono 500, tabular | Tempo sheet main readout |
+Chord names are smaller on desktop because the chart beside them is larger there. Text never scales with the viewport and honours browser zoom.
 
-From the expanded breakpoint (§5.3) up, `--text-body` stays at 17 px. Only the chord sizes step up. Text never scales with viewport units, and it honours the user's browser zoom and text size.
-
-### 4.3 Chord symbol typesetting
-Chord symbols are set like a lead sheet, not as plain strings:
-- **Root letter:** full chord size.
-- **Accidental on the root:** 70% size, raised 0.30em, tight to the letter.
-- **Quality and extensions** (`maj7`, `m9`, `7♯9`): 55% size, raised 0.38em, `--font-display` weight 500. **Exception:** a bare minor `m` sits on the baseline at 70% size, because it's read as part of the name ("Em").
-- **Slash bass:** "/" at 70% on the baseline, then the bass note at 70%.
-- **Accessible name** is spoken text ("E minor 9", "B flat major 7 over D"), generated by `src/theory/`. Assistive tech never reads the visual glyph string.
+### 4.3 Chord symbols
+- Root letter at full size. An accidental on the root at 72%, raised 0.28em.
+- A minor `m` sits on the baseline at full size ("Em").
+- Quality (`7`, `maj7`, `sus4`, `dim`) is superscript at 55%, raised 0.75em.
+- The accessible name is spoken text ("B flat major 7"), from `src/theory/`.
 
 ---
 
-## 5. Spacing and layout
+## 5. Layout, spacing and shape
 
-### 5.1 Spacing scale (8 px base)
-| Token | Value | Typical use |
+### 5.1 Breakpoint
+One breakpoint, **900 px** wide:
+- **Phone (< 900):** panel with two rows (playback above, chips below). Charts 156 px wide. Carousel 300 px tall.
+- **Desktop (≥ 900):** panel in one row, max 760 px wide, centred (chips left, actions right; Re-roll a fixed 200 px). Charts 210 px wide. Carousel 420 px tall. Pickers 420 px wide.
+
+### 5.2 Spacing
+| Token | Value | Use |
 |---|---|---|
-| `--space-0` | 0 | — |
-| `--space-half` | 4 px | Icon-to-label gap, accidental kerning, badge offsets |
-| `--space-1` | 8 px | **Minimum gap between adjacent tap targets**, chip padding (vertical) |
-| `--space-2` | 16 px | Page gutter on phones, chip padding (horizontal), card padding |
-| `--space-3` | 24 px | Gap between groups, card padding on desktop |
-| `--space-4` | 32 px | Section separation, sheet padding (desktop) |
-| `--space-5` | 40 px | — |
-| `--space-6` | 48 px | Large separations, empty-state padding |
-| `--space-8` | 64 px | Desktop gutters |
-| `--space-10` | 80 px | Desktop top and bottom breathing room |
+| `--gap` | 6 px | Between buttons and chips in a row; between picker options |
+| `--s-8` | 8 px | Between the two panel rows; icon-to-label gap |
+| `--s-10` | 10 px | Panel padding (phone); gap between panel and picker |
+| `--s-12` | 12 px | Screen gutters; panel padding (desktop); card inner gap |
+| `--s-14` | 14 px | Chip and card side padding; carousel gap (phone) |
+| `--s-16` | 16 px | Picker padding; option side padding; card top and bottom padding |
+| `--s-24` | 24 px | Carousel gap (desktop) |
 
-### 5.2 Tap targets
+Safe areas: the top bar and panel respect `env(safe-area-inset-*)`, with a 12 px minimum at the bottom.
+
+### 5.3 Targets
 | Token | Value | Applies to |
 |---|---|---|
-| `--target-min` | **48 × 48 px** | Every interactive element, including lock toggles, chips, fretboard cells and sheet handles. Above WCAG 2.5.8 (24 px) and Apple HIG (44 pt), because the app is used at arm's length with a guitar on. |
-| `--target-primary` | **64 px** tall | Play/Pause (64 × 64), RE-ROLL (64 tall, fills the space left in the transport row) |
-| Spacing | ≥ `--space-1` | Between any two targets. Targets may visually touch only inside a segmented control, whose segments are still ≥ 48 px. |
+| `--target-primary` | **56 × 56 px** | Play, Back, Click, Re-roll height, tempo ± |
+| `--target-min` | **48 px** tall | Chips, mode tabs, picker options (56), key buttons (52), switch rows (56). Top segmented control: 42 px buttons inside a 48 px control. |
 
-### 5.3 Breakpoints and grid
-| Name | Width | Layout |
-|---|---|---|
-| `compact` | < 600 px | One column, 16 px gutters, transport fixed to the bottom (plus `env(safe-area-inset-bottom)`). Vertical fretboard in portrait. |
-| `short` (modifier) | height < 500 px | Context row folds into the top bar; horizontal fretboard. |
-| `medium` | 600–1023 px | One column, 24 px gutters, horizontal fretboard, Jam cards 4 per row. |
-| `expanded` | ≥ 1024 px | Content max-width 1200 px, 64 px gutters. Jam: vibe list (280 px) + progression. Solo: fretboard full width above; strip + scale panel below. |
-
-Phone layout heights: top bar 56 px · context row 56 px · transport 88 px (64 px controls + 12 px vertical padding) + safe area.
+Targets are at least 6 px apart.
 
 ### 5.4 Radii
 | Token | Value | Use |
 |---|---|---|
-| `--radius-s` | 4 px | Badges, tooltip |
-| `--radius-m` | 8 px | Buttons, inputs, chips |
-| `--radius-l` | 12 px | Chord cards, vibe sleeves, sheets (top corners only) |
-| `--radius-full` | 999 px | Play button, fretboard circles, pills |
+| `--r-pill` | 999 px | Buttons, chips, pills, switches, progress bars |
+| `--r-panel` | 28 px | The floating panel |
+| `--r-picker` | 24 px | Pickers |
+| `--r-card` | 22 px | Chord cards |
+| `--r-option` | 16 px | Picker options, switch rows, Tap tempo |
+| `--r-key` | 14 px | Key and mode buttons |
 
-Cards are only slightly rounded, closer to paper than to app tiles.
-
----
-
-## 6. Iconography
-- One inline SVG set made for the app (no icon-library dependency). 24 px grid, **1.75 px stroke**, round caps and joins, `currentColor`.
-- v1 icons: play, pause, restart, re-roll (two curved arrows), back (history), lock-closed, lock-open, plus, settings, close, check, alert, chevron, drag handle, more (⋯), list, metronome.
-- Icons never appear alone on a primary action without a label, except Play/Pause, whose shape is universal and whose accessible name is set. Lock toggles show the icon, and in the locked state also the "LOCKED" caption.
+Everything is soft and round: it reads as an instrument, not a form.
 
 ---
 
-## 7. Interaction states
+## 6. Components
 
-### 7.1 State matrix
-| State | Secondary button / chip / card | Primary (accent) button | Notes |
+1. **Mode tabs (Jam · Solo):** plain text buttons, 48 px tall, `--t-body` 500. Current: `--text`; other: `--muted`. No underline or pill. *(Solo isn't designed yet: SPEC A13.)*
+2. **Carousel card:** a fixed width (chart + 28 px), `--r-card`, `--card` with blur. Chart above, chord name below, progress bar at the bottom.
+   - **Current:** scale 1, `--card-now`, 1 px `--edge-now`, the progress bar visible.
+   - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
+   - The card is a button (`role="button"`, focusable); its name is the spoken chord.
+3. **Progress bar:** 3 px tall, `--r-pill`, `--track` at 0.14, filled with `--text`.
+4. **Chord chart:** see §7.
+5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
+6. **Round buttons (Click, Back):** 56 px circles, `--fill-2`, `--muted` icon or digits. Click when on: inverted.
+7. **Re-roll:** 56 px tall pill, always inverted (`--text` fill, `--ink` label), re-roll icon + "RE-ROLL" in `--t-button`. The widest control. Grows to fill the row on phones.
+8. **Play / Pause:** 56 px circle, `--go` fill, `--ink` icon. Pause shows two bars.
+9. **Settings chip:** 48 px pill, `--fill-2`, `--t-chip`. Vibe chip grows to fill the space and carries a chevron. Open: `--fill-open` and `aria-expanded="true"`. A **HELD** tag (inverted, `--t-micro`, 6 px radius) marks a held key or tempo.
+10. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
+11. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
+12. **Key grid:** Major/Minor in two columns, then 12 keys in six columns, 52 px tall, `--r-key`, `--fill-1`. Selected: inverted.
+13. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track (see §2.4).
+14. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
+15. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.
+16. **Credit line:** `--t-fine` `--muted` with underlined links, inside the vibe picker.
+
+### 6.1 Icons
+Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, back (curved arrow), re-roll (two arrows), chevron. The Click toggle is typographic ("1 2 / 3 4"), not an icon. Icons never stand alone on Re-roll; Play, Back and Click have accessible names.
+
+---
+
+## 7. Chord charts
+
+- **Monochrome and light:** strings and frets in `--chart-line` at 1 px; finger dots, barres and the nut in `--text`. No colour, no finger numbers, no string names.
+- **Orientation:** nut at the top, low E on the left. 6 strings, 5 frets, always.
+- **Proportions (from the chart width `w`):** top margin 0.16w, left 0.12w, right 0.06w; string spacing `gs = (w − margins) / 5`; fret height 1.22·gs.
+- **Dots:** circles of radius 0.24·gs. **Circles only** (no squares).
+- **Barre:** a pill across the barred strings, the dot's height (1.6r), radius 0.8r.
+- **Nut:** 3 px, `--text`, rounded, only when the shape starts at fret 1. Otherwise a fret number (`--muted`, at least 10 px) sits left of the first fret.
+- **Open string:** a hollow circle above the nut (1.2 px stroke). **Muted string:** a small × in `--muted`.
+- Widths: 156 px on phones, 210 px on desktop.
+- Charts are `aria-hidden`; the card's spoken name carries the chord.
+
+---
+
+## 8. States
+
+### 8.1 Interaction states
+| State | Fill controls (`--fill-1/2`) | Inverted controls (Re-roll, selected) | Play (`--go`) |
 |---|---|---|---|
-| **Default** | `--surface-2` fill, 1 px `--border-strong`, `--text` | `--accent` fill, `--on-accent` label | |
-| **Hover** (pointer only, via `@media (hover: hover)`) | Fill → `--surface-3` | Fill → `--accent-hover` | No hover effects on touch. |
-| **Focus-visible** | Focus ring (§7.2) | Focus ring | Keyboard and switch access only (`:focus-visible`). |
-| **Active / pressed** | Fill → `--surface-accent`, content shifts down 1 px | Fill → `--accent-pressed`, shifts down 1 px | Feels like a footswitch going down. The 1 px shift is removed under reduced motion; the colour change stays. |
-| **Selected / on** | `--surface-accent` fill, 2 px `--accent` left or bottom edge, **plus a check or "on" glyph** | — | Selection is never shown by colour alone. |
-| **Disabled** | `--surface-1` fill, `--border-subtle`, `--text-faint` label, `cursor: not-allowed` | Same as the secondary disabled style (it loses the accent) | **Always paired with a visible reason** nearby ("Add a chord to play", "All locked"). |
-| **Locked** (Jam card) | `--surface-locked` fill, 2 px `--border-strong`, closed-padlock icon, "LOCKED" caption | — | Three cues: surface, icon, text. |
+| **Default** | as listed | `--text` fill, `--ink` content | `--go`, `--ink` icon |
+| **Hover** (pointer only, `@media (hover: hover)`) | `--hover` **NEW** | `--text` at 90% **NEW** | `--go` with a 1 px `--text` inner ring **NEW** |
+| **Focus-visible** | 2 px `--text` outline, 2 px offset | same | same |
+| **Pressed** | `--pressed` **NEW**, scale 0.97 **NEW** | scale 0.97 **NEW** | scale 0.97 **NEW** |
+| **Disabled** | 40% opacity, `cursor: not-allowed` **NEW**, always with a visible reason | same | same |
+| **Selected / on** | inverted (§2.3) | — | — |
 
-### 7.2 Focus ring
-- `outline: 2px solid var(--focus); outline-offset: 2px;` The offset gap shows `--bg`, giving a two-tone ring that stands out on any surface (15.7:1 against the background).
-- Fretboard cells use an inset ring (`outline-offset: -2px`) so the ring isn't clipped by the neck.
-- Focus is never removed without a replacement.
+- Disabled text is exempt from contrast rules but is never the only place information lives.
+- Pressed scale is removed under reduced motion; the fill change stays.
 
-### 7.3 Loading
-Most actions are instant (the generator and theory functions are synchronous). Loading exists in two places only:
-| Where | Treatment |
-|---|---|
-| **Fonts** | `font-display: swap`, with fallback metrics tuned via `size-adjust` to limit layout shift. No splash screen. |
-| **Starting audio** (first tap, usually < 100 ms) | If the start takes more than 150 ms, the Play icon is replaced by a slowly breathing ring (opacity 0.4 ↔ 1, 1.2 s). Under reduced motion it's a static "…" glyph. The accessible label becomes "Starting sound". |
-
-No skeleton screens: Jam renders with a progression already generated, and Solo has a designed empty state.
-
-### 7.4 Empty
-- **Solo, no chords:** the headline "What are we soloing over?" in `--text-headline` display, one line of helper text, and three stacked buttons (primary: **Add a chord**; secondary: **Type the whole progression**, **Bring the Jam progression over**). The fretboard behind is rendered at 40% opacity with the key-wide scale. The progression strip shows a single dashed-outline **+** slot.
-- **Disabled Play:** reason text in `--text-small` `--text-muted`, directly above the transport.
-
-### 7.5 Error
-| Context | Treatment |
-|---|---|
-| **Invalid chord input** | Input border → 2 px `--error`; background → `--surface-error`; an alert icon at the field's end; message below in `--text-small` `--error`, starting with the icon. The field keeps its text. `aria-invalid="true"` plus `aria-describedby` pointing at the message. |
-| **Invalid token in a typed progression** | Token gets a wavy `--error` underline (`text-decoration-style: wavy`) **and** sits in a chip with the alert icon in the preview. |
-| **Audio blocked / failed** | Inline banner above the transport: `--surface-error` background, 1 px `--error` top edge, alert icon, message, and a "Try again" text button. Not a modal. |
-| **Toasts** (Undo, info) | `--surface-3`, `--text`, 1 px `--border-subtle`, bottom-anchored above the transport, 8 s, with an inline action. Toasts never cover the transport. |
-
----
-
-## 8. Playback states
-
-| State | Transport | Progression | Other |
+### 8.2 Playback states
+| State | Panel | Carousel | Visuals |
 |---|---|---|---|
-| **Locked-audio** (before first tap) | Looks identical to Stopped. Play's accessible label is "Play (turns on sound)". | — | No warning UI unless unlocking fails (§7.5). |
-| **Stopped** | Play icon on `--accent` fill. | No spotlight. The selected chord (if any) has the Selected style. | |
-| **Count-in** | Play button shows a **4-segment ring** around its edge that fills one quarter per beat; the icon becomes a pause glyph (tap to cancel). | Over the first chord, large **display numerals 1 → 4** (`--text-headline` on phone, `--text-chord-lg` on desktop) in `--accent`, one per beat, **plus 4 beat pips** that fill. | The ring and pips are always shown, so the count-in also reads without sound. |
-| **Playing** | Pause icon on `--accent` fill. A small LED-style dot (8 px, `--accent`) appears on the active mode segment. | **Spotlight:** the current chord card or chip gets `--surface-accent` with a soft radial glow (`radial-gradient` from `--accent` at 14% alpha in the centre, to `--oxblood` at 0% at the edge), a 2 px `--accent` bottom edge, and **4 beat pips** under the chord showing the beat within the bar. Solo strip: a 2 px `--accent` playhead line moves through the chip. | Wake lock on. |
-| **Paused** | Play icon on `--accent` fill. | Spotlight stays on the paused chord at **50% strength**, with the caption "PAUSED" in place of the beat pips. | Shows where Play will resume. |
+| **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord centred. | Hidden. |
+| **Stopped** | Play icon. | First (or last tapped) chord centred; empty bar. | Hidden. |
+| **Count-in** (if on, SPEC A11) | Pause icon. | First chord centred; beat count shown on its card (design pending). | Hidden until beat 1. |
+| **Playing** | Pause icon. | Current chord centred, bar filling, cards sliding on each change. | Visible, moving. |
+| **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Fading out, then hidden. |
 
-**Seizure safety (WCAG 2.3.1):** beat pips change at most 4 times a second (240 BPM). They're small (≤ 8 px each), change between two adjacent lightness levels (`--fret-inlay` → `--accent`) and never flash the full screen. The spotlight moves per **chord**, never per beat.
-
----
-
-## 9. Components (core set)
-
-1. **Mode switch:** a segmented control with two segments, each ≥ 48 px tall and ≥ 96 px wide. Labels in `--text-body` UI 600. Selected = `--surface-accent` + `--text`; unselected = transparent + `--text-muted`. Includes the playing LED dot.
-2. **Context chip** (Key / Vibe / Tempo): 48 px tall, `--surface-2`, a `--text-caption` label above the value ("KEY" / "D major"). The tempo value uses `--font-mono`.
-3. **Chord card (Jam):** `--surface-2`, `--radius-l`, 16 px padding. The chord in `--text-chord-md`. Bar count (if ≠ 1) as a mono caption top-left ("2 BARS"). Lock toggle in its own 48 × 48 target, top-right. The whole card (outside the lock) opens the Chord sheet.
-4. **Chord chip (Solo strip):** 64 px tall, min-width 72 px. Width reflects duration (1 bar = 96 px, ½ = 72 px min, 2 bars = 168 px, 4 bars = 312 px), so the strip reads like a timeline.
-5. **Stomp button (RE-ROLL):** 64 px tall, `--accent` fill, re-roll icon + "RE-ROLL" in `--text-body-lg` UI 700, tracked +0.04em. The only full-accent element besides Play.
-6. **Vibe sleeve:** 200 × 120 px (phone, in the rail), `--surface-2`, `--radius-l`. Vibe name in `--text-title` display, descriptor in `--text-small`, artists in `--text-small` `--text-muted`. Selected: `--surface-accent`, a 3 px `--accent` left edge, a check icon. Not a grid: one rail, and the sleeves differ only in content.
-7. **Bottom sheet:** `--surface-3`, top radius `--radius-l`, a 4 × 32 px grab handle inside a 48 px drag zone, `--shadow-sheet`, max height 85% of the viewport. Backdrop: `--bg` at 60% alpha. Title in `--text-title`.
-8. **Stepper (tempo ±):** two 64 × 64 secondary buttons either side of the `--text-numeric-xl` readout.
-9. **Toggle (layers, sound parts):** a switch 52 × 32 inside a 48 px-tall row. On = `--accent` track + `--on-accent` knob + "ON" caption; off = `--surface-1` track with `--border-strong` + `--text-muted` knob. The row label is always visible.
-10. **Text input:** 56 px tall, `--surface-3`, 1 px `--border-strong`, `--text-body`, placeholder in `--text-muted` (6.1:1, so it stays readable).
+### 8.3 Loading and errors
+- **Instruments:** the loading pill (§6.15). The synth plays meanwhile, so there is no blocking spinner.
+- **Audio blocked:** an inline message above the panel in `--glass`, with a "Try again" action (design pending).
+- **Toasts** (Undo, "Playback paused"): `--glass`, `--r-pill`, `--t-caption` `--text`, above the panel, 8 s (design pending).
 
 ---
 
-## 10. Motion
+## 9. Motion
 
-### 10.1 Tokens
+### 9.1 Tokens
 | Token | Value | Use |
 |---|---|---|
-| `--dur-instant` | 0 ms | Reduced-motion replacement |
-| `--dur-fast` | 120 ms | Press feedback, toggles, spotlight hand-off between chords |
-| `--dur-base` | 200 ms | Hover, selection, chips, toasts |
-| `--dur-slow` | 320 ms | Sheets entering and leaving |
-| `--ease-standard` | `cubic-bezier(0.2, 0, 0, 1)` | Most transitions |
-| `--ease-exit` | `cubic-bezier(0.4, 0, 1, 1)` | Leaving the screen |
+| `--dur-carousel` | 620 ms, `cubic-bezier(0.32, 0.72, 0, 1)` | Cards sliding and scaling |
+| `--dur-fade` | 500 ms ease | Card opacity and fill changes |
+| `--dur-loading` | 400 ms ease | Loading pill fade |
+| `--dur-bar` | 300 ms ease | Progress bar appearing |
+| `--dur-pop` | 220 ms, `cubic-bezier(0.2, 0, 0, 1)` | Picker entering (fade + 8 px rise) |
+| `--dur-switch` | 200 ms, `cubic-bezier(0.2, 0, 0, 1)` | Switch knob |
 
-### 10.2 Signature moments
-- **Re-roll ("deal"):** unlocked cards fade out (`--dur-fast`), then the new chords fade in with a 4 px rise, staggered 40 ms left to right. Locked cards don't move at all, which makes the lock visibly "hold".
-- **Spotlight hand-off:** the glow cross-fades from one chord to the next over `--dur-fast`, starting **on** the downbeat (never before it, so the visual never runs ahead of the sound).
-- **Landing notes:** the diamond rings appear with a 120 ms fade during the last beat and fill solid on the change. Approach triangles fade in and out with them and never fill.
-- **Sheet:** slides up 24 px + fade over `--dur-slow`.
+The visuals use continuous rates, not durations (§3.3).
 
-### 10.3 Reduced motion (`prefers-reduced-motion: reduce`)
+### 9.2 Rules
+- **The carousel moves on the chord change,** never before it. When the loop wraps, cards jumping from one end to the other move without animation, so nothing flies across the screen.
+- **The progress bar is never animated by CSS;** it's set each frame from the audio clock.
+- Everything beat-related follows the audio clock, minus output latency, so visuals never lead the sound.
+
+### 9.3 Reduced motion (`prefers-reduced-motion: reduce`)
 | Normal | Reduced |
 |---|---|
-| Deal stagger and rise | All chords swap instantly. A one-line caption "New progression" shows for 1.5 s. |
-| Spotlight cross-fade | Spotlight jumps on the downbeat. |
-| Sheet slide | Fade only, `--dur-fast`. |
-| Press shift (1 px) | Colour change only. |
-| Breathing loading ring | Static "…" |
-| Strip auto-scroll (smooth) | Jumps (`scroll-behavior: auto`). |
+| Visuals drift, swell and crossfade | Still; shape and colour switch on chord changes |
+| Cards slide and scale | Opacity change only (200 ms) |
+| Picker rises | Appears without animation |
+| Pressed scale | Fill change only |
 
-Beat pips and the count-in ring stay, because they convey timing information, but they **change state** without animated transitions.
+The progress bar keeps moving: it shows position, not decoration.
 
-### 10.4 Timing rule
-Every visual tied to the beat is driven by the **audio clock** (scheduled times from the audio module), not by `setInterval` or animation frames alone. Visuals may lag the sound slightly but must never lead it.
+---
+
+## 10. Fretboard (Solo)
+
+To be designed with the Solo layout (SPEC A13). These rules carry over and are fixed:
+- **Each role is identifiable in greyscale.** Shape, fill style and label carry the meaning; colour only reinforces it.
+  - Root: rounded square, solid.
+  - Chord tone: circle, solid.
+  - Scale tone: circle, ring only.
+  - Avoid: circle, dashed ring with a slash.
+  - Landing: diamond, ring (fills solid on the change).
+  - Approach: small triangle, ring.
+- A legend of the shapes in use is always visible.
+- Marker taps cover the whole string × fret cell (≥ 48 px on phones).
+- Role colours must come from new tokens defined then. The previous palette (amber, sage) doesn't belong to this direction.
 
 ---
 
 ## 11. Accessibility checklist (design side)
-- [ ] All text ≥ 4.5:1 (body) / 3:1 (≥ 24 px or bold ≥ 18.66 px). Every pairing above meets AA; most meet AAA.
-- [ ] Control boundaries and meaningful icons ≥ 3:1 (`--border-strong` ≥ 3.49:1 everywhere).
-- [ ] Fretboard roles distinguishable in greyscale and under deuteranopia/protanopia/tritanopia simulation (check during the build).
-- [ ] Every interactive element has hover (pointer), focus-visible, active and disabled styles from §7.1.
+- [ ] Text ≥ 4.5:1 (body) / 3:1 (large) over the **worst** visual beneath it (§2.4): verify by screenshot sampling for every vibe, Lines and Dots.
+- [ ] Control boundaries and meaningful icons ≥ 3:1. Fix the off-switch track (§2.4).
+- [ ] Every interactive element has hover, focus-visible, pressed and disabled styles (§8.1).
 - [ ] Every disabled control has a visible reason.
-- [ ] Targets ≥ 48 × 48 px with ≥ 8 px spacing.
-- [ ] Layout holds at 200% text zoom and at 320 px width with no horizontal page scroll (the strip and vibe rail scroll horizontally on purpose).
-- [ ] Reduced motion honoured as in §10.3.
+- [ ] Targets ≥ 48 px (56 px primary), ≥ 6 px apart.
+- [ ] No flashing; reduced motion honoured (§3.4, §9.3).
+- [ ] Layout holds at 200% text zoom and at 320 px width with no horizontal page scroll.
+- [ ] Nothing depends on the visuals or on colour alone.
 
 ---
 
-## 12. Placeholder wordmark
-No product name yet. Until there is one, the top bar shows nothing but the mode switch and settings. No placeholder logo. When a name exists, it is set in `--font-display` 600 at `--text-title` size, `--text`, with no other treatment.
+## 12. Open design items
+| Item | Notes |
+|---|---|
+| Solo layout and fretboard | Next design task (SPEC A13). |
+| Lines vs Dots | Which ships, or a setting, or per vibe (SPEC A14). |
+| Sound picker | A home for count-in and part mutes (SPEC A11, A12). |
+| Own accidentals | Replace the thin Noto ♭/♯ (§4.1). |
+| Count-in, toasts, blocked-audio message | Visual design pending (§8.2, §8.3). |
+| Off-switch contrast | Proposed fix in §2.4. |
+| NEW hover, pressed and disabled values | §2.2 and §8.1, for approval. |
+| Wordmark | No product name yet. Until there is one, the top bar shows only the mode tabs. |

@@ -1,8 +1,9 @@
 # SPEC.md: Product behaviour
 
-> Status: **v1 draft, for review.** Product name to be decided; "the app" is used throughout.
-> Items marked **[A#]** refer to the assumptions table in §11. Everything else reflects decisions already made.
-> Visual details (colour, type, spacing, motion) live in `DESIGN.md`. This document defines *behaviour*.
+> Status: **v2 draft, for review.** Rewritten around the generative direction (prototype 04). Product name still to be decided; "the app" is used throughout.
+> **[A#]** refers to the assumptions and open questions in §13. Everything else reflects decisions already made.
+> Visual details (colour, type, spacing, motion, the visuals themselves) live in `DESIGN.md`. This document defines *behaviour*.
+> The previous version (Late Set, with chord locks) is in git history. `design/explorations/README.md` records how we got here.
 
 ---
 
@@ -10,17 +11,20 @@
 
 A browser tool for guitarists with two modes:
 
-- **Jam:** pick a key and a vibe, generate a chord progression, audition it on a loop, re-roll it, or lock the chords you like and re-roll the rest. Built for band improvisation: fast, few decisions, big buttons.
-- **Solo:** enter the progression of a song you are learning, set its tempo, loop it, and use a fretboard showing chord tones, scale options and landing notes to write lead lines.
+- **Jam:** pick a vibe, hit Re-roll, and hear a chord progression straight away on a real-sounding band (Wurlitzer, bass, optional drums). Each chord appears as a chord chart. Built for band improvisation: fast, few decisions, big buttons.
+- **Solo:** enter the progression of a song you're learning, set its tempo, loop it, and use a fretboard showing chord tones, scale options and landing notes to write lead lines.
+
+Behind both modes, **full-screen generative visuals** are drawn from the harmony that's playing. The visuals are part of the product, not decoration: they show the chord's character (consonant or restless, major or minor), the beat and the vibe.
 
 ### Product principles
 1. **Audible in one tap.** From a cold open, a progression should be playing within one tap in Jam and within a few taps in Solo.
 2. **Playable at arm's length.** Primary actions sit in the bottom thumb zone and stay large. You can operate it one-handed, guitar on, in a dim room.
-3. **Theory on demand.** The fretboard answers "what can I play here?" first. Explanation (intervals, why a scale fits) is one tap away, never in the way.
-4. **Loops never lie.** Timing is the product. Nothing in the UI is allowed to make playback drift.
+3. **The music is the picture.** Visuals are derived from what's playing and appear only while it plays. They never carry information that isn't also given in text.
+4. **Theory on demand.** Charts and the fretboard answer "what can I play here?" first. Explanation is one tap away, never in the way.
+5. **Loops never lie.** Timing is the product. Nothing in the UI or the visuals is allowed to make playback drift, and visuals never run ahead of the sound.
 
 ### Out of scope for v1
-Accounts, saving and sharing (beyond restoring the current session after a refresh, §10.5), recording, AI features, song libraries, chord-voicing diagrams, time signatures other than 4/4, custom tunings, looping only part of a progression.
+Accounts, saving and sharing (beyond restoring the current session, §11), recording, AI features, song libraries, time signatures other than 4/4, custom tunings, looping part of a progression, chord locks, extended chords in Jam (an option later, §5.6).
 
 ---
 
@@ -31,270 +35,278 @@ Accounts, saving and sharing (beyond restoring the current session after a refre
 | **Progression** | An ordered list of **slots** played in a loop. |
 | **Slot** | One chord plus its duration in bars (½, 1, 2 or 4). |
 | **Bar** | One bar of 4/4. The length of a progression is the sum of its slots' durations. |
-| **Vibe** | A named set of generator rules and playback feel (see §9). Six ship in v1. |
-| **Lock** | A flag on a Jam slot. Re-roll never changes a locked slot. |
-| **Roll** | One output of the generator. Jam keeps a short history of rolls. |
+| **Vibe** | A named set of generator rules, playback feel and visual look (§10, DESIGN.md §3). Six ship in v1. |
+| **Roll** | One output of the generator, with its key and tempo. Jam keeps a history of rolls. |
+| **Hold** | A switch on key or tempo. Re-roll doesn't change a held value. |
+| **Chord chart** | The basic fingering of a chord: open if one exists, otherwise the lowest E- or A-shape barre, never more than 5 frets. |
+| **Carousel** | The row of chord cards in the centre of the screen. The current chord is always in the middle. |
+| **Visuals** | The full-screen generative picture behind everything (DESIGN.md §3). |
 | **Chord tones** | The notes of the chord currently playing (or selected). |
-| **Landing notes** | The chord tones of the *next* chord, shown towards the end of the current one, so you can aim a phrase at them. Notes a half step either side of a landing note are **approach notes**, an optional layer. |
-| **Avoid notes** | Scale tones that clash with the current chord: a half step above a chord tone (classical definition). **[A6]** |
+| **Landing notes** | The chord tones of the *next* chord, shown towards the end of the current one. Notes a half step either side of a landing note are **approach notes**, an optional layer. |
+| **Avoid notes** | Scale tones that clash with the current chord: a half step above a chord tone. **[A6]** |
 | **Feel** | Straight or shuffle (swung 8ths), plus the groove pattern used for drums and bass. |
 
 ---
 
-## 3. Navigation model: one workspace with a mode switch
+## 3. Screen model: one full-screen stage
 
-There is a **single screen, the workspace**. A **Jam | Solo** segmented switch in the top bar swaps the **main panel**. The layout around the panel (top bar, context row, transport) stays in place.
-
-### 3.1 Regions (phone, portrait; top to bottom)
+There is a **single screen**. The visuals fill it edge to edge. Three layers sit on top:
 
 ```
 ┌───────────────────────────────┐
-│ Top bar   [ Jam | Solo ]   ⚙  │  mode switch · sound & fretboard settings
-│ Context   Key · Vibe · Tempo  │  chips; each opens a sheet
-├───────────────────────────────┤
+│ Jam  Solo                     │  top bar: mode tabs (loading pill centred when needed)
 │                               │
-│ Main panel                    │  Jam: vibe rail + progression (lead-sheet cards)
-│                               │  Solo: fretboard (vertical neck)
-│                               │
-├───────────────────────────────┤
-│ Progression strip (Solo only) │  scrollable chord chips with a playhead
-│ Transport (thumb zone)        │  Jam: ⟲ · RE-ROLL · ▶   Solo: ⏮ · ▶ · ⊕
+│   ┌──┐  ┌──────┐  ┌──┐  ┌──┐  │  centre: the carousel of chord cards
+│   │  │  │chart │  │  │  │  │  │  (Solo: fretboard, to be designed, §8)
+│   └──┘  │ Em7  │  └──┘  └──┘  │
+│         │ ━━─  │              │  progress through the current chord
+│         └──────┘              │
+│ ╭───────────────────────────╮ │
+│ │ (12/34) (⟲) [ RE-ROLL ] (▶)│ │  floating panel, row 1: playback
+│ │ [Neo-soul ⌄] [D major] [84]│ │  row 2: settings chips (each opens a picker above)
+│ ╰───────────────────────────╯ │
 └───────────────────────────────┘
 ```
 
-- **Phone, landscape or short viewports** (height < 500px): the context row folds into the top bar, and the fretboard turns horizontal (frets 0–15).
-- **Tablet and desktop** (≥ 1024px wide): Jam puts the vibe list in a left column and the progression centre stage. Solo puts the fretboard (horizontal, frets 0–15) across the top, with the progression strip, scale panel and transport below. The transport stays bottom-anchored on every size.
+- **Phone (< 900 px wide):** the panel has two rows: playback on top, settings chips beneath, at the very bottom where the thumb rests.
+- **Desktop (≥ 900 px):** the panel is one row, max 760 px wide and centred: settings chips on the left, playback on the right. The carousel shows more chords either side.
+- **Pickers** open as a floating sheet directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). Only one is open at a time. They close on Esc, a tap outside, or tapping their chip again. Opening or using a picker never stops playback.
 
-### 3.2 State ownership
-
+### 3.1 State ownership
 | State | Owned by | Notes |
 |---|---|---|
-| Key, tempo, vibe, progression, selection | **Each mode separately** | Generating in Jam never overwrites the Solo progression, and the reverse. |
-| Sound settings (part mutes, count-in) | Global | Apply to both modes. |
+| Key, tempo, vibe, progression, holds, history | **Each mode separately** | Generating in Jam never overwrites Solo, and the reverse. |
+| Sound settings (click, drums, count-in) | Global | Apply to both modes. |
 | Fretboard settings (tuning, handedness, labels, layers) | Global | Used in Solo. |
-| Playback | Global transport, playing the **active mode's** progression | See §3.3. |
+| Playback | Global transport, playing the **active mode's** progression | |
 
-### 3.3 Switching modes
-- Switching modes while playing **stops playback** and returns the playhead to bar 1 of the new mode. Two separate progressions can't sensibly share one running loop, and silent swaps would confuse.
-- **Exception: "Solo over this"** (a Jam action). It copies the current Jam progression, key, tempo and vibe into Solo, replacing what was there, then switches to Solo. If playback is running, it **keeps running without a break**, because it is the same progression. If Solo already had chords, an Undo toast (8 s) restores them.
-- The mode switch shows which mode is playing: a small playing indicator appears on the active segment while the transport runs.
-
-### 3.4 Sheets (overlays)
-All secondary controls open as **bottom sheets** on phones (thumb-reachable, swipe or tap outside to dismiss) and as **anchored popovers** on desktop. Sheets never stop playback.
-
-| Sheet | Opened from |
-|---|---|
-| Key | Key chip |
-| Vibe | Vibe chip (Solo); in Jam the vibe rail is inline |
-| Tempo | Tempo chip |
-| Chord | Tapping a chord card or chip; the "+" slot |
-| Type progression | Solo strip menu, or the Solo empty state |
-| Sound | ⚙ → Sound |
-| Fretboard | ⚙ → Fretboard, or the settings icon on the fretboard |
+### 3.2 Switching modes
+- Switching modes while playing **stops playback** and returns to bar 1 of the new mode.
+- **Exception: "Solo over this"** (a Jam action, §5.8) copies Jam's progression, key, tempo and vibe into Solo, then switches. If playing, it keeps playing without a break, because it's the same progression. If Solo already had chords, an Undo toast (8 s) restores them.
 
 ---
 
 ## 4. Shared controls
 
-### 4.1 Key
-- Root: 12 options in circle-of-fifths order, in two rows of six (one row of twelve can't keep 48 px targets on a phone). Mode: **Major / Minor**.
-- Spelling follows the conventional key signature: F major uses B♭, not A♯; F♯ minor uses sharps. Ambiguous keys use the signature with fewest accidentals: D♭ and F♯ major, E♭ and B♭ minor (C♯ minor, not D♭ minor). Chromatic notes are spelled by function: in major ♭3, ♭7, ♯4; in minor the leading tone (G♯ in A minor) and the ♭5 blue note (B♭ in E minor). The table lives in `src/theory/` and is tested.
-- **Changing the key transposes the whole progression, locked chords included.** It never re-rolls. Chords are stored relative to the key (Roman numerals) in Jam, and transposed by interval in Solo.
-- Default key (first load): **[A1]**
+### 4.1 Playback row
+| Control | Behaviour |
+|---|---|
+| **Click** (the "1 2 / 3 4" button) | Toggles the metronome click. **Off by default.** A toggle button (`aria-pressed`), not a menu. |
+| **Back** (⟲) | Steps back to the previous roll (§5.4). |
+| **Re-roll** | The primary action (§5.3). Wide, labelled. |
+| **Play / Pause** | Starts and pauses the loop. The largest round control, at bottom right. **[A7]** |
 
-### 4.2 Tempo
-- Range **40–240 BPM**, integer steps.
-- Tempo sheet: large BPM readout, **– / +** buttons (1 BPM per tap; holding repeats, speeding to 5 BPM steps after 1 s), a slider, and **Tap tempo** (averages the last 4 taps; resets after 2 s without a tap).
-- Tempo changes take effect **at the next beat**, never mid-beat.
-- Jam: choosing a vibe sets the tempo to the vibe's default **unless the user has changed tempo by hand in this session**. A manual tempo always wins.
+- **Looping is always on.** The whole progression loops.
+- **Pause** holds the playhead. **Play** resumes from the start of the bar that was playing (not mid-bar), after a count-in if count-in is on.
+- Playback states: `locked-audio` → `stopped` → `count-in` → `playing` ⇄ `paused`. How each looks is in DESIGN.md §8.
 
-### 4.3 Transport and looping
-- **Looping is always on.** The whole progression loops. (Looping only part of it is out of scope for v1.)
-- **Play/Pause** is the largest control on screen and sits at bottom right, under the thumb of a right-handed user. It moves to bottom left when the left-handed setting is on. **[A7]**
-- **Pause** holds the playhead position. **Play** resumes from the start of the bar that was playing (not mid-bar), after a count-in if enabled.
-- **Restart (⏮)**, Solo only: returns the playhead to bar 1. If playing, it jumps on the next downbeat.
-- Tapping Play while the count-in is running cancels the count-in and returns to stopped.
-- Playback states: `locked-audio` → `stopped` → `count-in` → `playing` ⇄ `paused`. Visuals for each are in DESIGN.md §8.
+### 4.2 Vibe picker
+- A list of the six vibes, each with its name and a short descriptor. The current vibe is selected (`role="radio"`).
+- Choosing a vibe makes a **new progression in the same key**. Tempo moves to the vibe's default **unless tempo is held**. The picker closes.
+- **Drums** switch (below the list): kick, snare and hat in the vibe's groove. **Off by default [A8]**.
+- **Credits** for the instrument samples, as their licences require (§7.4).
 
-### 4.4 Sound settings (global)
-| Setting | Default | Behaviour |
+### 4.3 Key picker
+- **Major / Minor** segmented control, then 12 tonics in two rows of six, spelled for the mode (D♭ and F♯ major; E♭ and B♭ minor; C♯ minor, not D♭ minor).
+- **Changing the tonic transposes** the current progression. Nothing re-rolls.
+- **Changing major ↔ minor makes a new progression** in the same tonic, because the two modes use different rules. The old one goes onto the history stack, so Back returns to it.
+- **Hold key** switch: "Re-roll won't change it". A held key shows a **HELD** tag on the key chip.
+- Spelling of chromatic chords follows the key (♭3, ♭7, ♯4 in major; the leading tone and ♭5 blue note in minor). The table lives in `src/theory/` and is tested.
+
+### 4.4 Tempo picker
+- Range **40–240 BPM**, whole numbers. Big readout with **− / +** either side (1 BPM per tap), a slider, and **Tap tempo** (averages up to the last 5 taps; taps more than 2 s apart start again).
+- A line under the controls says the vibe's usual range ("Neo-soul usually sits between 65 and 100 BPM").
+- **Hold tempo** switch, with the same HELD tag on the chip.
+- Tempo changes take effect at the next beat, never mid-beat.
+
+### 4.5 Sound settings (global)
+| Part | Default | Behaviour |
 |---|---|---|
-| Chords | On | Electric-piano / pad voice. **Mute chords** keeps the groove so the user can play rhythm themselves. |
-| Bass | On | Root-note bass following the vibe's pattern. |
-| Click | On | Quarter notes, accent on beat 1. |
-| Drums | Off **[A8]** | Simple pulse (kick, snare, hat) from the vibe's groove. |
-| Count-in | On | One bar of clicks before playback, shown visually (DESIGN.md §8). Plays even when Click is off. |
-| Feel | From vibe | Straight / Shuffle override. |
+| Chords | On | Sampled Wurlitzer electric piano (§7). |
+| Bass | On | Sampled bass following the vibe's pattern. |
+| Click | **Off** | Quarter notes, accent on beat 1. Playback row toggle. |
+| Drums | **Off [A8]** | Sampled kit in the vibe's groove. Vibe picker switch. |
+| Count-in | **Off [A11]** | One bar of clicks before playback when on. |
 
-Mutes take effect immediately (at the next scheduled note) and never stop or restart the loop.
+Changes take effect at the next scheduled note and never stop or restart the loop. A way to mute chords or bass (to play rhythm yourself) is wanted but has no home in the panel yet **[A12]**.
 
-### 4.5 Editing while playing
-Editing is always allowed during playback. Rules:
-- A changed slot takes effect **the next time the playhead reaches it**. If the slot playing right now changes, the new chord starts at the next downbeat.
-- A deleted slot that is playing right now: playback continues into the following slot at the next downbeat.
-- Re-roll or history navigation in Jam: the new progression starts **at the next downbeat, from bar 1**.
-- No edit ever causes a count-in or a gap.
+### 4.6 Editing while playing
+- Re-roll, Back, a vibe change or a key mode change: the new progression starts **at the next downbeat, from bar 1**.
+- A tonic change: the transposed chords take over at the next downbeat, keeping the position in the loop.
+- No change ever causes a count-in or a gap.
 
 ---
 
 ## 5. Jam mode
 
-### 5.1 Layout
-- **Vibe rail:** six vibe "sleeves" in a horizontal scroller (phone) or vertical list (desktop). Each shows the name, a 3–5 word descriptor and reference artists. The selected vibe is marked with a check and the accent edge (DESIGN.md §9.6).
-- **Progression:** chord **cards** in lead-sheet order, wrapping 2 per row on phones (4 per row on desktop), each showing the chord symbol, its bar count (if not 1) and a **lock toggle**.
-- **Transport:** `⟲ Back` · `RE-ROLL` (wide, solid) · `▶ Play`.
-- **Overflow menu** (on the progression header): Length (4 / 8 bars; Blues also 12), "Solo over this".
+### 5.1 First load
+- Jam, vibe **Neo-soul**, key **D major**, the vibe's default tempo, a progression already generated. **[A1]** The screen is never empty.
+- Nothing plays until the first tap (§12.3). The visuals are hidden until playback starts.
 
-### 5.2 Flow: pick a vibe and audition
-1. The user opens the app. Jam is the default mode on first load.
-2. A progression is **already generated** for the default vibe and key, so the screen is never empty. **[A1]**
-3. The user taps a vibe sleeve. All **unlocked** slots re-generate for the new vibe immediately. Locked slots stay. Tempo follows §4.2.
-4. The user taps **Play**. On the first-ever tap this also unlocks audio (§10.3). Count-in, then the loop plays. The current card is spotlit.
+### 5.2 The carousel
+- One **card** per chord: the chord chart above, the chord name below and, on the current card, a thin progress bar.
+- **The current chord is always centred.** The rest of the loop sits either side and slides along as the progression plays, wrapping round at the loop point. Up to a third of the loop sits behind (dimmed), the rest ahead:
+  - phone: up to 2 behind and 3 ahead;
+  - desktop: up to 3 behind and 4 ahead.
+- **Past chords** are dimmed; **upcoming chords** are at full strength; the **current chord** is larger, on a brighter card with an edge (shape and size, not just colour).
+- **Progress bar:** fills smoothly through the current chord, driven by the audio clock.
+- **When paused,** the chord that was playing stays centred and highlighted, with its progress bar frozen where it stopped.
+- **When stopped,** the first chord (or the last tapped) is centred, with an empty bar.
+- **Tapping a card plays the chord** once (a preview), whether or not the loop is running. When stopped, it also centres that card. Tapping never changes the loop.
+- Charts are the basic shape only (§2). A chord with no basic shape shows its name without a chart.
 
-### 5.3 Flow: re-roll
-1. The user taps **RE-ROLL** (or presses `R` on desktop).
-2. Every unlocked slot gets a new chord from the vibe's rules. Locked slots are kept, and the generator treats them as fixed context (§9.3).
-3. The previous roll goes onto the **history stack** (up to 20). **⟲ Back** steps back through it. After going back, RE-ROLL creates a new roll and discards the "forward" history, like browser history. A **Forward** control is not in v1.
-4. If playing, the new roll starts at the next downbeat from bar 1 (§4.5).
-5. Screen readers hear the new progression announced once via a polite live region ("New progression: E minor 9, A 13, D major 7, B minor 7").
+### 5.3 Re-roll
+1. The user taps **Re-roll** (or presses `R`).
+2. A new progression is generated from the current vibe. **Key and tempo change too**, unless held:
+   - Key: a random tonic, and major or minor with equal chance.
+   - Tempo: a random value within the vibe's range.
+3. The previous roll (with its vibe, key and tempo) goes onto the **history stack**.
+4. If playing, the new progression starts at the next downbeat from bar 1.
+5. Screen readers hear the new progression once via a polite live region ("New progression in E minor at 78 BPM: E minor 7, A 7, D major 7, B minor 7").
 
-### 5.4 Flow: lock
-- Each card has a **lock toggle** (its own 48 × 48 px target, separate from tapping the card itself).
-- Locked cards change state through **icon + label + surface** (closed padlock, "Locked" caption, tinted surface), never colour alone.
-- Locks survive re-roll, vibe change, key change (chords transpose) and length change (where the slot still exists).
-- **If every slot is locked**, RE-ROLL is disabled and its label reads "All locked". Tapping it shows the hint "Unlock a chord to re-roll".
-- **Editing a chord by hand locks it automatically** (§5.5). A toast confirms: "Locked so re-roll keeps it · Undo".
+### 5.4 Back
+- **Back** restores the previous roll exactly: chords, vibe, key and tempo. History holds up to **20** rolls.
+- At the oldest roll, Back is disabled, with a visible reason on tap ("No earlier progression yet").
+- After going back, Re-roll makes a new roll and discards the "forward" history, like a browser. No Forward control in v1.
 
-### 5.5 Flow: swap a chord
-1. The user taps a card. The **Chord sheet** opens for that slot.
-2. The sheet shows: the chord and its notes · **Swap for:** 3–6 alternatives the vibe's rules allow in this slot, given its neighbours · **Edit…** (the full chord editor, §6.4) · **Duration** (½ / 1 / 2 / 4) · **Lock** toggle.
-3. Choosing an alternative applies it immediately (audible on the next pass) and auto-locks the slot.
-4. Changing a duration can push the total over the selected length. If so, the change is refused with an inline message ("8 bars max. Shorten another chord first").
+### 5.5 Length
+- The vibe's harmonic rhythm and lengths decide the length of each roll: 4 or 8 bars. There's no length control in the prototype. **[A3]**
+- Blues offered 12 bars in the previous spec; the prototype only uses 4 or 8. **[A3]**
 
-### 5.6 Length
-- Jam progressions are **4 or 8 bars**. **Blues also offers 12 bars** so the classic 12-bar form is possible (decision A3). The vibe's harmonic rhythm decides how many chords fill them (Dreamy: 2 chords over 4 bars; Neo-soul: 4–8).
-- Which lengths are offered comes from the vibe file (`params.lengths`), not from code, so a vibe can add a length without changing the generator.
-- **Leaving Blues while at 12 bars:** the length drops to 8. Slots 9–12 are removed, and an Undo toast (8 s) restores both the slots and the Blues vibe.
-- **4 → 8:** existing slots are kept (locks too), and new slots are generated after them.
-- **Shortening (12 → 8, 8 → 4):** slots past the new length are removed, locked or not. An Undo toast (8 s) restores them.
+### 5.6 Chord set
+- Jam uses a **simple chord set by default:** major, minor, 7, maj7, m7, sus2, sus4, and dim (for vii°). The generator's richer qualities (9ths, 13ths, 6/9) are simplified to the nearest of these for display, charts and playback.
+- An **extended chords** option comes later. It will need charts beyond the basic shapes.
 
-### 5.7 Solo over this
-Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3.3). Locks are dropped, because Solo has no locks.
+### 5.7 Visuals in Jam
+- The visuals fade in when playback starts and fade out on pause or stop (DESIGN.md §3).
+- Each chord change crossfades the picture to the new harmony. The beat is a gentle swell. Each vibe has its own look.
 
----
-
-## 6. Solo mode
-
-### 6.1 Layout
-- **Fretboard** fills the main panel (§7).
-- **Scale bar** sits just above the fretboard: the active scale as a chip, plus **Follow chord** / **Whole song** scope (§6.6).
-- **Progression strip:** horizontally scrolling chord chips with a playhead line. A **+** chip sits at the end. The strip menu (⋯) holds: Type progression · Clear all.
-- **Transport:** `⏮ Restart` · `▶ Play` · `⊕ Add chord`.
-
-### 6.2 Empty state (first visit)
-Solo starts **empty** (unless filled by "Solo over this"). The main panel shows:
-- A headline: "What are we soloing over?"
-- Three actions: **Add a chord** (primary), **Type the whole progression**, **Bring the Jam progression over**.
-- The fretboard still renders, dimmed, showing the key-wide scale for the current key, so the screen teaches what it will do.
-- **Play is disabled** with the reason under it: "Add a chord to play".
-
-### 6.3 Flow: enter chords
-**Chord by chord (default, thumb-friendly):**
-1. The user taps **+** (or ⊕ in the transport). The Chord sheet opens on the **builder**:
-   - **Root:** 12 buttons, spelled for the current key.
-   - **Quality:** chips, most common first: `maj` `m` `7` `maj7` `m7` `sus2` `sus4` `add9` `6` `m6` `9` `m9` `13` `dim` `m7♭5` `aug`, then **More…** (alterations, slash bass).
-   - **Duration:** ½ / 1 / 2 / 4 bars (default **1**).
-   - A live preview of the chord symbol and its notes. Tapping the preview plays the chord.
-2. **Add** appends the chord and keeps the sheet open on a fresh builder (fast entry of several chords). **Done** closes it.
-3. A **Type it** field at the top of the builder accepts free text (§6.4) for users who know the symbol.
-
-**Whole progression at once:**
-- A text field accepting chords separated by spaces, with optional bar lines: `Em C G D`, or `| Em | C | G D |`.
-- Inside bar lines, chords share the bar equally (`| G D |` = two ½-bar chords). Without bar lines, each chord is 1 bar.
-- A live preview shows the parsed chips. Invalid tokens are underlined, and each comes with its own error (§10.2). **Add to progression** is available only when every token is valid.
-
-**Editing an existing chip:** tap it to open the Chord sheet with: builder (pre-filled) · Duration · Move left / Move right · Duplicate · Delete. Desktop and pointer users can also drag chips to reorder. Touch users can long-press then drag. The Move buttons are the accessible equivalent.
-
-### 6.4 Chord input rules (parser)
-- **Accepted:** root `A–G` with optional `#`/`b` (also `♯`/`♭`) · quality and extensions in common notation (`m`, `maj7`, `7`, `m7`, `dim`, `dim7`, `aug`/`+`, `sus2`, `sus4`, `add9`, `6`, `m6`, `9`, `m9`, `maj9`, `11`, `13`, `m7b5`) · alterations (`b9`, `#9`, `#11`, `b13`, `b5`, `#5`), with or without parentheses · slash bass (`C/E`).
-- **Aliases accepted and normalised:** `-` → `m`, `Δ`/`M7` → `maj7`, `ø` → `m7♭5`, `°` → `dim`, `min` → `m`.
-- **Display** is normalised common notation with real accidentals: input `Bbmaj7` displays as **B♭maj7**. The user's spelling of the root is kept (A♯ stays A♯).
-- Case: roots are case-insensitive at the start (`em` → Em). After the root, `M7` means maj7 and `m7` means minor 7.
-- Max length: 16 characters per chord.
-- An alteration straight after the root is bracketed on display, `C(♯11)`, because `C♯11` would read as a C♯ chord.
-
-### 6.5 Flow: set tempo, vibe, key and loop
-1. **Tempo:** tap the Tempo chip (§4.2). Default **[A4]**.
-2. **Vibe:** optional. It sets the playback feel (groove, voicing, straight or shuffle) and the **order of scale suggestions**. It never changes the chords. The default is **Plain**: straight feel, simple comping, no drums. **[A5]**
-3. **Key:** when the progression has ≥ 2 chords and the user hasn't set a key by hand, the app suggests one: a chip reading "Sounds like E minor. Use it?". Accepting sets the key without transposing anything. The user can always set the key manually. Ties show the two best candidates.
-4. **Play.** Count-in, then the loop. The playhead moves along the strip, which auto-scrolls to keep the current chip in view. It doesn't auto-scroll while the user is touching the strip, and resumes 3 s after they let go.
-
-### 6.6 Flow: explore the fretboard
-1. **What's shown follows the playhead** while playing. While paused or stopped, it shows the **selected** chip (tap a chip to select it).
-2. Tapping a chip **while playing** *pins* the fretboard to that chord. A "Pinned: Cmaj7 · Follow" chip appears. Tapping it resumes following. Playback is not affected.
-3. **Scale picker** (tap the scale chip): a ranked list of suggestions, each with a fit note. A scale **fits** a chord when (a) it's a seven-note scale that contains all the chord's core tones (root, 3rd, 5th, 6th/7th), or (b) it's a smaller scale (pentatonic, blues) that doesn't contradict the chord's quality: no minor 3rd against a major 3rd (or the reverse), no ♭7 against a maj7 (or the reverse). So E minor pentatonic fits D (its G is only the 4th) but not B7 (its D fights the D♯).
-   - **Whole song** scope: scales that fit across the progression, e.g. "E minor pentatonic · fits all 4 chords", "E Dorian · fits 3 of 4 (clashes on C)". The ranking uses vibe order (Blues puts minor pentatonic and blues first) and then fit.
-   - **Follow chord** scope: a scale per chord (e.g. A Mixolydian over A7). The fretboard changes scale with the chord.
-   - v1 set: major, natural minor, major and minor pentatonic, blues (minor and major), Dorian, Mixolydian, Lydian, Phrygian, harmonic minor. **[A6]**
-4. **Layers** (toggle chips under the scale bar): Chord tones (on) · Scale (on) · Landing notes (on) · Approach notes (off) · Avoid notes (off). The root is always marked when either Chord tones or Scale is on. Approach notes only appear while landing notes do, and their chip is disabled (with the reason "Turn on landing notes first") when Landing is off. They're off by default because they can light up most of the neck in the last beat.
-5. **Landing notes** appear during the **last beat** of each chord by default (setting: last beat / last bar / always). They stay visible through the change and fade as the next chord's tones take over.
-6. **Tap a note** on the fretboard: it plays that pitch (one short note, using the chord voice) and shows a tooltip with note name, interval to the chord and scale degree. This works while playing and doesn't affect the loop.
-7. **Labels:** Notes (E, G♯) · Intervals (relative to the **current chord's** root: R, 3, ♭7) · Degrees (relative to the **key**: 1, ♭3, 5).
-8. **Text alternative:** "Show as list" under the fretboard gives the same information as text: "Chord tones: E G♯ B D · Scale: E Mixolydian · Landing next: A C♯ E". It serves screen readers and anyone who prefers it.
+### 5.8 Solo over this
+Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3.2). Where this lives in the UI is still to be designed **[A13]**.
 
 ---
 
-## 7. Fretboard
+## 6. The visuals (behaviour)
+
+The picture is specified in DESIGN.md §3. Its behavioural rules:
+- **Derived from the music:** each chord's interval ratios shape the waves; the vibe sets palette, density, orientation and motion; tempo sets speed; the beat sets a swell.
+- **Present only while playing:** fades in on play (about 0.5 s) and out on pause or stop (about 0.3 s). Before the first play, the screen is dark.
+- **Clock-locked:** the beat swell is computed from the audio clock's beat position, so it never drifts and never leads the sound.
+- **Never flashes:** no brightness steps on the beat; changes are continuous. Safe at 240 BPM (WCAG 2.3.1).
+- **Reduced motion:** the picture holds still (no drift, no swell). Chord changes still change the shape and colour, without the crossfade.
+- **Decorative to assistive technology:** the canvas is hidden from screen readers. Everything it shows (the chord, the beat) is available in text.
+- **Rendering style:** lines or dots. Which ships, and whether it's a setting or per vibe, is open **[A14]**.
+- Rendering runs on its own frame loop; the audio scheduler is independent, so a slow frame can't disturb timing.
+
+---
+
+## 7. Sound
+
+### 7.1 Instruments
+| Part | Instrument | Licence |
+|---|---|---|
+| Chords | Wurlitzer EP200 (Greg Sullivan), 4 velocity layers | CC BY 3.0 (credit required) |
+| Bass | Karoryfer Swagbass (flatwound strings), 3 velocity layers, 2 takes per note, one note at a time | CC0 |
+| Drums | Versilian Virtuosity Drums: kick, snare, closed hat (close mics and overheads pre-mixed per hit) | CC0 |
+
+No guitar in the backing, so it never clashes with the player.
+
+### 7.2 Loading
+- Samples download in the background **after the first tap**, chords first, then bass, then drums (about 3.2 MB in all).
+- **Playback never waits for samples.** Until an instrument is ready, a synth plays its part. Each part switches as soon as its own instrument is ready.
+- A small **status pill** at the top shows "Loading instruments · 40%", then "Instruments ready", and fades out.
+- **Failure:** a file that won't load only affects its own notes. If most of an instrument fails (offline), that part stays on the synth and the pill says which ("Couldn't load Swagbass. Using the synth for that."), for 4 s.
+
+### 7.3 Feel and mix
+- **Humanising:** chords roll low to high (at most 30 ms), velocities vary ±6%, and each hit lands 0–5 ms late. Notes only ever move later, so the scheduler stays safe.
+- A generated room reverb, gentle saturation and a compressor glue the parts together. Per-part reverb sends: chords wet, bass nearly dry.
+
+### 7.4 Credits
+The vibe picker shows: "Wurlitzer EP200 samples by Greg Sullivan, CC BY 3.0. Bass: Swagbass by Karoryfer Samples. Drums: Virtuosity Drums by Versilian Studios (both CC0)." with links. Full credits and licences sit next to each sample set in `public/samples/`.
+
+---
+
+## 8. Solo mode
+
+> **Layout to be designed** in the generative style before it's built. The behaviour below carries over from the previous spec and still stands, except where noted. **[A13]**
+
+### 8.1 Entering chords
+- Solo starts **empty** (unless filled by "Solo over this"). The empty state invites "What are we soloing over?" with three actions: **Add a chord**, **Type the whole progression**, **Bring the Jam progression over**. Play is disabled with the reason "Add a chord to play".
+- **Chord by chord:** a builder with root (12, spelled for the key), quality (most common first: `maj` `m` `7` `maj7` `m7` `sus2` `sus4` `add9` `6` `m6` `9` `m9` `13` `dim` `m7♭5` `aug`, then More… for alterations and slash bass) and duration (½ / 1 / 2 / 4 bars, default 1). A live preview plays when tapped. **Add** keeps the builder open for the next chord.
+- **Whole progression:** free text, chords separated by spaces, optional bar lines: `Em C G D` or `| Em | C | G D |`. Inside a bar, chords share it equally. A live preview shows parsed chords; bad tokens are flagged one by one.
+- **Editing:** tap a chord to edit, change duration, move, duplicate or delete. Pointer users can drag to reorder; Move buttons are the accessible equivalent.
+- Solo accepts the full chord vocabulary (§8.2), unlike Jam's simple default.
+
+### 8.2 Chord input rules (parser)
+- **Accepted:** root `A–G` with `#`/`b`/`♯`/`♭` · qualities `m`, `maj7`, `7`, `m7`, `dim`, `dim7`, `aug`/`+`, `sus2`, `sus4`, `add9`, `6`, `m6`, `9`, `m9`, `maj9`, `11`, `13`, `m7b5` · alterations `b9`, `#9`, `#11`, `b13`, `b5`, `#5`, with or without brackets · slash bass (`C/E`).
+- **Aliases:** `-` → `m`, `Δ`/`M7` → `maj7`, `ø` → `m7♭5`, `°` → `dim`, `min` → `m`.
+- **Display** uses real accidentals and keeps the user's root spelling (A♯ stays A♯). An alteration straight after the root is bracketed, `C(♯11)`, because `C♯11` would read as a C♯ chord.
+- Roots are case-insensitive at the start (`em` → Em). After the root, `M7` means maj7 and `m7` means minor 7. Max 16 characters per chord.
+
+### 8.3 Tempo, vibe, key, loop
+- **Tempo:** the tempo picker (§4.4). Default 90 BPM **[A4]**.
+- **Vibe:** optional. Sets playback feel and the order of scale suggestions, never the chords. Default **Plain**: straight, simple comping, no drums **[A5]**.
+- **Key:** once there are ≥ 2 chords and the user hasn't set one, the app suggests one ("Sounds like E minor. Use it?"). Accepting sets the key without transposing.
+- **Loop:** the whole progression; the current chord follows the playhead.
+
+### 8.4 The fretboard
+- **Follows the playhead** while playing; otherwise shows the selected chord. Tapping a chord while playing **pins** the fretboard to it, with a "Pinned · Follow" control to resume.
+- **Scale picker:** ranked suggestions with a fit note. A scale fits a chord when (a) a seven-note scale contains all its core tones, or (b) a smaller scale (pentatonic, blues) doesn't contradict its quality (no ♭3 against a 3, no ♭7 against a maj7, or the reverse). **Whole song** and **Follow chord** scopes. v1 set: major, natural minor, major and minor pentatonic, blues (minor and major), Dorian, Mixolydian, Lydian, Phrygian, harmonic minor. **[A6]**
+- **Layers:** Chord tones (on) · Scale (on) · Landing notes (on) · Approach notes (off) · Avoid notes (off). Approach notes need Landing on.
+- **Landing notes** appear in the last beat of each chord by default (setting: last beat / last bar / always).
+- **Tap a note:** plays it and shows note name, interval to the chord and scale degree. Doesn't affect the loop.
+- **Labels:** Notes · Intervals (to the current chord's root) · Degrees (to the key).
+- **Text alternative:** "Show as list" gives the same information as text.
 
 | Property | Rule |
 |---|---|
-| Frets shown | 0 (open) to 15. Vertical neck (phone portrait) scrolls; horizontal shows all 16 positions. |
-| Orientation | **Phone portrait:** vertical, headstock at top, low E on the left (right-handed). **Landscape / ≥ 600px wide:** horizontal, headstock at left, low E at the bottom (the player's view). |
-| Left-handed | Mirrors across the neck's long axis: vertical puts low E on the right; horizontal puts the headstock on the right. Also mirrors transport placement **[A7]**. |
-| Tunings | Standard (default), Half-step down, Drop D, DADGAD, Open G, Open D. Changing tuning re-maps all markers instantly. Custom tunings: v2. |
-| Inlays | Single dots at 3, 5, 7, 9, 15; double at 12. Fret numbers shown at 3, 5, 7, 9, 12, 15. |
-| Note roles | Root, chord tone, scale tone, avoid note, landing note, approach note. Each has a **distinct shape and label** as well as a colour (DESIGN.md §6). Priority when a note has several roles: Root > Chord tone > Landing > Approach > Avoid > Scale. (Avoid sits above Scale because every avoid note is also a scale note; the other way round, avoid notes would never show. Approach sits above Avoid because just before a change, where to go matters more than what to avoid.) A chord tone that is also a landing note gets the landing badge. |
-| Scroll position | Kept per session. No auto-scroll during playback (a moving neck under your eyes is disorienting). |
+| Frets | 0 (open) to 15. |
+| Orientation | Phone portrait: vertical, headstock at top, low E on the left. Landscape or ≥ 600 px: horizontal, headstock at left, low E at the bottom. |
+| Left-handed | Mirrors the neck, and the transport **[A7]**. |
+| Tunings | Standard (default), Half-step down, Drop D, DADGAD, Open G, Open D. |
+| Inlays | Single dots at 3, 5, 7, 9, 15; double at 12. |
+| Roles | Root, chord tone, scale tone, avoid, landing, approach. Each has its **own shape and label** as well as colour. Priority: Root > Chord tone > Landing > Approach > Avoid > Scale. A chord tone that's also a landing note gets a landing badge. |
 
-All fretboard maths (which note sits at string *s*, fret *f* for tuning *t*; which roles it has) is a pure function in `src/theory/` with tests.
+All fretboard maths is a pure, tested function in `src/theory/`.
+
+### 8.5 Visuals in Solo (stretch)
+The notes you play (microphone pitch detection, nothing recorded or stored) could add harmonics to the visuals, so the picture answers your solo. A stretch goal, not a v1 commitment. It would need microphone permission and an HTTPS page. **[A15]**
 
 ---
 
-## 8. Keyboard and assistive technology
+## 9. Keyboard and assistive technology
 
 | Key | Action |
 |---|---|
 | `Space` | Play / Pause |
 | `R` | Re-roll (Jam) |
-| `L` | Toggle lock on the focused card (Jam) |
-| `←` `→` | Move focus between chords |
-| `Enter` | Open the Chord sheet for the focused chord |
+| `←` `→` | Move focus between chord cards |
+| `Enter` | Play the focused chord (Jam); open it for editing (Solo) |
 | `+` `−` | Tempo ±1 (`Shift` for ±5) |
-| `Esc` | Close sheet or popover |
+| `Esc` | Close the open picker |
 
 - Shortcuts are ignored while a text field has focus.
-- The progression is an ordered list. Each card's accessible name is "Bar 1, E minor 9, 1 bar, locked".
-- No live announcement for every chord change during playback (too noisy). The current chord is exposed with `aria-current` for anyone who queries it.
-- Count-in has a polite announcement ("Count-in") but no per-beat announcements.
-- All sheets trap focus and return focus to their trigger on close.
+- The carousel is an ordered list. Each card's accessible name is the spoken chord ("E minor 7"). The current card has `aria-current`. No announcement on every chord change during playback.
+- Pickers are dialogs: focus moves into them on open and returns to their chip on close.
+- Toggle buttons use `aria-pressed`; switches use `role="switch"`; single choices use `role="radio"`.
 
 ---
 
-## 9. Generator and vibe data (architecture for v2)
+## 10. Generator and vibe data
 
-### 9.1 Principles
-- The generator is a **pure function**: `generate(params, locks, seed) → Progression`. It has no DOM and no audio code. The same inputs and seed always give the same output, so it can be tested.
-- **Vibes are data files** in `src/data/vibes/*.json`. The generator knows nothing about any specific vibe.
-- **v2 path:** free-text input ("dusty Khruangbin groove, slower") maps onto the *same* `GeneratorParams`, either by picking or blending vibes or by overriding individual fields. No generator changes needed.
+### 10.1 Principles
+- The generator is a **pure, seeded function**: `generate(params, mode, length, seed) → Progression`, with no DOM or audio code. Same inputs and seed, same output.
+- **Vibes are data files** in `src/data/vibes/*.json`, checked on load by `parseVibe` (unknown degrees, invalid qualities, dead ends, unreachable chords, bad tempo ranges).
+- **v2 path:** free-text input ("dusty Khruangbin groove, slower") maps onto the *same* parameters by picking or blending vibes or overriding fields. No generator changes needed.
+- The generator still supports locks internally; the v1 UI doesn't use them.
 
-### 9.2 Vibe file shape
-Implemented in `src/theory/vibe.ts`. Every vibe file is checked on load by `parseVibe`, which lists every problem: unknown degrees, invalid chord qualities, dead ends, degrees that can never be reached, bad tempo ranges.
+### 10.2 Vibe file shape
 ```ts
 interface Vibe {
   id: string;                      // "neo-soul"
   name: string;                    // "Neo-soul"
   descriptor: string;              // "Lush 7ths and 9ths, lazy pocket"
-  references: string[];            // ["Tom Misch", "D'Angelo", …]
+  references: string[];            // reference artists: used to tune the rules, not shown in the UI
   params: GeneratorParams;         // everything the generator sees (the v2 target)
   playback: {
     feel: "straight" | "shuffle";
@@ -305,118 +317,107 @@ interface Vibe {
   };
   scalePreference: { major: ScaleId[]; minor: ScaleId[] };   // ordering for Solo suggestions
 }
-
-interface GeneratorParams {
-  lengths: number[];                              // Jam lengths offered, e.g. [4, 8] or [4, 8, 12]
-  harmonicRhythm: { bars: 0.5 | 1 | 2 | 4; w: number }[];
-  minChords: number;
-  allowRepeats: boolean;                          // a repeat means "hold the chord" (see §9.3)
-  loop: "closed" | "free";                        // closed: last chord must lead back to the first
-  modes: { major: ModeRules; minor: ModeRules };  // every vibe works in both key modes
-}
-
-interface ModeRules {
-  vocabulary: Record<Degree, Record<Quality, Weight>>;   // "ii": { "m7": 2, "m9": 3 }; "" = major triad
-  starts: Record<Degree, Weight>;
-  transitions: Record<Degree, Record<Degree, Weight>>;
-  templates?: Record<Length, { markov: Weight; forms: { w: Weight; degrees: Degree[] }[] }>;
-}
 ```
-**Degrees** are Roman numerals measured against the major scale of the tonic, so a minor key reads i, ♭III, iv, ♭VI, ♭VII (the usual pop/jazz convention). Case is a label for the reader ("iv" and "IV" are separate entries with the same root). Secondary dominants are written `V/ii`. Qualities are canonical chord suffixes (`m7`, `maj9`, `7sus4`, `6/9`).
+`GeneratorParams` (lengths, harmonic rhythm, minimum chords, repeats, closed or free loop, and per-mode vocabulary, starts, transitions and optional templates) is unchanged from the previous spec and implemented in `src/theory/vibe.ts`. Degrees are Roman numerals against the major scale (minor reads i, ♭III, iv, ♭VI, ♭VII); secondary dominants are `V/ii`.
 
-### 9.3 Generation rules
-1. **Locks first.** Locked slots stay at their bar positions. Locks that no longer fit (after shortening) are dropped.
-2. **Templates** (optional, per length): if the vibe has forms for this length, one is chosen by weight. Only forms that agree with the locks are considered. `markov` is the weight of using the rules below instead (0 = always use a form, as for the 12-bar blues). Runs of the same bar are merged into longer chords on 4/2/1-bar boundaries.
-3. **Durations** fill the free gaps from `harmonicRhythm`. Chords of a bar or more start on a bar line, and ½-bar chords come in pairs within a bar.
-4. **Chords** fill left to right from `starts`, then `transitions`. The chord before a locked slot must be able to move into it. With `loop: "closed"`, the last chord must be able to move back into the first.
-5. **No repeats** unless `allowRepeats`. When repeats are allowed, neighbouring repeats of the same degree are merged into one held chord (e.g. `Em7(½) Em7(½) Em7` → `Em7` for 2 bars).
-6. **Quality** for each chord comes from the degree's vocabulary weights.
-7. **Never the same roll twice in a row** (retry with the next random draw).
-8. **Relaxation:** if the rules can't be met after 50 attempts, relax them in order (repeats → loop → neighbours of locks → transitions), 50 attempts each, and report which were relaxed. The last level ignores transitions, so the generator always returns a progression and never an empty one.
-9. The generator is seeded (`mulberry32`), so every result is reproducible in tests.
+The **visual look** for each vibe (palette, density, orientation, motion) currently lives in the prototype's code. It should move into the vibe data so a v2 can map free text onto it too **[A16]**.
 
-### 9.4 v1 vibes
-| Vibe | References | Core movement |
-|---|---|---|
-| Neo-soul | Tom Misch, D'Angelo, Mac Ayres, FKJ, Christian Kuria | maj7, m9 and dom9 colours, ii–V, chromatic approach chords, borrowed iv |
-| Blues | BB King, Christone "Kingfish" Ingram, Marcus King, Jimi Hendrix | dom7 throughout, quick-change and turnaround forms, minor blues |
-| Soul & Roots | Leon Bridges, Ray Charles, Chris Stapleton, Ray LaMontagne, Norah Jones | I–IV–V with 6ths and 7ths, gospel turnarounds, IV–iv–I |
-| Heartland | The War On Drugs, The Paper Kites, John Mayer | I–V–vi–IV family, sus and add9, long chords, driving 8ths |
-| Dreamy | M83, Pink Floyd | Slow modal movement, pedal tones, open voicings, 2–4 bars per chord |
-| Desert Groove | Khruangbin, Hermanos Gutiérrez, Carlos Santana | Minor modal vamps (Dorian, Phrygian), i–IV, Andalusian ♭VII–♭VI–V |
+### 10.3 Generation rules
+1. **Templates** (optional, per length) are chosen by weight; `markov` is the weight of using the rules instead.
+2. **Durations** fill from the harmonic rhythm. Chords of a bar or more start on a bar line; ½-bar chords come in pairs.
+3. **Chords** fill left to right from `starts`, then `transitions`. With a closed loop, the last chord must lead back to the first.
+4. **No repeats** unless allowed; allowed repeats merge into one held chord.
+5. **Quality** comes from the degree's vocabulary weights.
+6. **Never the same roll twice in a row.**
+7. **Relaxation:** if the rules can't be met in 50 attempts, relax them in order (repeats → loop → transitions), so the generator always returns a progression.
+8. Seeded with `mulberry32`, so every result is reproducible in tests.
 
-The exact weights are tuned by ear during the build, and each vibe gets test fixtures for its rules.
+### 10.4 v1 vibes
+| Vibe | Core movement |
+|---|---|
+| Neo-soul | maj7, m7 and dom7 colours, ii–V, chromatic approach chords, borrowed iv |
+| Blues | dom7 throughout, quick-change and turnaround forms, minor blues |
+| Soul & Roots | I–IV–V with 6ths and 7ths, gospel turnarounds, IV–iv–I |
+| Heartland | I–V–vi–IV family, sus chords, long chords, driving 8ths |
+| Dreamy | slow modal movement, pedal tones, open voicings, 2–4 bars per chord |
+| Desert Groove | minor modal vamps (Dorian, Phrygian), i–IV, ♭VII–♭VI–V |
+
+Reference artists stay in the vibe files to guide tuning by ear, but aren't shown in the UI.
 
 ---
 
-## 10. Edge cases
+## 11. Session restore
 
-### 10.1 Empty progression
-- **Jam** is never empty: it always has a generated progression, and the generator never returns empty (§9.3.6).
-- **Solo** starts empty (§6.2). Play is disabled with a visible reason. The fretboard is shown dimmed with the key-wide scale.
-- **Deleting the last Solo chord while playing** stops playback, returns to the empty state, and shows an Undo toast (8 s).
-- **Clear all** (Solo) asks for confirmation in the sheet ("Clear 6 chords?") and offers Undo afterwards.
+So a refresh, a locked phone or a discarded tab doesn't wipe work. **Not** saving: one session, one device, no export.
+- **Stored** in `localStorage` under one versioned key: both modes' vibe, key, tempo, holds, progression and history (Jam); global sound and fretboard settings.
+- **Not stored:** playback state. After a restore the app opens stopped, in the last mode, and audio still needs a first tap.
+- **Written** at most every 500 ms after a change, and on `pagehide`. Never in the audio path.
+- **Unreadable or older data** is discarded silently and the app starts fresh. **Storage unavailable** (private browsing): the app works without persistence, with no error.
+- **Start fresh** (location to be designed) clears it after a confirmation.
 
-### 10.2 Invalid chord input
-- Parsing runs on each keystroke. While a token is incomplete (`C#m7b`), no error shows. Errors appear on blur, on Add, or after 800 ms of no typing.
-- Errors are specific, placed under the field, and give an example: "Didn't recognise "Cmaj#". Try Cmaj7, Cmaj7♯11 or C/E."
-- The invalid text is **kept as typed** and never cleared. The field gets the error state (icon + text + border; DESIGN.md §9.3).
-- The **Add** button stays disabled until the input is valid. Its accessible description states why.
-- Type-progression mode: each bad token is flagged on its own, the error count is summarised ("2 chords need fixing"), and the valid chips still preview.
-- A chord the parser accepts but the theory module can't voice (e.g. a highly altered chord): accept it, play the core triad plus the 7th, and show "Simplified for playback" in the Chord sheet.
-- Over the length cap (16 bars in Solo; in Jam, the selected length): Add is disabled with the message "16 bars max" (or the Jam length).
+(Not in the prototype yet. Decided earlier as A2.)
 
-### 10.3 Audio blocked until first tap
-- Browsers block audio until a user gesture. On load, the transport is in the **`locked-audio`** state. It looks normal (no scary banner), but the Play button's accessible label is "Play (turns on sound)".
-- The **first tap** on Play, a fretboard note or a chord preview creates and resumes the AudioContext in the same gesture, then does what the user asked.
-- If the context is still suspended after that tap, a small inline banner above the transport reads: "Your browser blocked sound. Tap to try again." Tapping it retries. It never auto-retries in a loop.
-- **iOS silent switch:** Web Audio can be muted by the ring/silent switch, and this can't be detected reliably. On iOS only, the first time playback starts, show a 6-second hint: "No sound? Check your silent switch."
-- **Interruptions** (phone call, another app takes audio, the context becomes "interrupted"): the transport goes to **paused**, with the toast "Playback paused".
-- **Background or screen lock:** playback continues if the browser allows. The app asks for a **screen wake lock** while playing so the screen doesn't sleep during practice, and releases it on pause or stop. Where the wake lock isn't supported, nothing happens.
+---
 
-### 10.4 Other edge cases
+## 12. Edge cases
+
+### 12.1 Empty progression
+- **Jam** is never empty: the generator always returns a progression.
+- **Solo** starts empty (§8.1). Deleting the last chord while playing stops playback and offers Undo (8 s).
+
+### 12.2 Invalid chord input (Solo)
+- Parsing runs on each keystroke, but errors only appear on blur, on Add, or after 800 ms of no typing.
+- Errors are specific and give an example: "Didn't recognise "Cmaj#". Try Cmaj7, Cmaj7♯11 or C/E." The typed text is kept.
+- **Add** stays disabled until the input is valid, with the reason available to assistive tech.
+- A chord the parser accepts but the audio can't voice in full plays its core triad plus 7th, with "Simplified for playback" shown.
+
+### 12.3 Audio blocked until first tap
+- Browsers block audio until a user gesture. The app looks normal before it; Play's accessible name is "Play (turns on sound)".
+- The **first tap** on Play or a chord card starts audio in the same gesture, then does what was asked, and starts loading samples (§7.2).
+- If audio is still blocked after that tap, a small inline message near the panel reads "Your browser blocked sound. Tap to try again." No auto-retry loop.
+- **iOS silent switch** can mute web audio undetectably. On iOS only, the first time playback starts, show for 6 s: "No sound? Check your silent switch."
+- **Interruptions** (a call, another app): playback pauses, with a toast "Playback paused".
+- **Screen wake lock** while playing, released on pause or stop, where supported.
+
+### 12.4 Other edge cases
 | Case | Behaviour |
 |---|---|
-| All Jam slots locked | RE-ROLL disabled, labelled "All locked" (§5.4). |
-| Vibe change with locks | Locked slots stay. Unlocked ones re-generate for the new vibe. |
-| Key change with locks | Everything transposes. Nothing re-rolls. |
-| History at its oldest roll | ⟲ Back looks disabled. Tapping it shows "No earlier progression yet" in the transport's reason line for 3 s, so the disabled state always comes with a visible reason. |
-| Tempo out of range (typed or tapped) | Clamped to 40–240, with the clamp shown ("Max 240"). |
-| ½-bar chords at 240 BPM | Allowed (that's 2 beats at 240). Timing tests cover it. |
-| Same chord repeated in Solo | Allowed (songs do this). The strip shows each repeat. |
-| Enharmonic input (`A#` in the key of F) | Keep the user's spelling on the chip. The fretboard labels follow the key's spelling. |
-| Rotate during playback | Layout changes, playback is unaffected, and the fretboard scroll position is kept where possible. |
-| Device or browser stalls (busy page, slow phone) | Sounds are scheduled 150 ms ahead on the audio clock, so short stalls are inaudible. After a longer stall, the missed notes are skipped and playback continues on the beat. It never plays a burst of late notes, and the loop never drifts. |
-| Background tab | The scheduler's timer runs in a Web Worker, which browsers throttle far less than the page, so playback usually continues. If the browser suspends audio anyway, playback pauses (as for interruptions). |
-| Reduced motion | All motion is replaced as DESIGN.md §10.3 sets out. No functional difference. |
-| Page refresh, phone lock, tab discarded | The session is restored from `localStorage` (§10.5). |
-| Very narrow screens (≤ 340px) | Jam cards drop to 1 per row. Every control stays ≥ 48 px. |
-
-### 10.5 Session restore (decision A2)
-This keeps a refresh, a locked phone or a discarded background tab from wiping work. It is **not** saving: there's one session, on one device, with no named items, no export and no sharing.
-- **Stored** in `localStorage` under one versioned key (`session.v1`): both modes' key, tempo, vibe, progression (with locks and durations) and selection; Jam's current roll plus its history stack; global sound and fretboard settings; whether the user has set tempo and key by hand.
-- **Not stored:** playback state. After a restore the app opens **stopped**, in the mode last used, and audio still needs a first tap (§10.3).
-- **Written** at most once every 500 ms, after any change, and on `pagehide`. Writes never run in the audio scheduling path.
-- **Unreadable, corrupt or older-schema data:** discarded silently, and the app starts fresh (§11 A1 defaults). It never shows a broken half-restored state. Schema migrations can come later if needed.
-- **Storage unavailable or full** (private browsing, quota): the app works normally without persistence, with no error shown.
-- **Start fresh:** ⚙ → "Start fresh" clears the stored session and resets both modes to defaults, after a confirmation in the sheet ("Clear both modes and settings?"). There's no Undo after confirming.
-- Lives in its own small module (`src/state/persist`), separate from the theory, audio and UI code.
+| Re-roll while a picker is open | The picker stays open and updates (e.g. the key picker shows the new key). |
+| Held key and held tempo | Re-roll changes chords only. |
+| History at its oldest roll | Back disabled, with "No earlier progression yet" on tap. |
+| Tempo out of range (typed, tapped) | Clamped to 40–240. |
+| ½-bar chords at 240 BPM | Allowed; timing tests cover them. |
+| One-chord progression | The carousel shows one centred card; the loop is that chord. |
+| Samples slow or failing | Synth plays meanwhile; status pill reports (§7.2). |
+| Device or browser stalls | Sounds are scheduled 150 ms ahead on the audio clock, so short stalls are inaudible. After a longer stall, missed notes are skipped and playback continues on the beat. Never a burst of late notes. |
+| Background tab | The scheduler timer runs in a Web Worker, so playback usually continues. If the browser suspends audio, playback pauses. |
+| Slow device, heavy visuals | The visuals may drop frames; audio is unaffected. If frame times stay high, the visuals reduce their detail **[A17]**. |
+| Reduced motion | DESIGN.md §9.3. No functional difference. |
+| Rotate during playback | Layout changes; playback and the current chord are unaffected. |
+| Very narrow screens (≤ 340 px) | Every control stays ≥ 48 px; the carousel shows fewer chords ahead. |
 
 ---
 
-## 11. Assumptions
+## 13. Assumptions and open questions
 
-A2, A3, A9 and A10 are decided. The rest are working defaults: they stand unless you change them.
+Decided items are marked ✅. Open ones are working defaults that stand unless you change them.
 
-| # | Assumption | Why it matters |
+| # | Item | Status |
 |---|---|---|
-| **A1** | First load: Jam, vibe **Neo-soul**, key **D major**, a progression already generated. | Sets the first impression. Any vibe or key works; I picked one with lots of colour. |
-| **A2** | ✅ **Decided:** restore the current session from `localStorage` (§10.5). | — |
-| **A3** | ✅ **Decided:** Jam offers 4 / 8 bars; Blues also offers 12 (§5.6). | — |
-| **A4** | Solo default tempo **90 BPM**; Jam uses each vibe's default. | Minor. |
-| **A5** | Solo vibe is **optional**, defaulting to "Plain" (straight, no drums). | You said users know the song's vibe. This lets them set it without forcing a choice. |
-| **A6** | Avoid notes use the classical definition (a half step above a chord tone). Scale set as listed in §6.6. | Theory choices that the tests will lock in. |
-| **A7** | The left-handed toggle also mirrors the transport (Play under the left thumb). | Left-handed players fret with the right hand, so the free thumb for tapping may be on the left. |
-| **A8** | Drums default **off**, so the first sound is musical, not a drum machine. | Taste call. |
-| **A9** | ✅ **Decided:** plain Web Audio, no Tone.js. Any future dependency is still raised first (CLAUDE.md). | — |
-| **A10** | ✅ **Decided:** fonts are self-hosted WOFF2 files (DESIGN.md §4). | — |
+| **A1** | First load: Jam, Neo-soul, D major, progression ready. | Working default (as prototyped). |
+| **A2** | Restore the session from `localStorage` (§11). | ✅ Decided. Not yet built in the new direction. |
+| **A3** | **Length.** The prototype rolls 4 or 8 bars from the vibe; there's no length control, and Blues' 12-bar form is gone. Bring back a length control (where?) or a 12-bar option for Blues? | **Open.** |
+| **A4** | Solo default tempo 90 BPM. | Working default. |
+| **A5** | Solo vibe optional, default Plain (no drums). | Working default. |
+| **A6** | Avoid notes: a half step above a chord tone. Scale set as in §8.4. | Working default. |
+| **A7** | Left-handed setting mirrors the transport (Play under the left thumb). | Working default; needs a home for the setting. |
+| **A8** | Drums off by default; switch in the vibe picker. | ✅ Decided. |
+| **A9** | Plain Web Audio, no Tone.js. | ✅ Decided. |
+| **A10** | Self-hosted fonts. | ✅ Decided. |
+| **A11** | **Count-in** is off in the prototype (it was on in the previous spec). Keep it off, or on? Either way it needs a home. | **Open.** |
+| **A12** | **Mute chords / bass** (to play rhythm yourself) has no control in the new panel. A "Sound" picker could hold click, drums, count-in and part mutes together. | **Open.** |
+| **A13** | **Solo mode layout** in the generative style, including where "Solo over this" lives. | **Open: next design task.** |
+| **A14** | **Lines or dots** (or both, as a setting or per vibe). | **Open.** |
+| **A15** | Mic-reactive visuals in Solo. | Stretch goal, after v1. |
+| **A16** | Move each vibe's visual look into the vibe data files. | Working default for the rebuild. |
+| **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |

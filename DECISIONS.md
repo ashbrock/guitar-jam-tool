@@ -65,4 +65,8 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **Drum mics are pre-mixed per hit, offline.** That's one file per hit instead of three to fetch, decode and keep aligned at play time.
 - **Mapping data can give each kit piece its own velocity layers and alternate takes.** The kit's pieces don't share layer splits. Alternate takes stop the "machine gun" sound on repeated hats.
 - **Drums stay off by default (SPEC A8); the switch lives in the vibe picker.** Real drums don't change the reason for A8. A fifth bar button wrapped Re-roll at 360 px, and drums are part of a vibe's groove.
+- **The generative direction (04, "Sympathetic strings") is the one we're building.** Its visuals come from the harmony, and the UI stays monochrome glass. It's memorable for a portfolio and still useful at arm's length. SPEC.md and DESIGN.md were rewritten around it, and Late Set stays in git history.
+- **The docs only list values the prototype actually uses. Anything else is marked NEW for approval.** The hover, pressed and disabled styles, and a fix for the off-switch contrast, weren't in the prototype. CLAUDE.md forbids invented values, so they're flagged rather than slipped in.
+- **The UI is monochrome; colour belongs to the visuals.** "Selected" is shown by inverting (off-white fill, dark ink), which reads at any distance without depending on colour. Play stays green, the universal "go".
+- **Contrast is checked against the worst visual beneath the glass, not just the background.** In the worst case, without blur, muted text on the panel measures 3.07:1. So muted small text stays off the panel and cards, and the build samples real screenshots to confirm.
 

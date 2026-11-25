@@ -57,7 +57,9 @@ Nothing here is wired into the app on `main` unless noted.
 
 ---
 
-## 04 · Generative visuals (prototype; exploring)
+## 04 · Generative visuals (chosen direction)
+
+**Status:** chosen. SPEC.md and DESIGN.md were rewritten around it. Next: port it from this prototype into `src/ui/` on `main`.
 
 **What it is:** full-screen, music-driven visuals with a minimal UI. The progression sits in the centre as chord charts: the current chord on a highlighted card with a progress bar that moves smoothly (from the audio clock), past chords dimmed (50%), upcoming chords at full opacity. The current chord is always centred and the rest of the loop slides sideways as it plays (phone and desktop; desktop shows more either side). When paused, the chord that was playing stays highlighted with its progress frozen. A floating glass panel at the bottom holds only playback (click toggle, Back, Re-roll, Play) and settings (vibe, key, tempo).
 
