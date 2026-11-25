@@ -128,6 +128,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 | **Sound ›** | Opens a second view in place, with a back arrow | — | Chords, Bass and Drums switches, plus the instrument credits (§7.4). |
 | **Count-in** | Switch | **Off** | One bar of clicks before playback, heard even with the metronome off. While it plays, the first chord card's progress bar shows four beats filling one per beat, so it reads without sound. |
 | **Metronome** | Switch | **Off** | A click on every beat, accent on beat 1. |
+| **Song form** | Switch | **Off** | Plays verse twice, then chorus twice, on repeat, instead of looping one section (§5.9). |
 
 | Sound part | Default | Notes |
 |---|---|---|
@@ -193,6 +194,18 @@ Focus moves into each view as it opens (the back arrow in Sound; the Sound row o
 Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3.2). Where this lives in the UI is still to be designed **[A13]**.
 
 ---
+
+### 5.9 Verse and chorus
+- **Every roll is a song:** a **verse** and a contrasting **chorus**, in the same key and tempo, at the same length (`src/theory/song.ts`).
+  - **Contrast:** the chorus starts on a different chord from the verse, leaning to the classic lift (IV, vi, ii, V or ♭VII in major; ♭VI, iv, ♭III or ♭VII in minor), using only chords the vibe has.
+  - **Never identical:** the two are never the same progression. A fixed form like the 12-bar blues may share its first chord, but the chorus is still a different form.
+- **Section switch:** a "Verse | Chorus" control above the chord cards. It shows the section on screen and sets the one that loops. While playing, the switch lands on the next bar line (the playing chord holds until then). Keys: `V` and `C`. **[A20]**
+- **Song form** (Settings, off by default): plays verse, verse, chorus, chorus on repeat, starting from the chosen section. The cards and the section switch follow the form as it plays.
+- **Shared by both sections:**
+  - Re-roll, the vibe, the length and a key mode change make a new verse and chorus together.
+  - A tonic change transposes both.
+  - Back (`U`) restores both, and the section you were on.
+- The screen-reader announcement lists both: "New progression in D major at 84 BPM. Verse: … Chorus: …".
 
 ## 6. The visuals (behaviour)
 
@@ -290,6 +303,7 @@ The notes you play (microphone pitch detection, nothing recorded or stored) coul
 | `R` | Re-roll (Jam) |
 | `M` | Mute / unmute |
 | `U` | Back to the previous progression (Jam) |
+| `V` / `C` | Verse / Chorus (Jam) |
 | `←` `→` | Move focus between chord cards |
 | `Enter` | Play the focused chord (Jam); open it for editing (Solo) |
 | `+` `−` | Tempo ±1 (`Shift` for ±5) |
@@ -434,3 +448,4 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |
 | **A18** | Visuals use WebGL (Three.js, approved) where available, loaded on first Play, with the 2D styles as the fallback. All six vibes use the particle-waves scene. | ✅ Decided (dependency approved). |
 | **A19** | Undo's button is replaced by Mute; Back stays on the keyboard (`U`). Bring it back somewhere on touch (e.g. a long-press on Re-roll) if it's missed. | Working default. |
+| **A20** | Verse and chorus only (a bridge could come later). Re-roll changes both; switching is manual, with an optional song form (V V C C). | ✅ Decided. |

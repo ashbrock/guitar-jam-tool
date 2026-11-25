@@ -7,6 +7,7 @@ import { muted } from '../state/sound';
 import { announcement, mode, openPicker, showStatus } from '../state/ui';
 import { useFrameLoop } from '../frame';
 import { Carousel } from './Carousel';
+import { SectionSwitch } from './SectionSwitch';
 import { Panel } from './Panel';
 import { StatusPill } from './StatusPill';
 import { TopBar } from './TopBar';
@@ -32,6 +33,10 @@ export function App() {
         void togglePlay();
       } else if (e.key === 'r' || e.key === 'R') {
         jam.reroll();
+      } else if (e.key === 'v' || e.key === 'V') {
+        jam.chooseSection('verse');
+      } else if (e.key === 'c' || e.key === 'C') {
+        jam.chooseSection('chorus');
       } else if (e.key === 'm' || e.key === 'M') {
         muted.value = !muted.value;
       } else if (e.key === 'u' || e.key === 'U') {
@@ -74,7 +79,10 @@ export function App() {
       <StatusPill />
       <main class="stage">
         {mode.value === 'jam' ? (
-          <Carousel />
+          <>
+            <SectionSwitch />
+            <Carousel />
+          </>
         ) : (
           <div class="solo-soon">
             <h1>Solo</h1>

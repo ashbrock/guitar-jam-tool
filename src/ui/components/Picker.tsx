@@ -165,6 +165,7 @@ function SettingsPicker() {
           </button>
           <SwitchRow id="count-in" on={countInOn.value} label="Count-in" hint="One bar of clicks before playing" onToggle={() => (countInOn.value = !countInOn.value)} />
           <SwitchRow id="metronome" on={clickOn.value} label="Metronome" hint="A click on every beat" onToggle={() => (clickOn.value = !clickOn.value)} />
+          <SwitchRow id="song-form" on={jam.formOn.value} label="Song form" hint="Verse twice, then chorus twice" onToggle={() => jam.setForm(!jam.formOn.value)} />
         </>
       ) : (
         <>

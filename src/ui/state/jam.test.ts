@@ -37,7 +37,7 @@ describe('first load', () => {
     expect(bars()).toBe(4);
     expect(jam.tempo.value).toBe(jam.vibe.value.playback.tempo.default);
     expect(calls.progression.at(-1)!.fromTop).toBe(true);
-    expect(announced.at(-1)).toMatch(/^New progression in D major at \d+ BPM: /);
+    expect(announced.at(-1)).toMatch(/^New progression in D major at \d+ BPM\. Verse: .+\. Chorus: .+\.$/);
   });
 
   it('only uses the simple chord set', () => {
@@ -143,5 +143,57 @@ describe('vibe, length and key', () => {
     expect(jam.tempo.value).toBe(240);
     jam.setTempo(10);
     expect(jam.tempo.value).toBe(40);
+  });
+});
+
+describe('verse and chorus', () => {
+  const degrees = (xs: { degree: string; bars: number }[]) => xs.map((x) => `${x.degree}:${x.bars}`).join(' ');
+
+  it('every roll is a verse and a different chorus of the same length', () => {
+    for (let i = 0; i < 10; i++) {
+      jam.reroll();
+      const { verse, chorus } = jam.song.value;
+      expect(degrees(chorus)).not.toBe(degrees(verse));
+      expect(chorus.reduce((a, x) => a + x.bars, 0)).toBe(verse.reduce((a, x) => a + x.bars, 0));
+    }
+  });
+
+  it('loops the chosen section; switching jumps to its top (at the next bar line)', () => {
+    expect(jam.section.value).toBe('verse');
+    expect(jam.playList.value.every((it) => it.section === 'verse')).toBe(true);
+    jam.chooseSection('chorus');
+    expect(jam.slots.value).toBe(jam.song.value.chorus);
+    expect(jam.playList.value.every((it) => it.section === 'chorus')).toBe(true);
+    expect(calls.progression.at(-1)!.fromTop).toBe(true);
+    expect(calls.progression.at(-1)!.slots).toHaveLength(jam.song.value.chorus.length);
+  });
+
+  it('song form plays verse ×2 then chorus ×2, starting from the chosen section', () => {
+    jam.setForm(true);
+    const n = jam.song.value.verse.length;
+    const m = jam.song.value.chorus.length;
+    const list = jam.playList.value;
+    expect(list).toHaveLength(2 * n + 2 * m);
+    expect(list.slice(0, 2 * n).every((it) => it.section === 'verse')).toBe(true);
+    expect(list.slice(2 * n).every((it) => it.section === 'chorus')).toBe(true);
+    expect(jam.itemAt(n)).toEqual({ section: 'verse', index: 0, bars: jam.song.value.verse[0]!.bars });
+    expect(calls.progression.at(-1)!.slots).toHaveLength(list.length);
+    jam.chooseSection('chorus');
+    expect(jam.playList.value[0]!.section).toBe('chorus');
+  });
+
+  it('re-roll, transpose and back keep both sections together', () => {
+    jam.chooseSection('chorus');
+    jam.reroll();
+    const before = jam.song.value;
+    jam.reroll();
+    expect(jam.song.value).not.toBe(before);
+    jam.back();
+    expect(jam.song.value).toBe(before);
+    expect(jam.section.value).toBe('chorus');
+    const roots = jam.songChords.value.chorus.map((c) => pc(c.chord.root));
+    const t = KEY_TONICS[jam.key.value.mode].find((x) => pc(x) === (pc(jam.key.value.tonic) + 1) % 12)!;
+    jam.chooseTonic(t);
+    expect(jam.songChords.value.chorus.map((c) => pc(c.chord.root))).toEqual(roots.map((r) => (r + 1) % 12));
   });
 });

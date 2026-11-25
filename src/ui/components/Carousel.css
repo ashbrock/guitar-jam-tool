@@ -31,3 +31,11 @@
 @media (prefers-reduced-motion: reduce) {
   .card-slot { transition: opacity var(--dur-reduced) ease; }
 }
+
+/* Verse | Chorus (DESIGN.md §6, "Section switch"): a glass segmented control above the cards. */
+.sections-wrap { display: flex; align-items: center; gap: var(--s-8); margin-bottom: var(--s-8); }
+.sections { display: flex; padding: 3px; border-radius: var(--r-pill); background: var(--glass); backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill); }
+.sections button { height: 42px; padding: 0 var(--s-16); border-radius: var(--r-pill); font-size: var(--t-small); font-weight: 500; color: var(--muted); }
+.sections button[aria-checked='true'] { background: var(--text); color: var(--ink); }
+@media (hover: hover) { .sections button:not([aria-checked='true']):hover { background: var(--hover); color: var(--text); } }
+.form-tag { font-size: var(--t-caption); color: var(--muted); }

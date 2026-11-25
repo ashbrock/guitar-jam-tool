@@ -1,6 +1,7 @@
-// Jam mode state and rules (SPEC.md §4–5). Progressions are stored as key-relative degree slots, so a
-// tonic change transposes and never re-rolls. The engine and randomness are injected, so these rules
-// are tested without audio (jam.test.ts).
+// Jam mode state and rules (SPEC.md §4–5). A roll is a song: a verse and a contrasting chorus (§5.9),
+// stored as key-relative degree slots, so a tonic change transposes and never re-rolls. What the
+// engine plays is a play list: the chosen section looping, or the song form (verse ×2, chorus ×2).
+// The engine and randomness are injected, so these rules are tested without audio (jam.test.ts).
 import { batch, computed, signal } from '@preact/signals';
 import { VIBES, vibeById } from '../../data/vibes/index';
 import { clampTempo } from '../../audio/transport';
@@ -8,7 +9,8 @@ import type { PlaybackSlot } from '../../audio/transport';
 import type { FeelSettings } from '../../audio/engine';
 import { spokenChord } from '../../theory/chords';
 import { resolveDegreeChord } from '../../theory/degrees';
-import { generate, type DegreeSlot } from '../../theory/generator';
+import type { DegreeSlot } from '../../theory/generator';
+import { generateSong, type Section, type Song } from '../../theory/song';
 import { KEY_TONICS, formatKey, type Key, type Mode } from '../../theory/keys';
 import { pc, type Note } from '../../theory/notes';
 import { newSeed } from '../../theory/random';
@@ -32,8 +34,18 @@ interface Roll {
   vibeId: string;
   key: Key;
   tempo: number;
-  slots: DegreeSlot[];
+  song: Song;
+  section: Section;
 }
+
+/** One chord in what the engine plays: which section it's from, and its place in that section. */
+export interface PlayItem {
+  section: Section;
+  index: number;
+  bars: DegreeSlot['bars'];
+}
+
+const EMPTY_SONG: Song = { verse: [], chorus: [] };
 
 let sink: JamSink = { setProgression() {}, setTempo() {}, setFeel() {} };
 let random: () => number = Math.random;
@@ -54,21 +66,49 @@ export const tempo = signal(vibeById(DEFAULT_VIBE)!.playback.tempo.default);
 export const keyHeld = signal(false);
 export const tempoHeld = signal(false);
 export const lengthBars = signal(DEFAULT_LENGTH);
-export const slots = signal<DegreeSlot[]>([]);
+export const song = signal<Song>(EMPTY_SONG);
+/** The section that loops (or, with the song form on, where the form starts). */
+export const section = signal<Section>('verse');
+/** Song form: verse twice, then chorus twice, on repeat (instead of looping one section). */
+export const formOn = signal(false);
 export const history = signal<Roll[]>([]);
 
 export const vibe = computed<Vibe>(() => vibeById(vibeId.value) ?? VIBES[0]!);
-/** The progression as Jam shows and plays it: the simple chord set (SPEC.md §5.6). */
-export const chords = computed<SimpleChord[]>(() =>
-  slots.value.map((s) => simplify(resolveDegreeChord(s.degree, s.quality, key.value, s.bassDegree))),
-);
+/** The chosen section's slots. */
+export const slots = computed<DegreeSlot[]>(() => song.value[section.value]);
+
+const toChords = (ss: readonly DegreeSlot[], k: Key) => ss.map((s) => simplify(resolveDegreeChord(s.degree, s.quality, k, s.bassDegree)));
+/** Both sections as Jam shows and plays them: the simple chord set (SPEC.md §5.6). */
+export const songChords = computed<Record<Section, SimpleChord[]>>(() => ({
+  verse: toChords(song.value.verse, key.value),
+  chorus: toChords(song.value.chorus, key.value),
+}));
+/** The chosen section's chords. */
+export const chords = computed<SimpleChord[]>(() => songChords.value[section.value]);
+
+/** What the engine plays, in order: the chosen section, or the form starting from it. */
+export const playList = computed<PlayItem[]>(() => {
+  const items = (sec: Section) => song.value[sec].map((s, index) => ({ section: sec, index, bars: s.bars }));
+  if (!formOn.value) return items(section.value);
+  const other: Section = section.value === 'verse' ? 'chorus' : 'verse';
+  return [...items(section.value), ...items(section.value), ...items(other), ...items(other)];
+});
+
+/** The play-list item at an engine slot index (null before playing). */
+export function itemAt(slotIndex: number | null): PlayItem | undefined {
+  return slotIndex === null ? undefined : playList.value[slotIndex];
+}
+
 export const canGoBack = computed(() => history.value.length > 0);
 
 const pick = <T>(xs: readonly T[]): T => xs[Math.floor(random() * xs.length)]!;
 
 function sendProgression(fromTop: boolean): void {
-  const cs = chords.value;
-  sink.setProgression(slots.value.map((s, i) => ({ chord: cs[i]!.chord, bars: s.bars })), { fromTop });
+  const cs = songChords.value;
+  sink.setProgression(
+    playList.value.map((it) => ({ chord: cs[it.section][it.index]!.chord, bars: it.bars })),
+    { fromTop },
+  );
 }
 
 function sendFeel(): void {
@@ -77,12 +117,12 @@ function sendFeel(): void {
 }
 
 function describe(): string {
-  const names = chords.value.map((c) => spokenChord(c.chord)).join(', ');
-  return `New progression in ${formatKey(key.value)} at ${tempo.value} BPM: ${names}`;
+  const names = (sec: Section) => songChords.value[sec].map((c) => spokenChord(c.chord)).join(', ');
+  return `New progression in ${formatKey(key.value)} at ${tempo.value} BPM. Verse: ${names('verse')}. Chorus: ${names('chorus')}.`;
 }
 
 function remember(): void {
-  const h = [...history.value, { vibeId: vibeId.value, key: key.value, tempo: tempo.value, slots: slots.value }];
+  const h = [...history.value, { vibeId: vibeId.value, key: key.value, tempo: tempo.value, song: song.value, section: section.value }];
   history.value = h.slice(-HISTORY_LIMIT);
 }
 
@@ -92,10 +132,10 @@ function fitLength(v: Vibe, want: number): number {
   return ls.includes(want) ? want : ([...ls].reverse().find((l) => l < want) ?? ls[0]!);
 }
 
-/** Generates a new progression for the current vibe, key mode and length, and starts it from bar 1. */
+/** Generates a new song (verse and chorus) for the current vibe, key mode and length, from bar 1. */
 function generateNew(): void {
   lengthBars.value = fitLength(vibe.value, lengthBars.value);
-  slots.value = generate({ params: vibe.value.params, mode: key.value.mode, lengthBars: lengthBars.value, seed: seed() }).slots;
+  song.value = generateSong({ params: vibe.value.params, mode: key.value.mode, lengthBars: lengthBars.value, seed: seed() });
   sendFeel();
   sink.setTempo(tempo.value);
   sendProgression(true);
@@ -133,8 +173,9 @@ export function back(): boolean {
     vibeId.value = prev.vibeId;
     key.value = prev.key;
     tempo.value = prev.tempo;
-    slots.value = prev.slots;
-    lengthBars.value = prev.slots.reduce((a, s) => a + s.bars, 0);
+    song.value = prev.song;
+    section.value = prev.section;
+    lengthBars.value = prev.song.verse.reduce((a, s) => a + s.bars, 0);
     sendFeel();
     sink.setTempo(tempo.value);
     sendProgression(true);
@@ -182,6 +223,23 @@ export function chooseMode(m: Mode): void {
   });
 }
 
+/**
+ * Verse or chorus (SPEC.md §5.9): loop that section (or, with the form on, start the form there).
+ * While playing, the switch lands on the next bar line.
+ */
+export function chooseSection(s: Section): void {
+  if (s === section.value) return;
+  section.value = s;
+  sendProgression(true);
+}
+
+/** Song form on or off (SPEC.md §5.9). Takes effect at the next bar line, from the chosen section. */
+export function setForm(on: boolean): void {
+  if (on === formOn.value) return;
+  formOn.value = on;
+  sendProgression(true);
+}
+
 /** Tempo picker (SPEC.md §4.4). Clamped to 40–240. */
 export function setTempo(bpm: number): void {
   const t = clampTempo(bpm);
@@ -199,7 +257,9 @@ export function resetJam(): void {
     keyHeld.value = false;
     tempoHeld.value = false;
     lengthBars.value = DEFAULT_LENGTH;
-    slots.value = [];
+    song.value = EMPTY_SONG;
+    section.value = 'verse';
+    formOn.value = false;
     history.value = [];
   });
 }

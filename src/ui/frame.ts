@@ -4,11 +4,12 @@
 import { useEffect } from 'preact/hooks';
 import type { RefObject } from 'preact';
 import { Visuals } from '../visuals/index';
-import { chords, slots, vibe } from './state/jam';
+import { itemAt, playList, songChords, vibe } from './state/jam';
+import type { Section } from '../theory/song';
 import { engine, syncPlayhead } from './state/playback';
 
 /** The current card's progress fill, registered by the carousel. */
-export const progressBar: { el: HTMLElement | null; slot: number } = { el: null, slot: 0 };
+export const progressBar: { el: HTMLElement | null; slot: number; section: Section } = { el: null, slot: 0, section: 'verse' };
 
 export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanvas: RefObject<HTMLCanvasElement | null>): void {
   useEffect(() => {
@@ -34,11 +35,12 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
     const frame = (now: number) => {
       const p = engine.playhead();
       syncPlayhead(p);
-      const cs = chords.value;
-      const idx = p.slotIndex ?? 0;
+      // The engine plays a play list (a section, or the song form); map its position to a chord.
+      const item = itemAt(p.slotIndex ?? 0) ?? playList.value[0];
+      const chord = item ? songChords.value[item.section][item.index] : undefined;
       visuals.render(now, {
         look: vibe.value.look,
-        chord: cs[idx],
+        chord,
         slotIndex: p.slotIndex,
         phase: p.phase,
         beatFraction: p.beatFraction,
@@ -52,11 +54,12 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
       const bar = progressBar.el;
       if (bar && p.phase !== 'paused') {
         let fraction = 0;
-        if (p.phase === 'playing' && p.slotIndex === progressBar.slot) {
-          const ss = slots.value;
+        const now = itemAt(p.slotIndex);
+        if (p.phase === 'playing' && p.slotIndex !== null && now && now.index === progressBar.slot && now.section === progressBar.section) {
+          const list = playList.value;
           let start = 0;
-          for (let i = 0; i < p.slotIndex; i++) start += ss[i]!.bars * 4;
-          const beats = ss[p.slotIndex]!.bars * 4;
+          for (let i = 0; i < p.slotIndex; i++) start += list[i]!.bars * 4;
+          const beats = now.bars * 4;
           fraction = Math.max(0, Math.min(1, (p.bar * 4 + p.beat + p.beatFraction - start) / beats));
         }
         bar.style.width = `${fraction * 100}%`;

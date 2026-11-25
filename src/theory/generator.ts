@@ -20,6 +20,11 @@ export interface GenerateInput {
   lengthBars: number;
   /** The current progression. Locked slots are kept at their positions; the rest is regenerated. */
   current?: readonly DegreeSlot[];
+  /**
+   * Overrides the vibe's first-chord weights (e.g. a chorus that should start somewhere new). Degrees
+   * not in the vibe's vocabulary are ignored; if none are left, the vibe's own starts are used.
+   */
+  starts?: Record<string, number>;
   seed: number;
 }
 
@@ -234,13 +239,22 @@ function sameProgression(a: readonly DegreeSlot[], b: readonly DegreeSlot[] | un
 }
 
 /** Generates a progression. Never returns an empty progression (SPEC.md §9.3.6). */
+/** The mode's rules with its first-chord weights replaced, keeping only degrees it knows. */
+function withStarts(rules: ModeRules, starts: Record<string, number> | undefined): ModeRules {
+  if (!starts) return rules;
+  const known = Object.fromEntries(Object.entries(starts).filter(([d, w]) => d in rules.vocabulary && w > 0));
+  return Object.keys(known).length ? { ...rules, starts: known } : rules;
+}
+
 export function generate(input: GenerateInput): GenerateResult {
-  const rules = input.params.modes[input.mode];
+  const rules = withStarts(input.params.modes[input.mode], input.starts);
   const rng = createRng(input.seed);
   const fixed = fixedSlots(input.current, input.lengthBars);
   const templates = rules.templates?.[String(input.lengthBars)];
-  // Only forms that agree with the locks; if none do, fall back to the rule-based path.
-  const usableForms = (templates?.forms ?? []).filter((f) => fromTemplate(f.degrees, fixed, rules, createRng(0)) !== null);
+  // Only forms that agree with the locks (and with overridden starts); if none do, use the rules.
+  const usableForms = (templates?.forms ?? []).filter(
+    (f) => (!input.starts || f.degrees[0]! in rules.starts) && fromTemplate(f.degrees, fixed, rules, createRng(0)) !== null,
+  );
 
   for (let level = 0; level <= LEVELS.length; level++) {
     for (let attempt = 0; attempt < ATTEMPTS_PER_LEVEL; attempt++) {

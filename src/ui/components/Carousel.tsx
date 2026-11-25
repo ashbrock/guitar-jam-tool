@@ -4,7 +4,7 @@ import { signal } from '@preact/signals';
 import { useLayoutEffect, useRef, useState, useEffect } from 'preact/hooks';
 import { spokenChord } from '../../theory/chords';
 import { basicQuality, basicShape } from '../../theory/shapes';
-import { chords } from '../state/jam';
+import { itemAt, section, songChords } from '../state/jam';
 import { engine, playhead } from '../state/playback';
 import { progressBar } from '../frame';
 import { ChordChart } from './ChordChart';
@@ -26,11 +26,14 @@ const useWide = () => {
 
 export function Carousel() {
   const wide = useWide();
-  const cs = chords.value;
-  const n = cs.length;
   const p = playhead.value;
   const live = p.phase !== 'stopped' && p.slotIndex !== null;
-  const cur = Math.min(n - 1, Math.max(0, live ? p.slotIndex! : selected.value));
+  const item = live ? itemAt(p.slotIndex) : undefined;
+  // The section on screen: the one playing (it follows the song form), else the chosen one.
+  const shown = item?.section ?? section.value;
+  const cs = songChords.value[shown];
+  const n = cs.length;
+  const cur = Math.min(n - 1, Math.max(0, live && item ? item.index : selected.value));
   const chartW = wide ? 210 : 156;
 
   const list = useRef<HTMLOListElement>(null);
@@ -67,7 +70,8 @@ export function Carousel() {
     lastCur.current = cur;
     progressBar.el = el.querySelector<HTMLElement>('li.now .bar i');
     progressBar.slot = cur;
-  }, [cur, n, wide, cs, p.phase === 'count-in']);
+    progressBar.section = shown;
+  }, [cur, n, wide, cs, shown, p.phase === 'count-in']);
 
   // A new progression: start the layout fresh (no slide from the old one).
   useLayoutEffect(() => {
