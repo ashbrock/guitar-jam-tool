@@ -156,7 +156,7 @@ Focus moves into each view as it opens (the back arrow in Sound; the Sound row o
   - phone: up to 2 behind and 3 ahead;
   - desktop: up to 3 behind and 4 ahead.
 - **Past chords** are dimmed; **upcoming chords** are at full strength; the **current chord** is larger, on a brighter card with an edge (shape and size, not just colour).
-- **Bar timeline** (under the cards): one dash per bar of the section that's playing, with small chord names above the bar where each chord starts, so you can see how long each chord lasts and when the next change is coming. The current bar fills smoothly from the audio clock; past bars stay full. The playing chord's name is bright, the next one nearly as bright, past ones dimmed. The section's name sits on the left ("VERSE") and the next one on the right ("CHORUS →"). Half-bar chords sit halfway along their bar.
+- **Bar timeline** (under the cards): one dash per bar of the section that's playing, with small chord names above the bar where each chord starts, so you can see how long each chord lasts and when the next change is coming. The current bar fills smoothly from the audio clock; past bars stay full. The playing chord's name is bright, the next one nearly as bright, past ones dimmed. Half-bar chords sit halfway along their bar.
 - **When paused,** the chord that was playing stays centred and highlighted, and the timeline freezes where it stopped.
 - **When stopped,** the first chord (or the last tapped) is centred, with an empty bar.
 - **Tapping a card plays the chord** once (a preview), whether or not the loop is running. When stopped, it also centres that card. Tapping never changes the loop.
@@ -198,7 +198,7 @@ Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3
 - **Every roll is a song:** a **verse** and a contrasting **chorus**, in the same key and tempo, each the chosen length (`src/theory/song.ts`).
   - **Contrast:** the chorus starts on a different chord from the verse, leaning to the classic lift (IV, vi, ii, V or ♭VII in major; ♭VI, iv, ♭III or ♭VII in minor), using only chords the vibe has.
   - **Never identical:** the two are never the same progression. A fixed form like the 12-bar blues may share its first chord, but the chorus is still a different form.
-- **It just plays:** verse, then chorus, on a loop. There's nothing to switch while playing. The cards and the bar timeline show which section you're in and what's next. **[A20]**
+- **It just plays:** verse, then chorus, on a loop. There's nothing to switch while playing. The section names aren't shown for now (a better way to show them is to come); the bar timeline follows whichever section is playing. **[A20]**
 - **Shared by both sections:**
   - Re-roll, the vibe, the length and a key mode change make a new verse and chorus together.
   - A tonic change transposes both.

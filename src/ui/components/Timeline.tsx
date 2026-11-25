@@ -1,6 +1,7 @@
 // The bar timeline under the chord cards (SPEC.md §5.2, DESIGN.md §6 "Bar timeline"): one dash per bar of
 // the section that's playing, the chord names above the bar where each starts, the current bar filling
 // in time with the audio. You can see how long each chord lasts and when the next change is coming.
+// (Section names aren't shown for now; the timeline still follows the section that's playing.)
 import { useEffect, useRef } from 'preact/hooks';
 import { formatChord } from '../../theory/chords';
 import type { Section } from '../../theory/song';
@@ -8,8 +9,6 @@ import { FORM, itemAt, song, songChords } from '../state/jam';
 import { playhead } from '../state/playback';
 import { timeline } from '../frame';
 import { slotStarts } from '../bars';
-
-const LABEL: Record<Section, string> = { verse: 'Verse', chorus: 'Chorus' };
 
 export function Timeline() {
   const p = playhead.value;
@@ -19,7 +18,6 @@ export function Timeline() {
   const slots = song.value[sec];
   const chords = songChords.value[sec];
   const bars = slots.reduce((a, s) => a + s.bars, 0);
-  const next = FORM[(FORM.indexOf(sec) + 1) % FORM.length]!;
   const cur = item?.index ?? (live ? 0 : -1);
   const starts = slotStarts(slots);
 
@@ -35,21 +33,16 @@ export function Timeline() {
   const countIn = p.phase === 'count-in';
   return (
     <div class="timeline" ref={root} aria-hidden="true">
-      <div class="tl-head">
-        {countIn ? (
-          <span class="tl-section">
-            Count-in
-            <span class="tl-beats">
-              {[1, 2, 3, 4].map((b) => (
-                <i class={p.countInBeat !== null && b <= p.countInBeat ? 'on' : ''} />
-              ))}
-            </span>
+      {countIn && (
+        <span class="tl-countin">
+          Count-in
+          <span class="tl-beats">
+            {[1, 2, 3, 4].map((b) => (
+              <i class={p.countInBeat !== null && b <= p.countInBeat ? 'on' : ''} />
+            ))}
           </span>
-        ) : (
-          <span class="tl-section">{LABEL[sec]}</span>
-        )}
-        <span class="tl-next">{LABEL[next]} →</span>
-      </div>
+        </span>
+      )}
       <div class="tl-chords">
         {slots.map((_, i) => (
           <span

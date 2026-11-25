@@ -282,10 +282,10 @@ Everything is soft and round: it reads as an instrument, not a form.
    - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
    - The card is a button (`role="button"`, focusable); its name is the spoken chord.
 3. **Bar timeline:** under the carousel, **directly on the visuals** (no strip), up to 560 px wide with 24 px side margins, 16 px below the cards. Text has `--halo`, bars and count-in dots have `--halo-line`.
-   - **Head row:** the section on the left in `--t-caption` 500, uppercase, tracking +0.1em, `--text`; the next section on the right in `--muted`, with an arrow.
    - **Chord row:** names in `--t-caption` 500, each placed at the start of its chord (as a share of the section's bars). Playing: `--text`. Next: `--text` at 75%. Past: 45% opacity. Others: `--muted`.
    - **Bar row:** one 3 px dash per bar (`--track`, `--r-pill`, 6 px apart). Fills with `--text` as the bar plays, from the audio clock, never a CSS animation.
-   - **Count-in:** the head reads "Count-in" with four 6 px dots that fill one per beat.
+   - **Count-in:** while it plays, "Count-in" (`--t-caption` 500, uppercase, `--text`) with four 6 px dots filling one per beat appears just above the chord row, positioned so nothing moves.
+   - **Section names:** not shown for now; another way to show the song's sections is to come.
 4. **Chord chart:** see §7.
 5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
 6. **Action row (icon buttons):** five 56 px circles, spread across the row: **Mute** (speaker; `--fill-2`, `--muted`; when on, inverted with a crossed-out speaker), **Re-roll** (two arrows; inverted: `--text` fill, `--ink` icon), **Play / Pause** (`--go` fill, `--ink` icon; the centre), **Tempo** (metronome icon) and **Key** (# icon), both `--fill-2`, `--muted`, opening their pickers (open: `--fill-open`, `--text`). Each has an accessible name that includes its value ("Tempo, 84 BPM", "Key, D major, held").
@@ -341,7 +341,7 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 |---|---|---|---|
 | **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord centred. | Hidden. |
 | **Stopped** | Play icon. | First (or last tapped) chord centred; empty bar. | Hidden. |
-| **Count-in** (if on) | Pause icon. | First chord centred; the timeline head reads "Count-in" with four dots filling one per beat. | Hidden until beat 1. |
+| **Count-in** (if on) | Pause icon. | First chord centred; "Count-in" with four dots filling one per beat appears just above the timeline. | Hidden until beat 1. |
 | **Playing** | Pause icon. | Current chord centred, bar filling, cards sliding on each change. | Visible, moving. |
 | **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Frozen, still visible. |
 

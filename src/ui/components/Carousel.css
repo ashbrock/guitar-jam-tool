@@ -30,12 +30,12 @@
 
 /* The bar timeline (DESIGN.md §6, "Bar timeline"): one dash per bar, chord names above where each starts. */
 .timeline {
+  position: relative;
   width: min(100% - 2 * var(--s-24), 560px); margin-top: var(--s-16);
 }
-.tl-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s-10); font-size: var(--t-caption); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
-.tl-section { color: var(--text); display: inline-flex; align-items: center; gap: var(--s-8); }
-.tl-next { color: var(--muted); }
 .tl-beats { display: inline-flex; gap: 4px; }
+/* Count-in: shown just above the timeline while it plays, without moving anything. */
+.tl-countin { position: absolute; left: 0; bottom: calc(100% + var(--s-8)); display: inline-flex; align-items: center; gap: var(--s-8); font-size: var(--t-caption); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); }
 .tl-beats i { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--track); box-shadow: var(--halo-line); }
 .tl-beats i.on { background: var(--text); }
 .tl-chords { position: relative; height: 18px; margin-bottom: var(--s-8); }
