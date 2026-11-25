@@ -149,6 +149,26 @@ describe('timing: loops stay in time', () => {
   });
 });
 
+describe('beat fraction (for smooth visuals)', () => {
+  it('rises smoothly from 0 to 1 through each beat, from the audio clock', () => {
+    const { h, t } = setup('C', { bpm: 120 });
+    t.start();
+    h.run(0.1);
+    const at = (dt: number) => t.playheadAt(START_DELAY + 1 + dt).beatFraction; // beat 3 starts at 1 s
+    h.run(1.6); // far enough that beat 4 (at 1.5 s) has been scheduled
+    expect(at(0)).toBeCloseTo(0, 6);
+    expect(at(0.125)).toBeCloseTo(0.25, 6);
+    expect(at(0.25)).toBeCloseTo(0.5, 6);
+    expect(at(0.499)).toBeCloseTo(0.998, 3);
+    expect(t.playheadAt(START_DELAY + 1.5).beatFraction).toBeCloseTo(0, 6); // next beat
+  });
+
+  it('is 0 when not playing', () => {
+    const { h, t } = setup('C');
+    expect(t.playheadAt(h.time).beatFraction).toBe(0);
+  });
+});
+
 describe('looping and slots', () => {
   it('loops the progression and reports bars and slots on the playhead', () => {
     const { h, t } = setup('C:2 F', { bpm: 120 });

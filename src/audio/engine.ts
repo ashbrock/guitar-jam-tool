@@ -178,7 +178,7 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
       voices!.previewNote(midi);
     },
     playhead() {
-      if (!ctx || !transport) return { state: lastState, phase: 'stopped', countInBeat: null, bar: 0, beat: 0, slotIndex: slots.length ? 0 : null };
+      if (!ctx || !transport) return { state: lastState, phase: 'stopped', countInBeat: null, bar: 0, beat: 0, slotIndex: slots.length ? 0 : null, beatFraction: 0 };
       // What's audible lags what's scheduled by the output latency; visuals follow the audible time.
       const latency = (ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0;
       return { state: lastState, ...transport.playheadAt(ctx.currentTime - latency) };

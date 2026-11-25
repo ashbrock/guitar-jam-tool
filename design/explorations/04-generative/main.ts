@@ -1,9 +1,10 @@
 // Exploration: full-screen generative visuals driven by the music. Not wired into the app.
 //
-// Concept, "sympathetic strings": the screen is filled with strings whose wave shapes are built from
-// the current chord's interval ratios (major 1 : 5/4 : 3/2, minor 1 : 6/5 : 3/2…), so the pattern is
-// literally the harmony. Chord changes morph the pattern, tempo sets the speed, each beat is a gentle
-// swell (never a flash), and each vibe has its own palette and motion. No AI: plain code, no deps.
+// Concept, "sympathetic strings": the screen fills with strings whose wave shapes are built from the
+// current chord's interval ratios (major 1 : 5/4 : 3/2, minor 1 : 6/5 : 3/2…), so the pattern is the
+// harmony. Everything is continuous: chord changes crossfade between harmonic layers, the beat is a
+// smooth swell locked to the audio clock, and the visuals only appear while the music plays.
+// No AI: plain canvas code, no dependencies.
 import { createEngine } from '../../../src/audio/engine';
 import { clampTempo } from '../../../src/audio/transport';
 import { VIBES } from '../../../src/data/vibes/index';
@@ -12,8 +13,8 @@ import { resolveDegreeChord } from '../../../src/theory/degrees';
 import { generate, type DegreeSlot } from '../../../src/theory/generator';
 import { KEY_TONICS, formatKey, type Key, type Mode } from '../../../src/theory/keys';
 import { pc } from '../../../src/theory/notes';
-import { basicQuality, basicShape, STRING_NAMES, type PlacedShape } from '../../../src/theory/shapes';
 import { newSeed } from '../../../src/theory/random';
+import { basicQuality, basicShape, type PlacedShape } from '../../../src/theory/shapes';
 import type { Vibe } from '../../../src/theory/vibe';
 
 // ---------- Music state ----------
@@ -41,12 +42,17 @@ let key: Key = { tonic: { letter: 'D', acc: 0 }, mode: 'major' };
 let tempo = VIBES[0]!.playback.tempo.default;
 let keyHeld = false;
 let tempoHeld = false;
+let clickOn = false; // off by default
 let degreeSlots: DegreeSlot[] = [];
 let slots: Slot[] = [];
 const history: { vibeIndex: number; key: Key; tempo: number; degreeSlots: DegreeSlot[] }[] = [];
 
 const vibe = (): Vibe => VIBES[vibeIndex]!;
 const pick = <T>(xs: readonly T[]): T => xs[Math.floor(Math.random() * xs.length)]!;
+
+function applySound(): void {
+  engine.setParts({ chords: true, bass: true, click: clickOn, drums: false });
+}
 
 function resolve(): void {
   slots = degreeSlots.map((d) => {
@@ -72,7 +78,7 @@ function roll(changeKeyAndTempo: boolean): void {
   engine.setFeel({ groove: v.playback.groove, swing: v.playback.swing, voicing: v.playback.voicing });
   engine.setTempo(tempo);
   resolve();
-  renderPanel();
+  renderAll();
 }
 
 function back(): void {
@@ -83,25 +89,20 @@ function back(): void {
   engine.setFeel({ groove: v.playback.groove, swing: v.playback.swing, voicing: v.playback.voicing });
   engine.setTempo(tempo);
   resolve();
-  renderPanel();
+  renderAll();
 }
 
 // ---------- Visual language per vibe ----------
 
 interface Look {
-  /** Gradient stops for major- and minor-family chords (left → right across the screen). */
   major: [string, string];
   minor: [string, string];
   lines: number;
   width: number;
-  /** Displacement as a fraction of line spacing. */
   amp: number;
-  /** Motion speed multiplier (on top of tempo). */
   speed: number;
-  /** Spatial cycles across the screen. */
   cycles: number;
   vertical: boolean;
-  /** Lilt for shuffle feels. */
   sway: number;
 }
 
@@ -117,7 +118,7 @@ const LOOKS: Record<string, Look> = {
 /** The chord's interval ratios (just intonation): these set the wave's harmonics. */
 function ratios(s: Slot | undefined): number[] {
   if (!s) return [1, 3 / 2];
-  const third = s.kind === 'major' ? 5 / 4 : s.kind === 'minor' ? 6 / 5 : s.kind === 'dim' ? 6 / 5 : s.chord.spec.third === 'sus2' ? 9 / 8 : 4 / 3;
+  const third = s.kind === 'major' ? 5 / 4 : s.kind === 'minor' || s.kind === 'dim' ? 6 / 5 : s.chord.spec.third === 'sus2' ? 9 / 8 : 4 / 3;
   const fifth = s.kind === 'dim' ? 64 / 45 : 3 / 2;
   const out = [1, third, fifth];
   if (s.seventh === 'major') out.push(15 / 8);
@@ -131,33 +132,36 @@ const canvas = document.getElementById('viz') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 let mode: 'lines' | 'dots' = 'lines';
-let W = 0, H = 0, DPR = 1;
+let W = 0, H = 0;
 
 function resize(): void {
-  DPR = Math.min(2, window.devicePixelRatio || 1);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   W = window.innerWidth;
   H = window.innerHeight;
-  canvas.width = Math.round(W * DPR);
-  canvas.height = Math.round(H * DPR);
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => (resize(), renderAll()));
 resize();
 
 const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const mix = (a: number[], b: number[], t: number) => a.map((x, i) => Math.round(x + (b[i]! - x) * t));
-const rgb = (c: number[]) => `rgb(${c[0]} ${c[1]} ${c[2]})`;
+const rgb = (c: number[]) => `rgb(${c.map(Math.round).join(' ')})`;
+/** Frame-rate–independent easing toward a target. */
+const approach = (cur: number, target: number, dt: number, perSecond: number) => cur + (target - cur) * (1 - Math.exp(-perSecond * dt));
 
-// Animated state: everything eases toward its target so chord changes morph instead of jumping.
+// Harmonic layers: a chord change adds a layer that fades in while the others fade out, so the
+// picture never snaps, even when chords change faster than a crossfade.
+interface Layer { ratios: number[]; w: number; target: number }
+let layers: Layer[] = [{ ratios: [1, 5 / 4, 3 / 2], w: 1, target: 1 }];
 let colA = hex('#ff8a3d'), colB = hex('#ff4d7e');
-let curRatios = [1, 5 / 4, 3 / 2], prevRatios = curRatios;
-let morph = 1, morphStart = 0;
 let base = 1.4, baseTarget = 1.4;
-let pulseAt = -10;
-let lastSlot: number | null = -1, lastBeat = -1;
-let phase = 0, lastFrame = performance.now();
+let presence = 0; // 0 = hidden (stopped), 1 = fully visible (playing)
+let lastSlot: number | null = -2;
+let phase = 0;
+let lastFrame = performance.now();
 
-function wave(x: number, line: number, t: number, rs: number[], look: Look): number {
+function waveOf(rs: number[], x: number, line: number, t: number): number {
   let sum = 0, norm = 0;
   for (let j = 0; j < rs.length; j++) {
     const r = rs[j]!;
@@ -168,62 +172,66 @@ function wave(x: number, line: number, t: number, rs: number[], look: Look): num
   return sum / norm;
 }
 
+function sample(x: number, line: number, t: number): number {
+  let v = 0, wsum = 0;
+  for (const l of layers) {
+    if (l.w < 0.001) continue;
+    v += l.w * waveOf(l.ratios, x, line, t);
+    wsum += l.w;
+  }
+  return wsum ? v / wsum : 0;
+}
+
 function frame(now: number): void {
   const dt = Math.min(0.1, (now - lastFrame) / 1000);
   lastFrame = now;
   const look = LOOKS[vibe().id] ?? LOOKS['neo-soul']!;
   const p = engine.playhead();
-  const playing = p.phase === 'playing' || p.phase === 'count-in';
+  const playing = p.phase === 'playing';
   const slot = p.slotIndex !== null ? slots[p.slotIndex] : slots[0];
-
-  // Chord change → morph to the new harmony and colour.
-  if (p.slotIndex !== lastSlot) {
-    lastSlot = p.slotIndex;
-    prevRatios = curRatios;
-    curRatios = ratios(slot);
-    morph = 0;
-    morphStart = now;
-    baseTarget = look.cycles * (0.85 + (slot ? pc(slot.chord.root) : 0) / 40);
-    renderChord();
-  }
-  // Beat → gentle swell.
-  if (playing && p.phase === 'playing' && p.beat !== lastBeat) {
-    lastBeat = p.beat;
-    pulseAt = now;
-  }
-  if (!playing) lastBeat = -1;
-
   const still = reduced.matches;
-  morph = still ? 1 : Math.min(1, (now - morphStart) / 700);
-  const ease = morph * morph * (3 - 2 * morph);
-  base += (baseTarget - base) * (still ? 1 : 0.04);
-  const [ta, tb] = slot && (slot.kind === 'minor' || slot.kind === 'dim') ? look.minor : look.major;
-  colA = mix(colA, hex(ta), still ? 1 : 0.06);
-  colB = mix(colB, hex(tb), still ? 1 : 0.06);
 
+  // Chord change: crossfade to the new harmony.
+  if (playing && p.slotIndex !== lastSlot) {
+    lastSlot = p.slotIndex;
+    for (const l of layers) l.target = 0;
+    layers.push({ ratios: ratios(slot), w: still ? 1 : 0, target: 1 });
+    baseTarget = look.cycles * (0.85 + (slot ? pc(slot.chord.root) : 0) / 40);
+  }
+  for (const l of layers) l.w = still ? l.target : approach(l.w, l.target, dt, 3.5);
+  layers = layers.filter((l) => l.target > 0 || l.w > 0.002);
+  base = approach(base, baseTarget, dt, 1.5);
+
+  const [ta, tb] = slot && (slot.kind === 'minor' || slot.kind === 'dim') ? look.minor : look.major;
+  const A = hex(ta), B = hex(tb);
+  colA = colA.map((c, i) => approach(c, A[i]!, dt, 2.5));
+  colB = colB.map((c, i) => approach(c, B[i]!, dt, 2.5));
+
+  // The visuals belong to the music: they fade in on play and out on pause.
+  presence = approach(presence, playing ? 1 : 0, dt, playing ? 2.2 : 3);
   const bpm = engine.tempo;
-  if (!still) phase += dt * (playing ? (bpm / 90) * 2.2 * look.speed : 0.35 * look.speed);
-  const lilt = look.sway * Math.sin(phase * 1.7) * 0.6;
-  const t = phase + lilt;
-  const swell = still || !playing ? 0 : 0.45 * Math.exp(-(now - pulseAt) / 240);
-  const breathe = playing ? 1 : 0.65 + 0.1 * Math.sin(now / 1400);
+  if (!still) phase += dt * (bpm / 90) * 2.2 * look.speed * (0.3 + 0.7 * presence);
+  const t = phase + look.sway * Math.sin(phase * 1.7) * 0.6;
+
+  // Beat: a smooth swell locked to the audio clock (a cosine over each beat, continuous at the beat line).
+  const swell = still || !playing ? 0 : 0.12 * (0.5 + 0.5 * Math.cos(2 * Math.PI * p.beatFraction));
 
   ctx.fillStyle = '#0b0b0b';
   ctx.fillRect(0, 0, W, H);
+  if (presence > 0.003) draw(look, t, swell);
+  updateCarousel(p);
+  requestAnimationFrame(frame);
+}
+
+function draw(look: Look, t: number, swell: number): void {
   const grad = look.vertical ? ctx.createLinearGradient(0, 0, 0, H) : ctx.createLinearGradient(0, 0, W, 0);
   grad.addColorStop(0, rgb(colA));
   grad.addColorStop(1, rgb(colB));
-
   const n = look.lines;
   const along = look.vertical ? H : W;
   const across = look.vertical ? W : H;
   const spacing = across / (n + 1);
-  const amp = spacing * look.amp * breathe * (1 + swell);
-  const sample = (x: number, i: number) => {
-    const a = wave(x, i, t, prevRatios, look);
-    const b = wave(x, i, t, curRatios, look);
-    return a + (b - a) * ease;
-  };
+  const a = spacing * look.amp * (1 + swell);
 
   if (mode === 'lines') {
     ctx.strokeStyle = grad;
@@ -231,13 +239,12 @@ function frame(now: number): void {
     ctx.lineCap = 'round';
     const step = 6;
     for (let i = 0; i < n; i++) {
-      // Strings fade a little towards the edges, like light falling off.
       const edge = 1 - Math.abs((i + 1) / (n + 1) - 0.5) * 1.1;
-      ctx.globalAlpha = 0.35 + 0.65 * edge;
+      ctx.globalAlpha = (0.35 + 0.65 * edge) * presence;
       ctx.beginPath();
       const c0 = spacing * (i + 1);
       for (let s = 0; s <= along + step; s += step) {
-        const d = sample(s / along, i) * amp * (0.55 + 0.45 * Math.sin(Math.PI * s / along));
+        const d = sample(s / along, i, t) * a * (0.55 + 0.45 * Math.sin((Math.PI * s) / along));
         const x = look.vertical ? c0 + d : s;
         const y = look.vertical ? s : c0 + d;
         if (s === 0) ctx.moveTo(x, y);
@@ -246,20 +253,18 @@ function frame(now: number): void {
       ctx.stroke();
     }
   } else {
-    // Dot grid: the same field, sampled on a grid; dots move with the wave and grow where it's strongest.
     ctx.fillStyle = grad;
     const gap = 14;
     for (let cy = gap / 2; cy < H; cy += gap) {
       for (let cx = gap / 2; cx < W; cx += gap) {
-        const a = look.vertical ? cy : cx;
+        const al = look.vertical ? cy : cx;
         const c = look.vertical ? cx : cy;
-        const line = c / spacing;
-        const v = sample(a / along, line);
-        const d = v * amp * 0.5;
+        const v = sample(al / along, c / spacing, t);
         const e = Math.abs(v) ** 0.7;
         const size = 1.5 + 6 * e * (0.75 + swell);
         const edge = 1 - Math.abs(c / across - 0.5) * 0.9;
-        ctx.globalAlpha = (0.18 + 0.82 * e) * (0.55 + 0.45 * edge);
+        ctx.globalAlpha = (0.18 + 0.82 * e) * (0.55 + 0.45 * edge) * presence;
+        const d = v * a * 0.5;
         const x = look.vertical ? cx + d : cx;
         const y = look.vertical ? cy : cy + d;
         ctx.fillRect(x - size / 2, y - size / 2, size, size);
@@ -267,18 +272,12 @@ function frame(now: number): void {
     }
   }
   ctx.globalAlpha = 1;
-
-  // Loop progress and the current pill.
-  updateLoop(p.slotIndex, playing);
-  requestAnimationFrame(frame);
 }
 
-// ---------- UI ----------
+// ---------- Chord charts ----------
 
 const $ = (id: string) => document.getElementById(id)!;
-const KIND_DOT: Record<Kind, string> = { major: '#ff5c2b', minor: '#f59ac2', dim: '#ffd23f', sus: '#e8d9bd' };
 
-/** Lead-sheet setting: a bare minor "m" stays on the baseline, the rest is raised. */
 function splitSuffix(suffix: string): [string, string] {
   return suffix.startsWith('m') && !suffix.startsWith('maj') ? ['m', suffix.slice(1)] : ['', suffix];
 }
@@ -288,139 +287,137 @@ function chordHTML(c: Chord): string {
   return `${root[0]}${root.length > 1 ? `<span class="acc">${root.slice(1)}</span>` : ''}${m}${q ? `<sup>${q}</sup>` : ''}`;
 }
 
-/** Chord chart: nut at the top, low E on the left. Roots are squares in the chord's colour. */
-function chartSVG(shape: PlacedShape, kind: Kind, w: number, fingers: boolean): string {
-  const top = w * 0.17, left = w * 0.13, right = w * 0.07, gs = (w - left - right) / 5, fh = gs * 1.18;
-  const frets = 5, gridH = fh * frets, h = top + gridH + (fingers ? w * 0.13 : w * 0.05);
-  const r = gs * 0.4, line = 'rgb(244 240 232 / 0.45)';
+/** A light, monochrome chord chart: nut at the top, low E on the left. Roots are small squares, other notes dots. */
+function chartSVG(shape: PlacedShape, w: number): string {
+  const top = w * 0.16, left = w * 0.12, right = w * 0.06, gs = (w - left - right) / 5, fh = gs * 1.22;
+  const frets = 5, gridH = fh * frets, h = top + gridH + w * 0.03;
+  const r = gs * 0.24, line = 'rgb(244 240 232 / 0.38)', ink = 'var(--text)';
   const base = shape.baseFret;
   let o = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">`;
-  for (let i = 0; i < 6; i++) o += `<rect x="${left + i * gs - 0.6}" y="${top}" width="1.2" height="${gridH}" fill="${line}"/>`;
+  for (let i = 0; i < 6; i++) o += `<rect x="${left + i * gs - 0.5}" y="${top}" width="1" height="${gridH}" fill="${line}"/>`;
   for (let f = 0; f <= frets; f++) {
     const nut = f === 0 && base === 1;
-    o += `<rect x="${left - 0.6}" y="${top + f * fh - (nut ? 2.5 : 0.6)}" width="${gs * 5 + 1.2}" height="${nut ? 5 : 1.2}" rx="${nut ? 1.5 : 0}" fill="${nut ? 'var(--text)' : line}"/>`;
+    o += `<rect x="${left - 0.5}" y="${top + f * fh - (nut ? 1.5 : 0.5)}" width="${gs * 5 + 1}" height="${nut ? 3 : 1}" rx="${nut ? 1 : 0}" fill="${nut ? ink : line}"/>`;
   }
-  if (base > 1) o += `<text x="${left - gs * 0.45}" y="${top + fh * 0.62}" text-anchor="end" font-family="DM Sans" font-weight="500" font-size="${Math.max(10, w * 0.075)}" fill="var(--muted)">${base}</text>`;
+  if (base > 1) o += `<text x="${left - gs * 0.4}" y="${top + fh * 0.62}" text-anchor="end" font-family="DM Sans" font-size="${Math.max(10, w * 0.07)}" fill="var(--muted)">${base}</text>`;
   if (shape.barre) {
     const [bf, from, to] = shape.barre;
     const y = top + (bf - base + 0.5) * fh;
-    o += `<rect x="${left + from * gs - r}" y="${y - r}" width="${(to - from) * gs + 2 * r}" height="${2 * r}" rx="${r}" fill="var(--text)"/>`;
+    o += `<rect x="${left + from * gs - r}" y="${y - r * 0.8}" width="${(to - from) * gs + 2 * r}" height="${r * 1.6}" rx="${r * 0.8}" fill="${ink}"/>`;
   }
   shape.frets.forEach((f, i) => {
-    const x = left + i * gs, root = shape.roots.includes(i), col = root ? KIND_DOT[kind] : 'var(--text)';
-    const yTop = top - fh * 0.55;
-    if (f < 0) { const d = r * 0.6; o += `<path d="M${x - d} ${yTop - d}L${x + d} ${yTop + d}M${x + d} ${yTop - d}L${x - d} ${yTop + d}" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"/>`; return; }
-    if (f === 0) { o += root ? `<rect x="${x - r * 0.62}" y="${yTop - r * 0.62}" width="${r * 1.24}" height="${r * 1.24}" rx="2" fill="none" stroke="${col}" stroke-width="1.8"/>` : `<circle cx="${x}" cy="${yTop}" r="${r * 0.62}" fill="none" stroke="var(--text)" stroke-width="1.6"/>`; return; }
+    const x = left + i * gs, root = shape.roots.includes(i);
+    const yTop = top - fh * 0.5, s = r * 0.7;
+    if (f < 0) { o += `<path d="M${x - s} ${yTop - s}L${x + s} ${yTop + s}M${x + s} ${yTop - s}L${x - s} ${yTop + s}" stroke="var(--muted)" stroke-width="1.2" stroke-linecap="round"/>`; return; }
+    if (f === 0) { o += root ? `<rect x="${x - s}" y="${yTop - s}" width="${2 * s}" height="${2 * s}" fill="none" stroke="${ink}" stroke-width="1.2"/>` : `<circle cx="${x}" cy="${yTop}" r="${s}" fill="none" stroke="${ink}" stroke-width="1.2"/>`; return; }
     const y = top + (f - base + 0.5) * fh;
     const onBarre = shape.barre && f === shape.barre[0] && i >= shape.barre[1] && i <= shape.barre[2];
-    if (root) o += `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="${r * 0.3}" fill="${col}"/>`;
-    else if (!onBarre) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--text)"/>`;
-    const showFinger = fingers && shape.fingers[i] && (!onBarre || root || i === shape.barre![1]);
-    if (showFinger) o += `<text x="${x}" y="${y + r * 0.36}" text-anchor="middle" font-family="DM Sans" font-weight="500" font-size="${r * 1.05}" fill="var(--ink)">${shape.fingers[i]}</text>`;
+    if (root) o += `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="1" fill="${ink}"/>`;
+    else if (!onBarre) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="${ink}"/>`;
   });
-  if (fingers) STRING_NAMES.forEach((n, i) => (o += `<text x="${left + i * gs}" y="${h - 2}" text-anchor="middle" font-family="DM Sans" font-size="${Math.max(9, w * 0.055)}" fill="var(--muted)">${n}</text>`));
   return o + '</svg>';
 }
 
-function renderChord(): void {
-  $('sub').textContent = `${vibe().name} · ${formatKey(key)} · ${tempo} bpm`;
-}
+// ---------- Carousel (phone) / row (desktop) ----------
 
-// ---------- Carousel ----------
-
+const wide = () => window.innerWidth >= 900;
 let selected = 0;
 let lastRel: number[] = [];
-const wide = () => window.innerWidth >= 900;
-const SIZES = () => (wide() ? { now: 290, other: 170, gap: 32 } : { now: 170, other: 104, gap: 14 });
+let lastCur = -2;
+let starts: number[] = [];
 
-function renderPanel(): void {
+function chartWidth(): number {
+  if (!wide()) return 156;
+  // Desktop: every chord in view, as large as the row allows.
+  const n = Math.max(1, slots.length);
+  return Math.min(190, Math.floor((Math.min(window.innerWidth, 1400) - 120 - (n - 1) * 20) / n) - 28);
+}
+
+function renderAll(): void {
+  starts = [];
+  let t = 0;
+  for (const s of slots) { starts.push(t); t += s.bars * 4; }
+  const cw = chartWidth();
   const list = $('carousel');
+  list.style.setProperty('--card-w', `${cw + 28}px`);
   list.innerHTML = slots
     .map((s, i) => {
       const q = basicQuality(s.chord);
       const shape = q !== null ? basicShape(s.chord, q) : null;
       return `<li class="card" data-i="${i}" role="button" tabindex="0" aria-label="${spokenChord(s.chord)}">
-        <span class="chart" data-now="${shape ? chartSVG(shape, s.kind, SIZES().now, true).replace(/"/g, '&quot;') : ''}" data-other="${shape ? chartSVG(shape, s.kind, SIZES().other, false).replace(/"/g, '&quot;') : ''}"></span>
-        <span class="cname">${chordHTML(s.chord)}</span>
-        <span class="bar"><i></i></span></li>`;
+        ${shape ? chartSVG(shape, cw) : ''}<span class="cname">${chordHTML(s.chord)}</span><span class="bar"><i></i></span></li>`;
     })
     .join('');
   list.querySelectorAll<HTMLElement>('.card').forEach((el) => {
     const go = () => {
       const i = Number(el.dataset.i);
-      if (!isPlaying()) selected = i;
+      if (engine.playhead().phase !== 'playing') selected = i;
       void engine.previewChord(slots[i]!.chord);
-      layout(true);
     };
     el.addEventListener('click', go);
     el.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), go()));
   });
   lastRel = [];
-  if (!isPlaying()) selected = 0;
+  lastCur = -2;
+  if (engine.playhead().phase !== 'playing') selected = 0;
+
   $('settings').innerHTML = `
     <button class="chip grow" id="vibe">${vibe().name}<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="chip" id="key" aria-pressed="${keyHeld}">${formatKey(key)}${keyHeld ? '<span class="held">HELD</span>' : ''}</button>
     <button class="chip" id="tempo" aria-pressed="${tempoHeld}" style="min-width:96px;justify-content:center">${tempo} <span class="k">BPM</span>${tempoHeld ? '<span class="held">HELD</span>' : ''}</button>`;
-  $('vibe').addEventListener('click', () => {
-    vibeIndex = (vibeIndex + 1) % VIBES.length;
-    roll(true);
-  });
-  $('key').addEventListener('click', () => ((keyHeld = !keyHeld), renderPanel()));
-  $('tempo').addEventListener('click', () => ((tempoHeld = !tempoHeld), renderPanel()));
-  lastSlot = -1;
-  renderChord();
-  layout(false);
+  $('vibe').addEventListener('click', () => { vibeIndex = (vibeIndex + 1) % VIBES.length; roll(true); });
+  $('key').addEventListener('click', () => ((keyHeld = !keyHeld), renderAll()));
+  $('tempo').addEventListener('click', () => ((tempoHeld = !tempoHeld), renderAll()));
 }
 
-const isPlaying = () => { const p = engine.playhead().phase; return p === 'playing' || p === 'count-in'; };
-
-/** Positions every card relative to the current chord. Cards that wrap around the loop jump without animating. */
-function layout(animate: boolean): void {
+/** Places cards around the current chord. Phone: a carousel. Desktop: all chords in one row. */
+function layout(cur: number, animate: boolean): void {
   const n = slots.length;
-  const p = engine.playhead();
-  const cur = isPlaying() && p.slotIndex !== null ? p.slotIndex : selected;
   const behind = n >= 5 ? 2 : n >= 3 ? 1 : 0;
-  const { now, other, gap } = SIZES();
+  const cw = chartWidth() + 28;
   document.querySelectorAll<HTMLElement>('.card').forEach((el, i) => {
-    let rel = (((i - cur) % n) + n) % n;
-    if (rel >= n - behind) rel -= n;
-    const visible = rel >= -2 && rel <= 3;
-    const dist = rel === 0 ? 0 : Math.sign(rel) * (now / 2 + gap + other / 2 + (Math.abs(rel) - 1) * (other + gap));
-    const wrapped = lastRel[i] !== undefined && Math.abs(lastRel[i]! - rel) > 1;
+    let x: number, scale: number, rel: number;
+    if (wide()) {
+      rel = i - cur;
+      x = (i - (n - 1) / 2) * (cw + 20);
+      scale = rel === 0 ? 1 : 0.9;
+    } else {
+      rel = (((i - cur) % n) + n) % n;
+      if (rel >= n - behind) rel -= n;
+      const small = 0.6, gap = 14;
+      const otherW = cw * small;
+      x = rel === 0 ? 0 : Math.sign(rel) * (cw / 2 + gap + otherW / 2 + (Math.abs(rel) - 1) * (otherW + gap));
+      scale = rel === 0 ? 1 : small;
+    }
+    const wrapped = lastRel[i] !== undefined && Math.abs(lastRel[i]! - rel) > 1 && !wide();
     if (!animate || wrapped) el.style.transition = 'none';
-    el.style.transform = `translate(calc(-50% + ${dist}px), -50%)`;
+    el.style.transform = `translate(calc(-50% + ${x}px), -50%) scale(${scale})`;
     el.classList.toggle('now', rel === 0);
     el.classList.toggle('past', rel < 0);
-    el.classList.toggle('hidden', !visible);
+    el.classList.toggle('hidden', !wide() && (rel < -2 || rel > 3));
     el.setAttribute('aria-current', String(rel === 0));
-    const chart = el.querySelector<HTMLElement>('.chart')!;
-    const want = rel === 0 ? 'now' : 'other';
-    if (chart.dataset.shown !== want) { chart.innerHTML = chart.dataset[want] ?? ''; chart.dataset.shown = want; }
-    (el.querySelector('.cname') as HTMLElement).style.fontSize = rel === 0 ? (wide() ? '52px' : '36px') : (wide() ? '28px' : '20px');
     if (!animate || wrapped) { void el.offsetWidth; el.style.transition = ''; }
     lastRel[i] = rel;
   });
 }
-window.addEventListener('resize', () => renderPanel());
 
-let lastCur = -2;
-function updateLoop(slotIndex: number | null, playing: boolean): void {
-  const cur = playing && slotIndex !== null ? slotIndex : selected;
+function updateCarousel(p: ReturnType<typeof engine.playhead>): void {
+  const playing = p.phase === 'playing' && p.slotIndex !== null;
+  const cur = playing ? p.slotIndex! : selected;
   if (cur !== lastCur) {
+    layout(cur, lastCur !== -2);
     lastCur = cur;
-    layout(true);
   }
-  // Progress through the current chord, on its card.
-  const p = engine.playhead();
+  // Smooth progress through the current chord, from the audio clock.
   const bar = document.querySelector<HTMLElement>('.card.now .bar i');
   if (!bar) return;
-  if (!playing || slotIndex === null || p.phase !== 'playing') { bar.style.width = '0%'; return; }
-  let start = 0;
-  for (let i = 0; i < slotIndex; i++) start += slots[i]!.bars * 4;
-  const beats = slots[slotIndex]!.bars * 4;
-  const elapsed = p.bar * 4 + p.beat - start + 1;
+  if (!playing) { bar.style.width = '0%'; return; }
+  const beats = slots[cur]!.bars * 4;
+  const elapsed = p.bar * 4 + p.beat + p.beatFraction - starts[cur]!;
   bar.style.width = `${Math.max(0, Math.min(1, elapsed / beats)) * 100}%`;
 }
+
+// ---------- Controls ----------
 
 const PLAY = '<svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z" fill="currentColor" stroke="none"/></svg>';
 const PAUSE = '<svg class="i" viewBox="0 0 24 24"><path d="M6.5 5h4v14h-4zM13.5 5h4v14h-4z" fill="currentColor" stroke="none"/></svg>';
@@ -430,10 +427,16 @@ engine.subscribe((e) => {
   const active = e.state === 'playing' || e.state === 'count-in';
   $('play').innerHTML = active ? PAUSE : PLAY;
   $('play').setAttribute('aria-label', active ? 'Pause' : 'Play');
+  if (!active) { lastSlot = -2; lastCur = -2; }
 });
 $('play').addEventListener('click', () => void engine.togglePlay());
 $('reroll').addEventListener('click', () => roll(true));
 $('back').addEventListener('click', back);
+$('click').addEventListener('click', () => {
+  clickOn = !clickOn;
+  $('click').setAttribute('aria-pressed', String(clickOn));
+  applySound();
+});
 for (const m of ['lines', 'dots'] as const) {
   $(m).addEventListener('click', () => {
     mode = m;
@@ -446,11 +449,11 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'r' || e.key === 'R') roll(true);
 });
 
-// Start: Neo-soul in D major, already generated (the app is never empty).
+// Start: Neo-soul in D major, already generated (the app is never empty). Click off, no count-in.
 engine.setCountIn(false);
+applySound();
 roll(false);
 history.length = 0;
 requestAnimationFrame(frame);
 
-// Exposed for the screen-recording script.
 (window as unknown as { __viz: unknown }).__viz = { engine, roll, setMode: (m: 'lines' | 'dots') => $(m).click(), setVibe: (i: number) => ((vibeIndex = i), roll(true)) };

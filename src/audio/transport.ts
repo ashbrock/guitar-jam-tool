@@ -55,6 +55,8 @@ export interface Playhead {
   /** Beat within the bar, 0–3. */
   beat: number;
   slotIndex: number | null;
+  /** How far through the current beat, 0–1, from the audio clock (for smooth visuals). */
+  beatFraction: number;
 }
 
 interface Mark {
@@ -64,6 +66,8 @@ interface Mark {
   bar: number;
   beat: number;
   slotIndex: number | null;
+  /** Length of this beat in seconds. */
+  dur: number;
 }
 
 export const STEPS_PER_BAR = 16;
@@ -240,7 +244,7 @@ export class Transport {
   playheadAt(time: number): Playhead {
     if (!this.isActive) {
       const bar = this.resumeBar;
-      return { phase: this._state, countInBeat: null, bar, beat: 0, slotIndex: this.slotAtStep(bar * STEPS_PER_BAR) };
+      return { phase: this._state, countInBeat: null, bar, beat: 0, slotIndex: this.slotAtStep(bar * STEPS_PER_BAR), beatFraction: 0 };
     }
     let mark: Mark | undefined;
     for (let i = this.marks.length - 1; i >= 0; i--) {
@@ -254,9 +258,10 @@ export class Transport {
       const first = this.marks[0];
       const phase = first?.phase ?? (this._state === 'count-in' ? 'count-in' : 'playing');
       const bar = Math.floor(this.pos / STEPS_PER_BAR);
-      return { phase, countInBeat: null, bar: first?.bar ?? bar, beat: 0, slotIndex: first?.slotIndex ?? this.slotAtStep(this.pos) };
+      return { phase, countInBeat: null, bar: first?.bar ?? bar, beat: 0, slotIndex: first?.slotIndex ?? this.slotAtStep(this.pos), beatFraction: 0 };
     }
-    return { phase: mark.phase, countInBeat: mark.countInBeat, bar: mark.bar, beat: mark.beat, slotIndex: mark.slotIndex };
+    const beatFraction = Math.min(1, Math.max(0, (time - mark.time) / mark.dur));
+    return { phase: mark.phase, countInBeat: mark.countInBeat, bar: mark.bar, beat: mark.beat, slotIndex: mark.slotIndex, beatFraction };
   }
 
   // ---------- Scheduling ----------
@@ -327,7 +332,7 @@ export class Transport {
       if (this.countStep % 4 === 0) {
         const beat = this.countStep / 4;
         this.sink.schedule({ kind: 'click', time: t, accent: beat === 0, countIn: true });
-        this.marks.push({ time: t, phase: 'count-in', countInBeat: beat + 1, bar: Math.floor(this.pos / STEPS_PER_BAR), beat, slotIndex: this.slotAtStep(this.pos) });
+        this.marks.push({ time: t, phase: 'count-in', countInBeat: beat + 1, bar: Math.floor(this.pos / STEPS_PER_BAR), beat, slotIndex: this.slotAtStep(this.pos), dur: this.stepDur * 4 });
       }
       return;
     }
@@ -343,7 +348,7 @@ export class Transport {
 
     if (stepInBar % 4 === 0) {
       const beat = stepInBar / 4;
-      this.marks.push({ time: t, phase: 'playing', countInBeat: null, bar: Math.floor(p / STEPS_PER_BAR), beat, slotIndex });
+      this.marks.push({ time: t, phase: 'playing', countInBeat: null, bar: Math.floor(p / STEPS_PER_BAR), beat, slotIndex, dur: this.stepDur * 4 });
       this.sink.schedule({ kind: 'click', time: t, accent: beat === 0, countIn: false });
     }
 

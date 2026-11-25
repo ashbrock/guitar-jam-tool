@@ -59,7 +59,9 @@ Nothing here is wired into the app on `main` unless noted.
 
 ## 04 · Generative visuals (prototype; exploring)
 
-**What it is:** full-screen, music-driven visuals with a minimal UI. The progression sits in the centre as a **carousel of chord charts**: the current chord on a highlighted card with its own progress bar, past chords dimmed (50%), upcoming chords at full opacity, sliding on each change and looping round. A floating glass panel at the bottom holds only playback (Back, Re-roll, Play) and settings (vibe, key, tempo).
+**What it is:** full-screen, music-driven visuals with a minimal UI. The progression sits in the centre as chord charts: the current chord on a highlighted card with a progress bar that moves smoothly (from the audio clock), past chords dimmed (50%), upcoming chords at full opacity. On phone it's a carousel that eases to each new chord and loops round; on desktop every chord is in view in one row. A floating glass panel at the bottom holds only playback (click toggle, Back, Re-roll, Play) and settings (vibe, key, tempo).
+
+**Behaviour:** the visuals appear only while music plays (they fade in on play and out on pause). Motion is continuous: chord changes crossfade between harmonic layers, and the beat is a smooth swell locked to the audio clock (measured: no frame-to-frame jumps). The click is off by default; the "1 2 / 3 4" button turns it on. Chord charts are monochrome and light (the visuals carry the colour): dots for notes, small squares for roots, no finger numbers or string names.
 
 **Run it:** `npm run dev`, then open `/design/explorations/04-generative/`. It plays real audio through the app's engine. Space plays, R re-rolls. Tap the vibe chip to cycle vibes; tap key or tempo to hold them. The Lines/Dots switch at the top right is exploration-only. Stills are in `screens/`.
 
@@ -75,4 +77,4 @@ Nothing here is wired into the app on `main` unless noted.
 ### Ideas noted, not built
 - **Solo mode:** the notes you play (microphone pitch detection, no recording) could feed extra harmonics into the strings, so the visuals answer your solo.
 - **Accidentals:** at display size the Noto ♭/♯ look thin beside DM Sans; we'd draw our own.
-- **Chord charts:** basic shapes from `src/theory/shapes.ts` (open where possible, else the lower E- or A-shape barre), with tests. Finger numbers and string names show on the current card; roots are squares in the chord's quality colour.
+- **Chord charts:** basic shapes from `src/theory/shapes.ts` (open where possible, else the lower E- or A-shape barre), with tests.
