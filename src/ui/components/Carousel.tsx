@@ -92,7 +92,12 @@ export function Carousel() {
                 void engine.previewChord(c.chord);
               }}
             >
-              {shape && <ChordChart shape={shape} width={chartW} />}
+              {/* Only the chart sits in a card; the name sits on the background below it. */}
+              {shape && (
+                <span class="chart-card">
+                  <ChordChart shape={shape} width={chartW} />
+                </span>
+              )}
               <ChordName chord={c.chord} />
             </button>
           </li>

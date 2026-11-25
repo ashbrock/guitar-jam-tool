@@ -62,6 +62,8 @@ All tokens are CSS custom properties on `:root`. Translucent values sit over the
 | `--track` | `rgb(255 255 255 / 0.12)` | Progress bar track (panel); `0.14` on cards. |
 | `--switch-off` | `rgb(255 255 255 / 0.18)` | Switch track when off. See §2.4. |
 | `--chart-line` | `rgb(244 240 232 / 0.38)` | Chord chart strings and frets (3.23:1 on a card). |
+| `--halo` **NEW** | `0 0 4px rgb(11 11 11 / 0.9), 0 0 14px rgb(11 11 11 / 0.75)` | Text shadow for text directly on the visuals (chord names, timeline). |
+| `--halo-line` **NEW** | `0 0 6px rgb(11 11 11 / 0.6)` | The same, as a box shadow, for thin shapes on the visuals (timeline bars, count-in dots). |
 | `--hover` **NEW** | `rgb(255 255 255 / 0.10)` | Hover on `--fill-1` / `--fill-2` controls. |
 | `--pressed` **NEW** | `rgb(255 255 255 / 0.14)` | Pressed on `--fill-1` / `--fill-2` controls. |
 
@@ -80,7 +82,7 @@ Measured worst cases, with the glass over the **brightest visual colour** (`#e9f
 
 Lines are thin and blurred, so real values sit much closer to the over-`--bg` figures (16.55 and 7.50 on the panel). Rules:
 - **Small text in `--muted` never sits on `--glass` or `--card`.** Panel chips use `--muted` only for the "BPM" unit, which is a 15 px label next to the number. **Check during the build** by sampling screenshots across vibes; if any reading falls under 4.5:1, raise the panel glass to 0.8.
-- Chord names on `--card` are ≥ 30 px Medium (large text, 3:1 needed): 4.10 in the worst case ✓.
+- Chord names and the bar timeline sit **directly on the visuals**, so they carry a soft dark halo (`--halo`, NEW): two blurred shadows in `--bg`. Chord names are ≥ 30 px Medium (large text, 3:1 needed). **Check during the build** by sampling screenshots across vibes that the halo keeps text ≥ 4.5:1 (timeline captions) and ≥ 3:1 (chord names) over the brightest particles.
 - **Off switch:** `--switch-off` alone is 1.73:1 against `--glass-strong`, under the 3:1 needed for controls. **Fix (NEW, approved):** a 1 px `--muted` inset border on the off track (7.39:1).
 
 ### 2.5 Visual palettes (decorative)
@@ -275,11 +277,11 @@ Everything is soft and round: it reads as an instrument, not a form.
 
 1. **Mode tabs (Jam · Solo):** plain text buttons, 48 px tall, `--t-body` 500. Current: `--text`; other: `--muted`. No underline or pill. *(Solo isn't designed yet: SPEC A13.)*
    **Settings button** (top right): 48 px pill, `--glass`, sliders icon + "Settings" in `--t-chip`. Open: `--fill-open`. Its picker drops down below the top bar (right-aligned, 420 px on desktop, full width minus gutters on phones).
-2. **Carousel card:** a fixed width (chart + 28 px), `--r-card`, `--card` with blur. Chart above, chord name below, progress bar at the bottom.
-   - **Current:** scale 1, `--card-now`, 1 px `--edge-now`.
+2. **Carousel card:** a fixed width (chart + 28 px). **Only the chart is boxed:** a chart card (`--r-card`, `--card` with blur, 14 px padding) holding the chord chart. The chord name sits **below it, directly on the visuals** (14 px gap), with `--halo`. Nothing else in the stage is boxed; only the bottom panel and pickers use glass.
+   - **Current:** scale 1, chart card in `--card-now` with a 1 px `--edge-now`.
    - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
    - The card is a button (`role="button"`, focusable); its name is the spoken chord.
-3. **Bar timeline:** under the carousel, on a `--glass` strip (blur 20 px, `--r-option`, padding 12 / 16 / 14 px), up to 560 px wide with 24 px side margins.
+3. **Bar timeline:** under the carousel, **directly on the visuals** (no strip), up to 560 px wide with 24 px side margins, 16 px below the cards. Text has `--halo`, bars and count-in dots have `--halo-line`.
    - **Head row:** the section on the left in `--t-caption` 500, uppercase, tracking +0.1em, `--text`; the next section on the right in `--muted`, with an arrow.
    - **Chord row:** names in `--t-caption` 500, each placed at the start of its chord (as a share of the section's bars). Playing: `--text`. Next: `--text` at 75%. Past: 45% opacity. Others: `--muted`.
    - **Bar row:** one 3 px dash per bar (`--track`, `--r-pill`, 6 px apart). Fills with `--text` as the bar plays, from the audio clock, never a CSS animation.

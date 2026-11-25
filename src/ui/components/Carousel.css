@@ -1,4 +1,4 @@
-/* DESIGN.md §6.2–6.3 */
+/* DESIGN.md §6: carousel card (only the chart is boxed), chord name, bar timeline. */
 .carousel { position: relative; width: 100%; height: var(--carousel-h); margin: 0; padding: 0; list-style: none; }
 .card-slot {
   position: absolute; left: 50%; top: 50%; width: var(--card-w);
@@ -7,15 +7,17 @@
 }
 .card-slot.past { opacity: 0.5; }
 .card-slot.hidden { opacity: 0; pointer-events: none; visibility: hidden; transition-property: transform, opacity, visibility; }
-.card {
-  width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--s-12);
-  padding: var(--s-16) var(--s-14); border-radius: var(--r-card);
+.card { width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--s-14); border-radius: var(--r-card); }
+.chart-card {
+  display: block; padding: var(--s-14); border-radius: var(--r-card);
   background: var(--card); backdrop-filter: var(--blur-card); -webkit-backdrop-filter: var(--blur-card);
   border: 1px solid transparent;
   transition: background-color var(--dur-fade) ease, border-color var(--dur-fade) ease;
 }
-.card-slot.now .card { background: var(--card-now); border-color: var(--edge-now); }
-@media (hover: hover) { .card-slot:not(.now) .card:hover { background: var(--card-now); } }
+.card-slot.now .chart-card { background: var(--card-now); border-color: var(--edge-now); }
+@media (hover: hover) { .card-slot:not(.now) .card:hover .chart-card { background: var(--card-now); } }
+/* Text on the visuals: a soft dark halo keeps it readable when bright particles pass behind. */
+.chord-name, .timeline { text-shadow: var(--halo); }
 .chart { display: block; }
 .chart text { font-family: var(--font); }
 .chord-name { font-size: var(--t-chord); font-weight: 500; line-height: 1; letter-spacing: -0.02em; white-space: nowrap; }
@@ -28,14 +30,13 @@
 
 /* The bar timeline (DESIGN.md §6, "Bar timeline"): one dash per bar, chord names above where each starts. */
 .timeline {
-  width: min(100% - 2 * var(--s-24), 560px); margin-top: var(--s-16); padding: var(--s-12) var(--s-16) var(--s-14);
-  border-radius: var(--r-option); background: var(--glass); backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill);
+  width: min(100% - 2 * var(--s-24), 560px); margin-top: var(--s-16);
 }
 .tl-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s-10); font-size: var(--t-caption); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
 .tl-section { color: var(--text); display: inline-flex; align-items: center; gap: var(--s-8); }
 .tl-next { color: var(--muted); }
 .tl-beats { display: inline-flex; gap: 4px; }
-.tl-beats i { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--track); }
+.tl-beats i { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--track); box-shadow: var(--halo-line); }
 .tl-beats i.on { background: var(--text); }
 .tl-chords { position: relative; height: 18px; margin-bottom: var(--s-8); }
 .tl-chord { position: absolute; bottom: 0; font-size: var(--t-caption); font-weight: 500; color: var(--muted); white-space: nowrap; transition: color var(--dur-switch) ease, opacity var(--dur-switch) ease; }
@@ -43,6 +44,6 @@
 .tl-chord.next { color: var(--text); opacity: 0.75; }
 .tl-chord.past { opacity: 0.45; }
 .tl-bars { display: flex; gap: var(--gap); }
-.tl-bar { flex: 1; height: 3px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; }
+.tl-bar { flex: 1; height: 3px; border-radius: var(--r-pill); background: var(--track); overflow: hidden; box-shadow: var(--halo-line); }
 .tl-bar i { display: block; height: 100%; width: 0; background: var(--text); }
 @media (prefers-reduced-motion: reduce) { .tl-chord { transition: none; } }
