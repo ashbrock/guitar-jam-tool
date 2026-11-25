@@ -54,7 +54,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 
 ```
 ┌───────────────────────────────┐
-│ Jam  Solo                     │  top bar: mode tabs (loading pill centred when needed)
+│ Jam  Solo              Sound  │  top bar: mode tabs, Sound picker (loading pill centred when needed)
 │                               │
 │   ┌──┐  ┌──────┐  ┌──┐  ┌──┐  │  centre: the carousel of chord cards
 │   │  │  │chart │  │  │  │  │  │  (Solo: fretboard, to be designed, §8)
@@ -62,7 +62,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 │         │ ━━─  │              │  progress through the current chord
 │         └──────┘              │
 │ ╭───────────────────────────╮ │
-│ │ (12/34) (⟲) [ RE-ROLL ] (▶)│ │  floating panel, row 1: playback
+│ │ (12|♪) (⟲) [ RE-ROLL ] (▶) │ │  floating panel, row 1: count-in|metronome, back, re-roll, play
 │ │ [Neo-soul ⌄] [D major] [84]│ │  row 2: settings chips (each opens a picker above)
 │ ╰───────────────────────────╯ │
 └───────────────────────────────┘
@@ -70,7 +70,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 
 - **Phone (< 900 px wide):** the panel has two rows: playback on top, settings chips beneath, at the very bottom where the thumb rests.
 - **Desktop (≥ 900 px):** the panel is one row, max 760 px wide and centred: settings chips on the left, playback on the right. The carousel shows more chords either side.
-- **Pickers** open as a floating sheet directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). Only one is open at a time. They close on Esc, a tap outside, or tapping their chip again. Opening or using a picker never stops playback.
+- **Pickers** open as a floating sheet directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). The **Sound** picker drops down from its button in the top bar instead. Only one is open at a time. They close on Esc, a tap outside, or tapping their chip again. Opening or using a picker never stops playback.
 
 ### 3.1 State ownership
 | State | Owned by | Notes |
@@ -91,11 +91,13 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 ### 4.1 Playback row
 | Control | Behaviour |
 |---|---|
-| **Click** (the "1 2 / 3 4" button) | Toggles the metronome click. **Off by default.** A toggle button (`aria-pressed`), not a menu. |
+| **Count-in** (the "1 2 / 3 4" button) | Toggles a one-bar count-in before playback. **Off by default.** During the count-in its digits light up one per beat, so it reads without sound. |
+| **Metronome** (metronome icon) | Toggles the click during playback. **Off by default.** |
 | **Back** (⟲) | Steps back to the previous roll (§5.4). |
 | **Re-roll** | The primary action (§5.3). Wide, labelled. |
 | **Play / Pause** | Starts and pauses the loop. The largest round control, at bottom right. **[A7]** |
 
+- Count-in and Metronome share one pill (two halves), so the row fits a 360 px phone. Both are toggle buttons (`aria-pressed`).
 - **Looping is always on.** The whole progression loops.
 - **Pause** holds the playhead. **Play** resumes from the start of the bar that was playing (not mid-bar), after a count-in if count-in is on.
 - Playback states: `locked-audio` → `stopped` → `count-in` → `playing` ⇄ `paused`. How each looks is in DESIGN.md §8.
@@ -103,8 +105,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 ### 4.2 Vibe picker
 - A list of the six vibes, each with its name and a short descriptor. The current vibe is selected (`role="radio"`).
 - Choosing a vibe makes a **new progression in the same key**. Tempo moves to the vibe's default **unless tempo is held**. The picker closes.
-- **Drums** switch (below the list): kick, snare and hat in the vibe's groove. **Off by default [A8]**.
-- **Credits** for the instrument samples, as their licences require (§7.4).
+- **Length** (below the list): **4 bars** or **8 bars**, plus **12 bars** for Blues. Default 4. Changing it makes a new progression at that length, in the same key and tempo, and the picker stays open. Re-roll keeps the chosen length. Lengths come from the vibe file, not code. Leaving Blues at 12 bars drops to 8.
 
 ### 4.3 Key picker
 - **Major / Minor** segmented control, then 12 tonics in two rows of six, spelled for the mode (D♭ and F♯ major; E♭ and B♭ minor; C♯ minor, not D♭ minor).
@@ -120,15 +121,15 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 - Tempo changes take effect at the next beat, never mid-beat.
 
 ### 4.5 Sound settings (global)
-| Part | Default | Behaviour |
+| Part | Default | Where |
 |---|---|---|
-| Chords | On | Sampled Wurlitzer electric piano (§7). |
-| Bass | On | Sampled bass following the vibe's pattern. |
-| Click | **Off** | Quarter notes, accent on beat 1. Playback row toggle. |
-| Drums | **Off [A8]** | Sampled kit in the vibe's groove. Vibe picker switch. |
-| Count-in | **Off [A11]** | One bar of clicks before playback when on. |
+| Chords | On | Sound picker. Turn off to play the chords yourself over bass and drums. |
+| Bass | On | Sound picker. |
+| Drums | **Off [A8]** | Sound picker. Kick, snare and hat in the vibe's groove. |
+| Metronome | **Off** | Playback row. Quarter notes, accent on beat 1. |
+| Count-in | **Off** | Playback row. One bar of clicks, heard even with the metronome off. |
 
-Changes take effect at the next scheduled note and never stop or restart the loop. A way to mute chords or bass (to play rhythm yourself) is wanted but has no home in the panel yet **[A12]**.
+The **Sound** picker (top right) holds the three part switches and the instrument credits (§7.4). Changes take effect at the next scheduled note and never stop or restart the loop.
 
 ### 4.6 Editing while playing
 - Re-roll, Back, a vibe change or a key mode change: the new progression starts **at the next downbeat, from bar 1**.
@@ -170,15 +171,16 @@ Changes take effect at the next scheduled note and never stop or restart the loo
 - After going back, Re-roll makes a new roll and discards the "forward" history, like a browser. No Forward control in v1.
 
 ### 5.5 Length
-- The vibe's harmonic rhythm and lengths decide the length of each roll: 4 or 8 bars. There's no length control in the prototype. **[A3]**
-- Blues offered 12 bars in the previous spec; the prototype only uses 4 or 8. **[A3]**
+- Set in the vibe picker (§4.2): 4 or 8 bars, plus 12 for Blues. Default 4. **[A3]**
+- The vibe's harmonic rhythm decides how many chords fill them (Dreamy: 2 chords over 4 bars; Neo-soul: 4–8).
+- Back restores a roll at its own length.
 
 ### 5.6 Chord set
 - Jam uses a **simple chord set by default:** major, minor, 7, maj7, m7, sus2, sus4, and dim (for vii°). The generator's richer qualities (9ths, 13ths, 6/9) are simplified to the nearest of these for display, charts and playback.
 - An **extended chords** option comes later. It will need charts beyond the basic shapes.
 
 ### 5.7 Visuals in Jam
-- The visuals fade in when playback starts and fade out on pause or stop (DESIGN.md §3).
+- The visuals fade in when playback starts and **freeze in place on pause** (DESIGN.md §3).
 - Each chord change crossfades the picture to the new harmony. The beat is a gentle swell. Each vibe has its own look.
 
 ### 5.8 Solo over this
@@ -190,12 +192,12 @@ Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3
 
 The picture is specified in DESIGN.md §3. Its behavioural rules:
 - **Derived from the music:** each chord's interval ratios shape the waves; the vibe sets palette, density, orientation and motion; tempo sets speed; the beat sets a swell.
-- **Present only while playing:** fades in on play (about 0.5 s) and out on pause or stop (about 0.3 s). Before the first play, the screen is dark.
+- **Present once playing:** fades in on play (about 0.5 s). **On pause the picture freezes and stays visible**; Play sets it moving again. Before the first play, the screen is dark.
 - **Clock-locked:** the beat swell is computed from the audio clock's beat position, so it never drifts and never leads the sound.
 - **Never flashes:** no brightness steps on the beat; changes are continuous. Safe at 240 BPM (WCAG 2.3.1).
 - **Reduced motion:** the picture holds still (no drift, no swell). Chord changes still change the shape and colour, without the crossfade.
 - **Decorative to assistive technology:** the canvas is hidden from screen readers. Everything it shows (the chord, the beat) is available in text.
-- **Rendering style:** lines or dots. Which ships, and whether it's a setting or per vibe, is open **[A14]**.
+- **Each vibe has its own visualisation** (style, palette, density, orientation, motion). There's no switch. **[A14]**
 - Rendering runs on its own frame loop; the audio scheduler is independent, so a slow frame can't disturb timing.
 
 ---
@@ -222,7 +224,7 @@ No guitar in the backing, so it never clashes with the player.
 - A generated room reverb, gentle saturation and a compressor glue the parts together. Per-part reverb sends: chords wet, bass nearly dry.
 
 ### 7.4 Credits
-The vibe picker shows: "Wurlitzer EP200 samples by Greg Sullivan, CC BY 3.0. Bass: Swagbass by Karoryfer Samples. Drums: Virtuosity Drums by Versilian Studios (both CC0)." with links. Full credits and licences sit next to each sample set in `public/samples/`.
+The Sound picker shows: "Wurlitzer EP200 samples by Greg Sullivan, CC BY 3.0. Bass: Swagbass by Karoryfer Samples. Drums: Virtuosity Drums by Versilian Studios (both CC0)." with links. Full credits and licences sit next to each sample set in `public/samples/`.
 
 ---
 
@@ -388,6 +390,7 @@ So a refresh, a locked phone or a discarded tab doesn't wipe work. **Not** savin
 | Tempo out of range (typed, tapped) | Clamped to 40–240. |
 | ½-bar chords at 240 BPM | Allowed; timing tests cover them. |
 | One-chord progression | The carousel shows one centred card; the loop is that chord. |
+| Sound picker and another picker | Only one opens at a time; opening one closes the other. |
 | Samples slow or failing | Synth plays meanwhile; status pill reports (§7.2). |
 | Device or browser stalls | Sounds are scheduled 150 ms ahead on the audio clock, so short stalls are inaudible. After a longer stall, missed notes are skipped and playback continues on the beat. Never a burst of late notes. |
 | Background tab | The scheduler timer runs in a Web Worker, so playback usually continues. If the browser suspends audio, playback pauses. |
@@ -406,7 +409,7 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 |---|---|---|
 | **A1** | First load: Jam, Neo-soul, D major, progression ready. | Working default (as prototyped). |
 | **A2** | Restore the session from `localStorage` (§11). | ✅ Decided. Not yet built in the new direction. |
-| **A3** | **Length.** The prototype rolls 4 or 8 bars from the vibe; there's no length control, and Blues' 12-bar form is gone. Bring back a length control (where?) or a 12-bar option for Blues? | **Open.** |
+| **A3** | Length control in the vibe picker: 4 / 8 bars, Blues also 12. Default 4. | ✅ Decided. |
 | **A4** | Solo default tempo 90 BPM. | Working default. |
 | **A5** | Solo vibe optional, default Plain (no drums). | Working default. |
 | **A6** | Avoid notes: a half step above a chord tone. Scale set as in §8.4. | Working default. |
@@ -414,10 +417,10 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A8** | Drums off by default; switch in the vibe picker. | ✅ Decided. |
 | **A9** | Plain Web Audio, no Tone.js. | ✅ Decided. |
 | **A10** | Self-hosted fonts. | ✅ Decided. |
-| **A11** | **Count-in** is off in the prototype (it was on in the previous spec). Keep it off, or on? Either way it needs a home. | **Open.** |
-| **A12** | **Mute chords / bass** (to play rhythm yourself) has no control in the new panel. A "Sound" picker could hold click, drums, count-in and part mutes together. | **Open.** |
+| **A11** | Count-in is an option, off by default, on the "1 2 / 3 4" button. The metronome gets its own icon button. | ✅ Decided. |
+| **A12** | A Sound picker (top right) holds Chords, Bass and Drums switches and the credits. | ✅ Decided. |
 | **A13** | **Solo mode layout** in the generative style, including where "Solo over this" lives. | **Open: next design task.** |
-| **A14** | **Lines or dots** (or both, as a setting or per vibe). | **Open.** |
+| **A14** | Each vibe has its own visualisation; no style switch. Paused visuals freeze and stay visible. | ✅ Decided. Currently each vibe uses lines or dots with its own look; making all six clearly distinct is the next visuals task. |
 | **A15** | Mic-reactive visuals in Solo. | Stretch goal, after v1. |
 | **A16** | Move each vibe's visual look into the vibe data files. | Working default for the rebuild. |
 | **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |

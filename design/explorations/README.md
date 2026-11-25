@@ -86,6 +86,14 @@ Nothing here is wired into the app on `main` unless noted.
 - **All three load one after another after the first tap** (chords first), about 3.2 MB in total. Each part switches from synth to samples as soon as its own instrument is ready. The pill shows combined progress and names any instrument that failed.
 - **Checked in Chromium:** each part sits at about the level its synth did. The bass is raised to sit about 3 dB under the chords; the old synth bass was louder than the chords. The full band peaks at 0.56, with no late events. Timing is exact at 40 and 240 BPM across the loop point.
 
+### Round 2 changes
+- Length control in the vibe picker (4 / 8 bars, Blues 12).
+- Count-in ("1 2 / 3 4", digits light per beat) and a metronome button, joined into one pill.
+- A Sound picker at top right (Chords, Bass and Drums switches, plus credits).
+- A style per vibe; the Lines/Dots switch is gone.
+- Pause freezes the visuals instead of fading them.
+- Approved hover, pressed and disabled styles, plus the off-switch border.
+
 ### Ideas noted, not built
 - **Solo mode:** the notes you play (microphone pitch detection, no recording) could feed extra harmonics into the strings, so the visuals answer your solo.
 - **Accidentals:** at display size the Noto ♭/♯ look thin beside DM Sans; we'd draw our own.

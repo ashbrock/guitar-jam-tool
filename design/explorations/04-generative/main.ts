@@ -4,7 +4,8 @@
 // current chord's interval ratios (major 1 : 5/4 : 3/2, minor 1 : 6/5 : 3/2…), so the pattern is the
 // harmony. Everything is continuous: chord changes crossfade between harmonic layers, the beat is a
 // smooth swell locked to the audio clock, and the visuals only appear while the music plays.
-// No AI: plain canvas code, no dependencies.
+// Each vibe has its own look, including whether it's drawn as strings or dots. No AI: plain canvas
+// code, no dependencies.
 import { createEngine } from '../../../src/audio/engine';
 import { clampTempo } from '../../../src/audio/transport';
 import { VIBES } from '../../../src/data/vibes/index';
@@ -42,8 +43,12 @@ let key: Key = { tonic: { letter: 'D', acc: 0 }, mode: 'major' };
 let tempo = VIBES[0]!.playback.tempo.default;
 let keyHeld = false;
 let tempoHeld = false;
-let clickOn = false; // off by default
+let clickOn = false; // metronome: off by default
+let countInOn = false; // count-in: an option, off by default
+let chordsOn = true;
+let bassOn = true;
 let drumsOn = false; // off by default (SPEC A8): the first sound is musical, not a drum machine
+let lengthBars = 4; // Jam length in bars: 4 or 8, and 12 for Blues
 let degreeSlots: DegreeSlot[] = [];
 let slots: Slot[] = [];
 const history: { vibeIndex: number; key: Key; tempo: number; degreeSlots: DegreeSlot[] }[] = [];
@@ -52,7 +57,8 @@ const vibe = (): Vibe => VIBES[vibeIndex]!;
 const pick = <T>(xs: readonly T[]): T => xs[Math.floor(Math.random() * xs.length)]!;
 
 function applySound(): void {
-  engine.setParts({ chords: true, bass: true, click: clickOn, drums: drumsOn });
+  engine.setParts({ chords: chordsOn, bass: bassOn, click: clickOn, drums: drumsOn });
+  engine.setCountIn(countInOn);
 }
 
 function resolve(): void {
@@ -74,8 +80,11 @@ function roll(changeKeyAndTempo: boolean): void {
     tempo = clampTempo(t.min + Math.random() * (t.max - t.min));
   }
   const v = vibe();
-  const length = pick(v.params.lengths.filter((l) => l <= 8));
-  degreeSlots = generate({ params: v.params, mode: key.mode, lengthBars: length, seed: newSeed() }).slots;
+  // Keep the chosen length if this vibe offers it; otherwise the longest it offers below it
+  // (leaving Blues at 12 bars drops to 8).
+  const lengths = v.params.lengths;
+  if (!lengths.includes(lengthBars)) lengthBars = [...lengths].reverse().find((l) => l < lengthBars) ?? lengths[0]!;
+  degreeSlots = generate({ params: v.params, mode: key.mode, lengthBars, seed: newSeed() }).slots;
   engine.setFeel({ groove: v.playback.groove, swing: v.playback.swing, voicing: v.playback.voicing });
   engine.setTempo(tempo);
   resolve();
@@ -86,6 +95,7 @@ function back(): void {
   const h = history.pop();
   if (!h) return;
   ({ vibeIndex, key, tempo, degreeSlots } = h);
+  lengthBars = degreeSlots.reduce((a, d) => a + d.bars, 0);
   const v = vibe();
   engine.setFeel({ groove: v.playback.groove, swing: v.playback.swing, voicing: v.playback.voicing });
   engine.setTempo(tempo);
@@ -96,6 +106,8 @@ function back(): void {
 // ---------- Visual language per vibe ----------
 
 interface Look {
+  /** How the field is drawn: flowing strings, or a halftone of dots. */
+  style: 'lines' | 'dots';
   major: [string, string];
   minor: [string, string];
   lines: number;
@@ -108,12 +120,12 @@ interface Look {
 }
 
 const LOOKS: Record<string, Look> = {
-  'neo-soul': { major: ['#ff8a3d', '#ff4d7e'], minor: ['#ff4d7e', '#c4467a'], lines: 30, width: 1.6, amp: 2.4, speed: 0.55, cycles: 1.4, vertical: false, sway: 0.35 },
-  blues: { major: ['#2f7bff', '#36d1ff'], minor: ['#1f4fd1', '#2f7bff'], lines: 16, width: 3.2, amp: 1.6, speed: 0.4, cycles: 0.9, vertical: false, sway: 0.6 },
-  'soul-roots': { major: ['#ffb020', '#ff5a1f'], minor: ['#ff5a1f', '#d2334b'], lines: 22, width: 2.2, amp: 1.8, speed: 0.6, cycles: 1.1, vertical: true, sway: 0.15 },
-  heartland: { major: ['#ffd23f', '#3ccf7d'], minor: ['#3ccf7d', '#22a7b8'], lines: 26, width: 2, amp: 1.4, speed: 0.9, cycles: 1.6, vertical: true, sway: 0 },
-  dreamy: { major: ['#8fe3ff', '#e9f7ff'], minor: ['#4f9dff', '#8fe3ff'], lines: 20, width: 1.4, amp: 3.2, speed: 0.25, cycles: 0.7, vertical: false, sway: 0 },
-  'desert-groove': { major: ['#ff7a3d', '#ffd23f'], minor: ['#e0442b', '#ff9a3d'], lines: 34, width: 1.3, amp: 1.2, speed: 0.75, cycles: 2.6, vertical: true, sway: 0.1 },
+  'neo-soul': { style: 'lines', major: ['#ff8a3d', '#ff4d7e'], minor: ['#ff4d7e', '#c4467a'], lines: 30, width: 1.6, amp: 2.4, speed: 0.55, cycles: 1.4, vertical: false, sway: 0.35 },
+  blues: { style: 'lines', major: ['#2f7bff', '#36d1ff'], minor: ['#1f4fd1', '#2f7bff'], lines: 16, width: 3.2, amp: 1.6, speed: 0.4, cycles: 0.9, vertical: false, sway: 0.6 },
+  'soul-roots': { style: 'dots', major: ['#ffb020', '#ff5a1f'], minor: ['#ff5a1f', '#d2334b'], lines: 22, width: 2.2, amp: 1.8, speed: 0.6, cycles: 1.1, vertical: true, sway: 0.15 },
+  heartland: { style: 'lines', major: ['#ffd23f', '#3ccf7d'], minor: ['#3ccf7d', '#22a7b8'], lines: 26, width: 2, amp: 1.4, speed: 0.9, cycles: 1.6, vertical: true, sway: 0 },
+  dreamy: { style: 'dots', major: ['#8fe3ff', '#e9f7ff'], minor: ['#4f9dff', '#8fe3ff'], lines: 20, width: 1.4, amp: 3.2, speed: 0.25, cycles: 0.7, vertical: false, sway: 0 },
+  'desert-groove': { style: 'dots', major: ['#ff7a3d', '#ffd23f'], minor: ['#e0442b', '#ff9a3d'], lines: 34, width: 1.3, amp: 1.2, speed: 0.75, cycles: 2.6, vertical: true, sway: 0.1 },
 };
 
 /** The chord's interval ratios (just intonation): these set the wave's harmonics. */
@@ -132,7 +144,6 @@ function ratios(s: Slot | undefined): number[] {
 const canvas = document.getElementById('viz') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-let mode: 'lines' | 'dots' = 'lines';
 let W = 0, H = 0;
 
 function resize(): void {
@@ -157,7 +168,8 @@ interface Layer { ratios: number[]; w: number; target: number }
 let layers: Layer[] = [{ ratios: [1, 5 / 4, 3 / 2], w: 1, target: 1 }];
 let colA = hex('#ff8a3d'), colB = hex('#ff4d7e');
 let base = 1.4, baseTarget = 1.4;
-let presence = 0; // 0 = hidden (stopped), 1 = fully visible (playing)
+let presence = 0; // 0 = hidden (stopped), 1 = fully visible (playing or paused)
+let swell = 0;
 let lastSlot: number | null = -2;
 let phase = 0;
 let lastFrame = performance.now();
@@ -189,6 +201,7 @@ function frame(now: number): void {
   const look = LOOKS[vibe().id] ?? LOOKS['neo-soul']!;
   const p = engine.playhead();
   const playing = p.phase === 'playing';
+  const paused = p.phase === 'paused';
   const slot = p.slotIndex !== null ? slots[p.slotIndex] : slots[0];
   const still = reduced.matches;
 
@@ -199,23 +212,30 @@ function frame(now: number): void {
     layers.push({ ratios: ratios(slot), w: still ? 1 : 0, target: 1 });
     baseTarget = look.cycles * (0.85 + (slot ? pc(slot.chord.root) : 0) / 40);
   }
-  for (const l of layers) l.w = still ? l.target : approach(l.w, l.target, dt, 3.5);
+  const fdt = paused ? 0 : dt; // paused: everything holds still
+  for (const l of layers) l.w = still ? l.target : approach(l.w, l.target, fdt, 3.5);
   layers = layers.filter((l) => l.target > 0 || l.w > 0.002);
-  base = approach(base, baseTarget, dt, 1.5);
+  base = approach(base, baseTarget, fdt, 1.5);
 
   const [ta, tb] = slot && (slot.kind === 'minor' || slot.kind === 'dim') ? look.minor : look.major;
   const A = hex(ta), B = hex(tb);
-  colA = colA.map((c, i) => approach(c, A[i]!, dt, 2.5));
-  colB = colB.map((c, i) => approach(c, B[i]!, dt, 2.5));
+  colA = colA.map((c, i) => approach(c, A[i]!, fdt, 2.5));
+  colB = colB.map((c, i) => approach(c, B[i]!, fdt, 2.5));
 
-  // The visuals belong to the music: they fade in on play and out on pause.
-  presence = approach(presence, playing ? 1 : 0, dt, playing ? 2.2 : 3);
+  // The visuals belong to the music: they fade in on play, freeze (but stay) on pause, and only
+  // disappear when there's nothing playing or paused.
+  presence = approach(presence, playing || paused ? 1 : 0, dt, playing || paused ? 2.2 : 3);
   const bpm = engine.tempo;
-  if (!still) phase += dt * (bpm / 90) * 2.2 * look.speed * (0.3 + 0.7 * presence);
+  if (!still && playing) phase += dt * (bpm / 90) * 2.2 * look.speed * (0.3 + 0.7 * presence);
   const t = phase + look.sway * Math.sin(phase * 1.7) * 0.6;
 
-  // Beat: a smooth swell locked to the audio clock (a cosine over each beat, continuous at the beat line).
-  const swell = still || !playing ? 0 : 0.12 * (0.5 + 0.5 * Math.cos(2 * Math.PI * p.beatFraction));
+  // Beat: a smooth swell locked to the audio clock (a cosine over each beat, continuous at the beat
+  // line). Held where it was while paused.
+  if (still) swell = 0;
+  else if (playing) swell = 0.12 * (0.5 + 0.5 * Math.cos(2 * Math.PI * p.beatFraction));
+
+  // Count-in: the count-in button's digits light up one per beat.
+  $('countin').dataset.beat = p.phase === 'count-in' && p.countInBeat ? String(p.countInBeat) : '';
 
   ctx.fillStyle = '#0b0b0b';
   ctx.fillRect(0, 0, W, H);
@@ -234,7 +254,7 @@ function draw(look: Look, t: number, swell: number): void {
   const spacing = across / (n + 1);
   const a = spacing * look.amp * (1 + swell);
 
-  if (mode === 'lines') {
+  if (look.style === 'lines') {
     ctx.strokeStyle = grad;
     ctx.lineWidth = look.width;
     ctx.lineCap = 'round';
@@ -362,7 +382,7 @@ function renderAll(): void {
 
 // ---------- Pickers (vibe, key, tempo) ----------
 
-type PickerName = 'vibe' | 'key' | 'tempo';
+type PickerName = 'vibe' | 'key' | 'tempo' | 'sound';
 let openPicker: PickerName | null = null;
 const CHEV = '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m6 9 6 6 6-6"/></svg>';
 
@@ -379,13 +399,19 @@ function renderChips(): void {
   }
 }
 
+/** The Sound picker drops from the top bar; the others rise from the panel. */
+const popFor = (name: PickerName) => $(name === 'sound' ? 'pop-top' : 'pop');
+
 function togglePicker(name: PickerName | null): void {
   openPicker = name;
-  const pop = $('pop');
-  pop.hidden = !name;
+  $('pop').hidden = !name || name === 'sound';
+  $('pop-top').hidden = name !== 'sound';
+  $('sound').setAttribute('aria-expanded', String(name === 'sound'));
   if (name) renderPicker(name);
   renderChips();
 }
+
+const CREDITS = `<p class="credit">Wurlitzer EP200 samples by <a href="http://www.sullivang.net/" target="_blank" rel="noopener">Greg Sullivan</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Bass: Swagbass by <a href="https://karoryfer.com/" target="_blank" rel="noopener">Karoryfer Samples</a>. Drums: Virtuosity Drums by <a href="https://versilian-studios.com/" target="_blank" rel="noopener">Versilian Studios</a> (both CC0).</p>`;
 
 const holdRow = (id: string, on: boolean, label: string, hint = "Re-roll won't change it") =>
   `<button class="hold" id="${id}" role="switch" aria-checked="${on}"><span>${label}<small>${hint}</small></span><span class="sw"></span></button>`;
@@ -402,14 +428,29 @@ function setTempo(v: number): void {
 
 let taps: number[] = [];
 function renderPicker(name: PickerName): void {
-  const pop = $('pop');
-  pop.setAttribute('aria-label', name === 'vibe' ? 'Vibe' : name === 'key' ? 'Key' : 'Tempo');
-  if (name === 'vibe') {
+  const pop = popFor(name);
+  pop.setAttribute('aria-label', { vibe: 'Vibe', key: 'Key', tempo: 'Tempo', sound: 'Sound' }[name]);
+  if (name === 'sound') {
+    pop.innerHTML = `<h2>Sound</h2>
+      ${holdRow('part-chords', chordsOn, 'Chords', 'Wurlitzer electric piano')}
+      ${holdRow('part-bass', bassOn, 'Bass', 'Flatwound bass, following the vibe')}
+      ${holdRow('part-drums', drumsOn, 'Drums', 'Kick, snare and hat in the vibe’s groove')}
+      ${CREDITS}`;
+    $('part-chords').addEventListener('click', () => { chordsOn = !chordsOn; applySound(); renderPicker('sound'); });
+    $('part-bass').addEventListener('click', () => { bassOn = !bassOn; applySound(); renderPicker('sound'); });
+    $('part-drums').addEventListener('click', () => { drumsOn = !drumsOn; applySound(); renderPicker('sound'); });
+  } else if (name === 'vibe') {
     pop.innerHTML = `<h2>Vibe</h2><div class="opt-list" role="radiogroup">${VIBES.map((v, i) =>
       `<button class="opt" role="radio" aria-checked="${i === vibeIndex}" data-i="${i}"><span>${v.name}<span class="d">${v.descriptor}</span></span></button>`).join('')}</div>
-      ${holdRow('drums', drumsOn, 'Drums', 'Kick, snare and hat in the vibe’s groove')}
-      <p class="credit">Wurlitzer EP200 samples by <a href="http://www.sullivang.net/" target="_blank" rel="noopener">Greg Sullivan</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Bass: Swagbass by <a href="https://karoryfer.com/" target="_blank" rel="noopener">Karoryfer Samples</a>. Drums: Virtuosity Drums by <a href="https://versilian-studios.com/" target="_blank" rel="noopener">Versilian Studios</a> (both CC0).</p>`;
-    $('drums').addEventListener('click', () => { drumsOn = !drumsOn; applySound(); renderAll(); });
+      <h2 class="sub">Length</h2>
+      <div class="lens" role="radiogroup" aria-label="Length">${vibe().params.lengths.map((l) =>
+        `<button role="radio" aria-checked="${l === lengthBars}" data-l="${l}">${l} bars</button>`).join('')}</div>`;
+    pop.querySelectorAll<HTMLButtonElement>('.lens button').forEach((b) => b.addEventListener('click', () => {
+      const l = Number(b.dataset.l);
+      if (l === lengthBars) return;
+      lengthBars = l;
+      roll(false); // a new progression at the new length, same key and tempo
+    }));
     pop.querySelectorAll<HTMLButtonElement>('.opt').forEach((b) => b.addEventListener('click', () => {
       vibeIndex = Number(b.dataset.i);
       // A new vibe means a new progression; key stays, tempo moves to the vibe's default unless held.
@@ -467,7 +508,7 @@ document.addEventListener('click', (e) => {
   const t = e.target as HTMLElement;
   // A click inside the picker can re-render it, detaching the target; that's still an inside click.
   if (!t.isConnected) return;
-  if (!t.closest('.pop') && !t.closest('.chip')) togglePicker(null);
+  if (!t.closest('.pop') && !t.closest('.chip') && !t.closest('#sound')) togglePicker(null);
 });
 
 /**
@@ -549,29 +590,29 @@ engine.subscribe((e) => {
 $('play').addEventListener('click', () => void engine.togglePlay());
 $('reroll').addEventListener('click', () => roll(true));
 $('back').addEventListener('click', back);
+$('countin').addEventListener('click', () => {
+  countInOn = !countInOn;
+  $('countin').setAttribute('aria-pressed', String(countInOn));
+  applySound();
+});
 $('click').addEventListener('click', () => {
   clickOn = !clickOn;
   $('click').setAttribute('aria-pressed', String(clickOn));
   applySound();
 });
-
-for (const m of ['lines', 'dots'] as const) {
-  $(m).addEventListener('click', () => {
-    mode = m;
-    $('lines').setAttribute('aria-pressed', String(m === 'lines'));
-    $('dots').setAttribute('aria-pressed', String(m === 'dots'));
-  });
-}
+$('sound').addEventListener('click', (e) => {
+  e.stopPropagation();
+  togglePicker(openPicker === 'sound' ? null : 'sound');
+});
 window.addEventListener('keydown', (e) => {
   if (e.key === ' ') { e.preventDefault(); void engine.togglePlay(); }
   if (e.key === 'r' || e.key === 'R') roll(true);
 });
 
-// Start: Neo-soul in D major, already generated (the app is never empty). Click off, no count-in.
-engine.setCountIn(false);
+// Start: Neo-soul in D major, 4 bars, already generated (the app is never empty). Click and count-in off.
 applySound();
 roll(false);
 history.length = 0;
 requestAnimationFrame(frame);
 
-(window as unknown as { __viz: unknown }).__viz = { engine, roll, setMode: (m: 'lines' | 'dots') => $(m).click(), setVibe: (i: number) => ((vibeIndex = i), roll(true)) };
+(window as unknown as { __viz: unknown }).__viz = { engine, roll, setVibe: (i: number) => ((vibeIndex = i), roll(true)) };

@@ -2,7 +2,7 @@
 
 > Status: **v2 draft, for review.** Rewritten around the generative direction (prototype 04). Dark only.
 > Every value here is a token. Code must not use a colour, font, size, radius, duration or spacing value that isn't listed here (CLAUDE.md).
-> Values come from the prototype (`design/explorations/04-generative/`). Values marked **NEW** weren't in the prototype; they fill gaps the rules require (hover, pressed, disabled) and need your approval.
+> Values come from the prototype (`design/explorations/04-generative/`). Values marked **NEW** weren't in the prototype; they fill gaps the rules require (hover, pressed, disabled, the off-switch border) and are **approved**.
 > Contrast ratios use the WCAG 2.x formula. Behaviour lives in `SPEC.md`. The previous system (Late Set) is in git history.
 
 ---
@@ -50,7 +50,7 @@ All tokens are CSS custom properties on `:root`. Translucent values sit over the
 ### 2.2 Glass and fills
 | Token | Value | Use |
 |---|---|---|
-| `--glass` | `rgb(20 20 20 / 0.72)` + `backdrop-filter: blur(28px) saturate(1.2)` | The floating panel; the loading pill and top segmented control (blur 20px). |
+| `--glass` | `rgb(20 20 20 / 0.72)` + `backdrop-filter: blur(28px) saturate(1.2)` | The floating panel; the loading pill and the Sound button (blur 20px). |
 | `--glass-strong` | `rgb(20 20 20 / 0.92)` + blur 28px | Pickers. More opaque, because they hold small text. |
 | `--card` | `rgb(11 11 11 / 0.55)` + blur 14px | Chord cards that aren't current. |
 | `--card-now` | `rgb(28 28 28 / 0.82)` + blur 14px | The current chord card. |
@@ -66,7 +66,7 @@ All tokens are CSS custom properties on `:root`. Translucent values sit over the
 | `--pressed` **NEW** | `rgb(255 255 255 / 0.14)` | Pressed on `--fill-1` / `--fill-2` controls. |
 
 ### 2.3 Selected and "on"
-Selected and on states **invert**: `--text` fill, `--ink` content. It reads at any distance and needs no colour. Used by: selected picker options and keys, the Click toggle when on, Lines/Dots, the Re-roll button (always), the current chord's progress fill. Secondary text inside a selected option uses `--ink` at 70% (6.65:1).
+Selected and on states **invert**: `--text` fill, `--ink` content. It reads at any distance and needs no colour. Used by: selected picker options, keys and lengths, Count-in and Metronome when on, the Re-roll button (always), the current chord's progress fill. Secondary text inside a selected option uses `--ink` at 70% (6.65:1).
 
 ### 2.4 Contrast over the visuals
 Measured worst cases, with the glass over the **brightest visual colour** (`#e9f7ff`) and no blur:
@@ -81,7 +81,7 @@ Measured worst cases, with the glass over the **brightest visual colour** (`#e9f
 Lines are thin and blurred, so real values sit much closer to the over-`--bg` figures (16.55 and 7.50 on the panel). Rules:
 - **Small text in `--muted` never sits on `--glass` or `--card`.** Panel chips use `--muted` only for the "BPM" unit, which is a 15 px label next to the number. **Check during the build** by sampling screenshots across vibes; if any reading falls under 4.5:1, raise the panel glass to 0.8.
 - Chord names on `--card` are ≥ 30 px Medium (large text, 3:1 needed): 4.10 in the worst case ✓.
-- **Known gap:** `--switch-off` is 1.73:1 against `--glass-strong`, under the 3:1 needed for controls. The knob (`--text`, 9.45:1) and its position carry the state, but the track itself fails. **Proposed fix (NEW):** a 1 px `--muted` inset border on the off track. Needs approval.
+- **Off switch:** `--switch-off` alone is 1.73:1 against `--glass-strong`, under the 3:1 needed for controls. **Fix (NEW, approved):** a 1 px `--muted` inset border on the off track (7.39:1).
 
 ### 2.5 Visual palettes (decorative)
 Each vibe's look has two gradient pairs, one for major-family chords (warmer) and one for minor and diminished (cooler). These colours are **decorative only**: no text, no state, no information depends on them.
@@ -112,17 +112,17 @@ No purple gradients. Blues is the only cool-blue vibe, on purpose.
 - **Chord root → base frequency:** the wave's base cycles shift slightly with the root, so a new root changes the picture even when the quality doesn't.
 - **Colour:** a gradient along the lines from the vibe's pair (§2.5), major or minor pair by chord quality, easing to the new pair over about 0.4 s.
 - **Depth:** lines near the centre are more opaque than those at the edges (35% → 100%), so the middle, where the chord card sits, is the richest area.
-- **Dots mode:** samples the same field on a 14 px grid. Dot size (1.5–7.5 px) and opacity follow the wave's strength, like a moving halftone.
+- **Style per vibe:** each vibe is drawn as **strings** (lines) or as **dots**: the same field sampled on a 14 px grid, with dot size (1.5–7.5 px) and opacity following the wave's strength, like a moving halftone. There's no switch. Making all six vibes clearly distinct (more than two styles) is the next visuals task.
 
 ### 3.2 Per-vibe looks
-| Vibe | Lines | Line width | Amplitude | Speed | Cycles | Orientation | Sway |
-|---|---|---|---|---|---|---|---|
-| Neo-soul | 30 | 1.6 | 2.4 | 0.55 | 1.4 | horizontal | 0.35 |
-| Blues | 16 | 3.2 | 1.6 | 0.40 | 0.9 | horizontal | 0.6 |
-| Soul & Roots | 22 | 2.2 | 1.8 | 0.60 | 1.1 | vertical | 0.15 |
-| Heartland | 26 | 2.0 | 1.4 | 0.90 | 1.6 | vertical | 0 |
-| Dreamy | 20 | 1.4 | 3.2 | 0.25 | 0.7 | horizontal | 0 |
-| Desert Groove | 34 | 1.3 | 1.2 | 0.75 | 2.6 | vertical | 0.1 |
+| Vibe | Style | Lines | Line width | Amplitude | Speed | Cycles | Orientation | Sway |
+|---|---|---|---|---|---|---|---|---|
+| Neo-soul | strings | 30 | 1.6 | 2.4 | 0.55 | 1.4 | horizontal | 0.35 |
+| Blues | strings | 16 | 3.2 | 1.6 | 0.40 | 0.9 | horizontal | 0.6 |
+| Soul & Roots | dots | 22 | 2.2 | 1.8 | 0.60 | 1.1 | vertical | 0.15 |
+| Heartland | strings | 26 | 2.0 | 1.4 | 0.90 | 1.6 | vertical | 0 |
+| Dreamy | dots | 20 | 1.4 | 3.2 | 0.25 | 0.7 | horizontal | 0 |
+| Desert Groove | dots | 34 | 1.3 | 1.2 | 0.75 | 2.6 | vertical | 0.1 |
 
 Amplitude is a multiple of the line spacing; speed scales with tempo (`bpm / 90`). **Sway** adds a slow side-to-side lilt to shuffle vibes. These values belong in the vibe data files (SPEC A16).
 
@@ -130,7 +130,8 @@ Amplitude is a multiple of the line spacing; speed scales with tempo (`bpm / 90`
 | Event | Treatment |
 |---|---|
 | **Play** | The visuals fade in (presence rate 2.2/s, about 0.5 s to full). Motion speeds up with presence. |
-| **Pause / stop** | Fade out (rate 3/s, about 0.3 s). The screen returns to `--bg`. |
+| **Pause** | **Freeze:** drift, swell, colour and crossfades all hold exactly where they were. The picture stays visible. Play resumes from there. |
+| **Before first play** | Hidden: the screen is `--bg`. (Fades out at rate 3/s if playback ever ends without pausing.) |
 | **Chord change** | A new harmonic layer fades in while the old ones fade out (rate 3.5/s). Layers overlap, so fast changes never snap. |
 | **Beat** | A swell in amplitude: `0.12 × (0.5 + 0.5·cos(2π·beatFraction))`, from the audio clock. Continuous through the beat line: never a step, never a flash. |
 | **Tempo** | Sets the speed of drift. |
@@ -226,6 +227,7 @@ Everything is soft and round: it reads as an instrument, not a form.
 ## 6. Components
 
 1. **Mode tabs (Jam · Solo):** plain text buttons, 48 px tall, `--t-body` 500. Current: `--text`; other: `--muted`. No underline or pill. *(Solo isn't designed yet: SPEC A13.)*
+   **Sound button** (top right): 48 px pill, `--glass`, sliders icon + "Sound" in `--t-chip`. Open: `--fill-open`. Its picker drops down below the top bar (right-aligned, 420 px on desktop, full width minus gutters on phones).
 2. **Carousel card:** a fixed width (chart + 28 px), `--r-card`, `--card` with blur. Chart above, chord name below, progress bar at the bottom.
    - **Current:** scale 1, `--card-now`, 1 px `--edge-now`, the progress bar visible.
    - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
@@ -233,20 +235,22 @@ Everything is soft and round: it reads as an instrument, not a form.
 3. **Progress bar:** 3 px tall, `--r-pill`, `--track` at 0.14, filled with `--text`.
 4. **Chord chart:** see §7.
 5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
-6. **Round buttons (Click, Back):** 56 px circles, `--fill-2`, `--muted` icon or digits. Click when on: inverted.
-7. **Re-roll:** 56 px tall pill, always inverted (`--text` fill, `--ink` label), re-roll icon + "RE-ROLL" in `--t-button`. The widest control. Grows to fill the row on phones.
+6. **Back:** a 56 px circle, `--fill-2`, `--muted` icon.
+   **Count-in | Metronome pair:** one 56 px tall pill (`--fill-2`) holding two 48 px halves: "1 2 / 3 4" in `--t-micro` and a metronome icon. Each half inverts when on. During the count-in the digits dim to 30% except the current beat (brightness and position, not colour).
+7. **Re-roll:** 56 px tall pill, always inverted (`--text` fill, `--ink` label), re-roll icon + "RE-ROLL" in `--t-button`. The widest control. Grows to fill the row on phones. Under 380 px wide the icon is dropped (the label stays) so the row fits.
 8. **Play / Pause:** 56 px circle, `--go` fill, `--ink` icon. Pause shows two bars.
 9. **Settings chip:** 48 px pill, `--fill-2`, `--t-chip`. Vibe chip grows to fill the space and carries a chevron. Open: `--fill-open` and `aria-expanded="true"`. A **HELD** tag (inverted, `--t-micro`, 6 px radius) marks a held key or tempo.
 10. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
 11. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
 12. **Key grid:** Major/Minor in two columns, then 12 keys in six columns, 52 px tall, `--r-key`, `--fill-1`. Selected: inverted.
-13. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track (see §2.4).
+    **Length:** the same button style in one row ("4 bars", "8 bars", "12 bars"), under a "LENGTH" title in the vibe picker.
+13. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
 14. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
 15. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.
-16. **Credit line:** `--t-fine` `--muted` with underlined links, inside the vibe picker.
+16. **Credit line:** `--t-fine` `--muted` with underlined links, inside the Sound picker.
 
 ### 6.1 Icons
-Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, back (curved arrow), re-roll (two arrows), chevron. The Click toggle is typographic ("1 2 / 3 4"), not an icon. Icons never stand alone on Re-roll; Play, Back and Click have accessible names.
+Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, back (curved arrow), re-roll (two arrows), chevron, metronome, sliders (Sound). The count-in toggle is typographic ("1 2 / 3 4"), not an icon. Icons never stand alone on Re-roll; Play, Back, Count-in and Metronome have accessible names.
 
 ---
 
@@ -284,9 +288,9 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 |---|---|---|---|
 | **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord centred. | Hidden. |
 | **Stopped** | Play icon. | First (or last tapped) chord centred; empty bar. | Hidden. |
-| **Count-in** (if on, SPEC A11) | Pause icon. | First chord centred; beat count shown on its card (design pending). | Hidden until beat 1. |
+| **Count-in** (if on) | Pause icon; the count-in digits light one per beat. | First chord centred. | Hidden until beat 1. |
 | **Playing** | Pause icon. | Current chord centred, bar filling, cards sliding on each change. | Visible, moving. |
-| **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Fading out, then hidden. |
+| **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Frozen, still visible. |
 
 ### 8.3 Loading and errors
 - **Instruments:** the loading pill (§6.15). The synth plays meanwhile, so there is no blocking spinner.
@@ -343,7 +347,7 @@ To be designed with the Solo layout (SPEC A13). These rules carry over and are f
 ---
 
 ## 11. Accessibility checklist (design side)
-- [ ] Text ≥ 4.5:1 (body) / 3:1 (large) over the **worst** visual beneath it (§2.4): verify by screenshot sampling for every vibe, Lines and Dots.
+- [ ] Text ≥ 4.5:1 (body) / 3:1 (large) over the **worst** visual beneath it (§2.4): verify by screenshot sampling for every vibe.
 - [ ] Control boundaries and meaningful icons ≥ 3:1. Fix the off-switch track (§2.4).
 - [ ] Every interactive element has hover, focus-visible, pressed and disabled styles (§8.1).
 - [ ] Every disabled control has a visible reason.
@@ -358,10 +362,7 @@ To be designed with the Solo layout (SPEC A13). These rules carry over and are f
 | Item | Notes |
 |---|---|
 | Solo layout and fretboard | Next design task (SPEC A13). |
-| Lines vs Dots | Which ships, or a setting, or per vibe (SPEC A14). |
-| Sound picker | A home for count-in and part mutes (SPEC A11, A12). |
+| Six distinct visualisations | Each vibe its own style, beyond strings vs dots (SPEC A14). |
 | Own accidentals | Replace the thin Noto ♭/♯ (§4.1). |
-| Count-in, toasts, blocked-audio message | Visual design pending (§8.2, §8.3). |
-| Off-switch contrast | Proposed fix in §2.4. |
-| NEW hover, pressed and disabled values | §2.2 and §8.1, for approval. |
+| Toasts, blocked-audio message | Visual design pending (§8.3). |
 | Wordmark | No product name yet. Until there is one, the top bar shows only the mode tabs. |

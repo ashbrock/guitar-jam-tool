@@ -69,4 +69,10 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **The docs only list values the prototype actually uses. Anything else is marked NEW for approval.** The hover, pressed and disabled styles, and a fix for the off-switch contrast, weren't in the prototype. CLAUDE.md forbids invented values, so they're flagged rather than slipped in.
 - **The UI is monochrome; colour belongs to the visuals.** "Selected" is shown by inverting (off-white fill, dark ink), which reads at any distance without depending on colour. Play stays green, the universal "go".
 - **Contrast is checked against the worst visual beneath the glass, not just the background.** In the worst case, without blur, muted text on the panel measures 3.07:1. So muted small text stays off the panel and cards, and the build samples real screenshots to confirm.
+- **Length comes back as a control in the vibe picker (4 / 8 bars, Blues 12), default 4.** Rolling a random length gave up control for no gain, and the 12-bar form is central to blues.
+- **Count-in is an option, off by default, on the "1 2 / 3 4" button, whose digits light up per beat. The metronome gets its own icon button.** The digits already said "count", so the count-in shows itself without sound or an extra element.
+- **Count-in and metronome share one pill of two 48 px halves.** Five separate 56 px buttons wrapped Re-roll at 360 and 390 px. Joining the two timing toggles keeps Re-roll's label on one line, and both halves stay at least 48 px.
+- **A Sound picker (top right) holds Chords, Bass and Drums switches plus the credits.** Muting chords lets you play them yourself. The top bar had room once the Lines/Dots switch went, and these are set-and-forget controls.
+- **Each vibe has its own visualisation; there's no style switch.** The visual is part of the vibe's identity, like its groove. Until the visuals pass, it's strings or dots with a per-vibe look.
+- **Pause freezes the visuals instead of fading them.** The paused picture stays as a still of the moment, matching the paused chord that stays highlighted.
 
