@@ -4,7 +4,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [design-explorations]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
