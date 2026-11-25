@@ -13,6 +13,8 @@
 }
 .icon-btn.fill { color: var(--muted); }
 .icon-btn.inv { color: var(--ink); }
+/* Mute when on: inverted, with the speaker-off icon (shape and fill, not colour alone). */
+.icon-btn.fill[aria-pressed='true'] { color: var(--ink); }
 .icon-btn.fill[aria-expanded='true'] { background: var(--fill-open); color: var(--text); }
 .icon-btn[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; }
 .icon-btn.play { background: var(--go); color: var(--ink); }

@@ -282,7 +282,7 @@ Everything is soft and round: it reads as an instrument, not a form.
 3. **Progress bar:** 3 px tall, `--r-pill`, `--track` at 0.14, filled with `--text`.
 4. **Chord chart:** see §7.
 5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
-6. **Action row (icon buttons):** five 56 px circles, spread across the row: **Undo** (curved arrow; `--fill-2`, `--muted`), **Re-roll** (two arrows; inverted: `--text` fill, `--ink` icon), **Play / Pause** (`--go` fill, `--ink` icon; the centre), **Tempo** (metronome icon) and **Key** (# icon), both `--fill-2`, `--muted`, opening their pickers (open: `--fill-open`, `--text`). Each has an accessible name that includes its value ("Tempo, 84 BPM", "Key, D major, held").
+6. **Action row (icon buttons):** five 56 px circles, spread across the row: **Mute** (speaker; `--fill-2`, `--muted`; when on, inverted with a crossed-out speaker), **Re-roll** (two arrows; inverted: `--text` fill, `--ink` icon), **Play / Pause** (`--go` fill, `--ink` icon; the centre), **Tempo** (metronome icon) and **Key** (# icon), both `--fill-2`, `--muted`, opening their pickers (open: `--fill-open`, `--text`). Each has an accessible name that includes its value ("Tempo, 84 BPM", "Key, D major, held").
 7. **Held dot:** an 8 px `--text` dot at the top right of the Tempo or Key button, with a 2 px `--bg` ring, when that value is held.
 8. **Vibe row:** a full-width 48 px pill, `--fill-2`: the vibe name in `--t-chip` 500 on the left, the current key and tempo in `--t-chip` 400 `--muted` on the right ("D major · 84 BPM", truncating with an ellipsis), then a chevron. It opens the vibe picker. On desktop it sits left of the action row in one line.
 9. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
@@ -296,7 +296,7 @@ Everything is soft and round: it reads as an instrument, not a form.
 15. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Sound.
 
 ### 6.1 Icons
-Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, undo (curved arrow), re-roll (two arrows), metronome (tempo), hash (key), chevron (down, left, right), sliders (Settings). The action row is icon-only; every button has an accessible name, and Tempo and Key include their current values.
+Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, speaker and speaker-off (mute), re-roll (two arrows), metronome (tempo), hash (key), chevron (down, left, right), sliders (Settings). The action row is icon-only; every button has an accessible name, and Tempo and Key include their current values.
 
 ---
 

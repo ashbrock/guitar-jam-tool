@@ -10,8 +10,11 @@ export const drumsOn = signal(false);
 export const clickOn = signal(false);
 /** One bar of clicks before playback. An option, off by default. */
 export const countInOn = signal(false);
+/** All sound off, loop still running: for playing along with a band. Off by default. */
+export const muted = signal(false);
 
 effect(() => {
   engine.setParts({ chords: chordsOn.value, bass: bassOn.value, click: clickOn.value, drums: drumsOn.value });
   engine.setCountIn(countInOn.value);
+  engine.setMuted(muted.value);
 });

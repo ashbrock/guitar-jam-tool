@@ -65,6 +65,8 @@ export interface Engine {
   setFeel(feel: FeelSettings): void;
   setParts(parts: PartLevels): void;
   setCountIn(on: boolean): void;
+  /** Silence all sound while the loop (and the visuals) carry on in time. */
+  setMuted(muted: boolean): void;
   /** Hear a chord now (chord previews). Unlocks audio if needed. */
   previewChord(chord: Chord): Promise<void>;
   /** Hear one note now (fretboard taps). Unlocks audio if needed. */
@@ -95,6 +97,7 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
   let feel: FeelSettings = { groove: 'plain', swing: 0, voicing: 'close' };
   let parts: PartLevels = { ...DEFAULT_PARTS };
   let countIn = true;
+  let muted = false;
   let lastState: EngineState = 'locked-audio';
 
   const toFeel = (f: FeelSettings): Feel => ({ groove: grooveById(f.groove), swing: f.swing, voicing: f.voicing });
@@ -118,6 +121,7 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
     analyser.connect(mute).connect(ctx.destination);
     spectrum = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
     voices.setParts(parts);
+    voices.setMuted(muted);
     options.onOutput?.(voices.output, ctx);
     const c = ctx;
     const sink = options.onSchedule
@@ -226,6 +230,10 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
     setParts(p) {
       parts = { ...p };
       voices?.setParts(parts);
+    },
+    setMuted(on) {
+      muted = on;
+      voices?.setMuted(on);
     },
     setCountIn(on) {
       countIn = on;

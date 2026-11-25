@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'preact/hooks';
 import * as jam from '../state/jam';
 import { togglePlay } from '../state/playback';
-import { announcement, mode, openPicker } from '../state/ui';
+import { muted } from '../state/sound';
+import { announcement, mode, openPicker, showStatus } from '../state/ui';
 import { useFrameLoop } from '../frame';
 import { Carousel } from './Carousel';
 import { Panel } from './Panel';
@@ -31,6 +32,11 @@ export function App() {
         void togglePlay();
       } else if (e.key === 'r' || e.key === 'R') {
         jam.reroll();
+      } else if (e.key === 'm' || e.key === 'M') {
+        muted.value = !muted.value;
+      } else if (e.key === 'u' || e.key === 'U') {
+        // Undo has no button any more (Mute took its place); the history is still here on the keyboard.
+        if (!jam.back()) showStatus('No earlier progression yet');
       } else if (e.key === '+' || e.key === '=') {
         jam.setTempo(jam.tempo.value + (e.shiftKey ? 5 : 1));
       } else if (e.key === '-' || e.key === '_') {

@@ -62,7 +62,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 │         │ ━━─  │              │  progress through the current chord
 │         └──────┘              │
 │ ╭───────────────────────────╮ │
-│ │ (⟲)  (↻)  (▶)  (♩)  (#)    │ │  floating panel, row 1: undo, re-roll, play, tempo, key
+│ │ (🔈)  (↻)  (▶)  (♩)  (#)   │ │  floating panel, row 1: mute, re-roll, play, tempo, key
 │ │ [Neo-soul   D major·84 ⌄]  │ │  row 2: vibe (with the key and tempo shown quietly)
 │ ╰───────────────────────────╯ │
 └───────────────────────────────┘
@@ -91,7 +91,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 ### 4.1 Playback row
 | Control | Behaviour |
 |---|---|
-| **Undo** (curved arrow) | Steps back to the previous roll (§5.4). |
+| **Mute** (speaker) | Silences all sound while the loop, cards and visuals carry on in time: for playing with a band and following the chords. A toggle (`aria-pressed`); when on it's inverted with a crossed-out speaker. Off by default. Fades over about 20 ms, no click. |
 | **Re-roll** (two arrows) | The primary action (§5.3). Inverted, so it stands out. |
 | **Play / Pause** | Starts and pauses the loop. Green, in the centre of the row. **[A7]** |
 | **Tempo** (metronome icon) | Opens the tempo picker (§4.4). Its name includes the BPM; a dot marks it held. |
@@ -171,9 +171,9 @@ Focus moves into each view as it opens (the back arrow in Sound; the Sound row o
 4. If playing, the new progression starts at the next downbeat from bar 1.
 5. Screen readers hear the new progression once via a polite live region ("New progression in E minor at 78 BPM: E minor 7, A 7, D major 7, B minor 7").
 
-### 5.4 Back
+### 5.4 Back (history)
 - **Back** restores the previous roll exactly: chords, vibe, key and tempo. History holds up to **20** rolls.
-- At the oldest roll, Back is disabled, with a visible reason on tap ("No earlier progression yet").
+- Mute took the Undo button's place, so Back is on the keyboard (`U`) for now. At the oldest roll it shows "No earlier progression yet". **[A19]**
 - After going back, Re-roll makes a new roll and discards the "forward" history, like a browser. No Forward control in v1.
 
 ### 5.5 Length
@@ -288,6 +288,8 @@ The notes you play (microphone pitch detection, nothing recorded or stored) coul
 |---|---|
 | `Space` | Play / Pause |
 | `R` | Re-roll (Jam) |
+| `M` | Mute / unmute |
+| `U` | Back to the previous progression (Jam) |
 | `←` `→` | Move focus between chord cards |
 | `Enter` | Play the focused chord (Jam); open it for editing (Solo) |
 | `+` `−` | Tempo ±1 (`Shift` for ±5) |
@@ -431,3 +433,4 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A16** | Move each vibe's visual look into the vibe data files. | Working default for the rebuild. |
 | **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |
 | **A18** | Visuals use WebGL (Three.js, approved) where available, loaded on first Play, with the 2D styles as the fallback. All six vibes use the particle-waves scene. | ✅ Decided (dependency approved). |
+| **A19** | Undo's button is replaced by Mute; Back stays on the keyboard (`U`). Bring it back somewhere on touch (e.g. a long-press on Re-roll) if it's missed. | Working default. |

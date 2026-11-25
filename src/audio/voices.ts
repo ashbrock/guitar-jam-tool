@@ -28,6 +28,8 @@ interface Voice {
 }
 
 const MIN = 0.0001; // exponential ramps can't reach zero
+/** Master output level, below 0 dBFS with every part on (measured, see DECISIONS.md). */
+const MASTER = 0.85;
 
 export class Voices implements Sink {
   readonly output: GainNode;
@@ -46,7 +48,7 @@ export class Voices implements Sink {
     compressor.attack.value = 0.002;
     compressor.release.value = 0.15;
     this.output = ctx.createGain();
-    this.output.gain.value = 0.85;
+    this.output.gain.value = MASTER;
     compressor.connect(this.output).connect(destination);
 
     // Gentle tape-style saturation in front of the compressor: rounds off transients, adds warmth.
@@ -106,6 +108,17 @@ export class Voices implements Sink {
   }
 
   /** Mutes and unmutes take effect straight away, with a 10 ms ramp to avoid clicks. */
+  /**
+   * Mute everything (playing with a band: follow the chords, no sound). Only the master level changes,
+   * with a 20 ms fade so there's no click; scheduling carries on untouched, so the loop stays in time.
+   */
+  setMuted(muted: boolean): void {
+    const g = this.output.gain;
+    const now = this.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setTargetAtTime(muted ? 0 : MASTER, now, 0.02);
+  }
+
   setParts(parts: PartLevels): void {
     const now = this.ctx.currentTime;
     for (const p of ['chords', 'bass', 'click', 'drums'] as Part[]) {

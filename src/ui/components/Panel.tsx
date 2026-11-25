@@ -1,12 +1,13 @@
-// The floating panel (SPEC.md §4.1, DESIGN.md §6: panel, action row, vibe row). Row 1: icon buttons for Undo, Re-roll, Play,
+// The floating panel (SPEC.md §4.1, DESIGN.md §6: panel, action row, vibe row). Row 1: icon buttons for Mute, Re-roll, Play,
 // Tempo and Key. Row 2: the vibe, with the current key and tempo shown quietly beside it.
 // The vibe, tempo and key pickers open above the panel.
 import type { ComponentChildren } from 'preact';
 import { formatKey } from '../../theory/keys';
 import * as jam from '../state/jam';
 import { engineState, togglePlay } from '../state/playback';
-import { openPicker, showStatus, type PickerName } from '../state/ui';
-import { BackIcon, ChevronIcon, HashIcon, MetronomeIcon, PauseIcon, PlayIcon, RerollIcon } from './icons';
+import { muted } from '../state/sound';
+import { openPicker, type PickerName } from '../state/ui';
+import { ChevronIcon, HashIcon, MetronomeIcon, MutedIcon, PauseIcon, PlayIcon, RerollIcon, SoundIcon } from './icons';
 import { Picker, triggerId } from './Picker';
 
 /** An icon button that opens a picker. A dot marks a held value. */
@@ -41,15 +42,8 @@ export function Panel() {
       {panelPicker && <Picker name={panelPicker} placement="panel" />}
       <div class="panel-grid">
         <div class="row actions">
-          <button
-            class="icon-btn fill"
-            aria-label="Undo: previous progression"
-            aria-disabled={!jam.canGoBack.value}
-            onClick={() => {
-              if (!jam.back()) showStatus('No earlier progression yet');
-            }}
-          >
-            <BackIcon />
+          <button class="icon-btn fill mute" aria-label="Mute" aria-pressed={muted.value} onClick={() => (muted.value = !muted.value)}>
+            {muted.value ? <MutedIcon /> : <SoundIcon />}
           </button>
           <button class="icon-btn inv" aria-label="Re-roll" onClick={jam.reroll}>
             <RerollIcon />
