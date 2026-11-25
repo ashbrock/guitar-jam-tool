@@ -1,30 +1,13 @@
-/* Design tokens: a direct transcription of DESIGN.md. Every colour, size, space, radius and duration
-   used in the UI comes from here. Do not add values that aren't in DESIGN.md. */
+/* Design tokens: DESIGN.md is the source of truth. Don't add a value here that isn't listed there. */
 
 @font-face {
-  font-family: 'Fraunces';
-  src: url('../fonts/fraunces.woff2') format('woff2');
-  font-weight: 500 600;
-  font-style: normal;
+  font-family: 'DM Sans';
+  src: url('../fonts/dm-sans.woff2') format('woff2');
+  font-weight: 100 1000;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  src: url('../fonts/atkinson-hyperlegible-next.woff2') format('woff2');
-  font-weight: 200 800;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible Mono';
-  src: url('../fonts/atkinson-hyperlegible-mono.woff2') format('woff2');
-  font-weight: 200 800;
-  font-style: normal;
-  font-display: swap;
-}
-/* ♭ ♮ ♯ only: none of the three families has them (DESIGN.md §4.1). */
-@font-face {
-  font-family: 'Noto Music';
+  font-family: 'NM';
   src: url('../fonts/noto-music-accidentals.woff2') format('woff2');
   unicode-range: U+266D-266F;
   font-display: swap;
@@ -33,100 +16,94 @@
 :root {
   color-scheme: dark;
 
-  /* §2.1 Surfaces and lines */
-  --bg: #120e0b;
-  --surface-1: #1b1511;
-  --surface-2: #241c17;
-  --surface-3: #2f251e;
-  --surface-locked: #2b1a16;
-  --surface-accent: #3a2a17;
-  --surface-error: #2e1714;
-  --border-subtle: #3a2f27;
-  --border-strong: #8a7765;
-  --shadow-sheet: 0 -8px 32px rgb(0 0 0 / 0.55);
+  /* §2.1 Base */
+  --bg: #0b0b0b;
+  --text: #f4f0e8;
+  --muted: #a8a39a;
+  --ink: #121110;
+  --go: #33a066;
 
-  /* §2.2 Text */
-  --text: #f1e7da;
-  --text-muted: #b3a391;
-  --text-faint: #7e6f61;
+  /* §2.2 Glass and fills */
+  --glass: rgb(20 20 20 / 0.72);
+  --glass-strong: rgb(20 20 20 / 0.92);
+  --card: rgb(11 11 11 / 0.55);
+  --card-now: rgb(28 28 28 / 0.82);
+  --line: rgb(255 255 255 / 0.08);
+  --edge-now: rgb(255 255 255 / 0.14);
+  --fill-1: rgb(255 255 255 / 0.05);
+  --fill-2: rgb(255 255 255 / 0.06);
+  --fill-open: rgb(255 255 255 / 0.16);
+  --track: rgb(255 255 255 / 0.12);
+  --track-card: rgb(255 255 255 / 0.14);
+  --switch-off: rgb(255 255 255 / 0.18);
+  --chart-line: rgb(244 240 232 / 0.38);
+  --hover: rgb(255 255 255 / 0.10);
+  --pressed: rgb(255 255 255 / 0.14);
+  --text-hover: rgb(244 240 232 / 0.9);
+  --ink-soft: rgb(18 17 16 / 0.7);
+  --blur-panel: blur(28px) saturate(1.2);
+  --blur-picker: blur(28px);
+  --blur-pill: blur(20px);
+  --blur-card: blur(14px);
 
-  /* §2.3 Accent and semantic */
-  --accent: #e9a54a;
-  --accent-hover: #f2b862;
-  --accent-pressed: #c9883a;
-  --on-accent: #1a1009;
-  --oxblood: #8e3b37;
-  --error: #ee8a7a;
-  --success: #a9c48f;
-  --focus: #f1e7da;
+  /* §4 Type */
+  --font: 'DM Sans', 'NM', system-ui, sans-serif;
+  --t-micro: 11px;
+  --t-fine: 12px;
+  --t-caption: 13px;
+  --t-small: 14px;
+  --t-chip: 15px;
+  --t-button: 16px;
+  --t-body: 17px;
+  --t-step: 24px;
+  --t-chord: 34px;
+  --t-readout: 48px;
 
-  /* §2.4 Fretboard */
-  --fret-wood: #1e1611;
-  --fret-wire: #6b5a4c;
-  --fret-nut: #b3a391;
-  --fret-string: #9c8b7b;
-  --fret-inlay: #3a2f27;
+  /* §5.2 Spacing */
+  --gap: 6px;
+  --s-8: 8px;
+  --s-10: 10px;
+  --s-12: 12px;
+  --s-14: 14px;
+  --s-16: 16px;
+  --s-24: 24px;
 
-  /* §3 Fretboard roles */
-  --role-root: #e9a54a;
-  --role-chord: #f1e7da;
-  --role-scale: #b3a391;
-  --role-avoid: #e0705f;
-  --role-landing: #8dc0a9;
-
-  /* §4.1 Families */
-  --font-display: 'Fraunces', 'Noto Music', 'Iowan Old Style', Georgia, serif;
-  --font-ui: 'Atkinson Hyperlegible Next', 'Noto Music', system-ui, sans-serif;
-  --font-mono: 'Atkinson Hyperlegible Mono', 'Noto Music', ui-monospace, monospace;
-
-  /* §4.2 Scale */
-  --text-caption: 0.8125rem;
-  --text-small: 0.9375rem;
-  --text-body: 1.0625rem;
-  --text-body-lg: 1.25rem;
-  --text-title: 1.5rem;
-  --text-headline: 1.875rem;
-  --text-chord-sm: 2rem;
-  --text-chord-md: 2.75rem;
-  --text-chord-lg: 3.75rem;
-  --text-numeric: 1.75rem;
-  --text-numeric-xl: 3.75rem;
-
-  /* §5.1 Spacing (8 px base) */
-  --space-0: 0;
-  --space-half: 4px;
-  --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 32px;
-  --space-5: 40px;
-  --space-6: 48px;
-  --space-8: 64px;
-  --space-10: 80px;
-
-  /* §5.2 Tap targets */
+  /* §5.3 Targets */
+  --target-primary: 56px;
   --target-min: 48px;
-  --target-primary: 64px;
-
-  /* §5.3 Fixed layout heights (phone) */
-  --top-bar: 56px;
-  --context-row: 56px;
-  --transport: 88px;
-  --transport-padding: 12px; /* 64 px controls + 12 px above and below = 88 px */
+  --target-half: 48px;
+  --target-key: 52px;
 
   /* §5.4 Radii */
-  --radius-s: 4px;
-  --radius-m: 8px;
-  --radius-l: 12px;
-  --radius-full: 999px;
+  --r-pill: 999px;
+  --r-panel: 28px;
+  --r-picker: 24px;
+  --r-card: 22px;
+  --r-option: 16px;
+  --r-key: 14px;
 
-  /* §10.1 Motion */
-  --dur-instant: 0ms;
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
-  --dur-slow: 320ms;
+  /* §9.1 Motion */
+  --ease-carousel: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --dur-carousel: 620ms;
+  --dur-fade: 500ms;
+  --dur-loading: 400ms;
+  --dur-bar: 300ms;
+  --dur-pop: 220ms;
+  --dur-switch: 200ms;
+  --dur-reduced: 200ms;
+
+  /* §5.1 Layout */
+  --chart-w: 156px;
+  --carousel-h: 300px;
+  --panel-max: 760px;
+  --picker-w: 420px;
 }
 
-/* §10.3 Reduced motion is handled per component (motion replaced, fades kept), not by zeroing tokens. */
+@media (min-width: 900px) {
+  :root {
+    --t-chord: 30px;
+    --chart-w: 210px;
+    --carousel-h: 420px;
+  }
+}

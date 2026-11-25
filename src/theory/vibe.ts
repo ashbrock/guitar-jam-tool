@@ -48,6 +48,31 @@ export interface VibePlayback {
   tempo: { default: number; min: number; max: number };
 }
 
+/**
+ * How the vibe looks in the generative visuals (DESIGN.md §3). Plain data, so a v2 can map free text
+ * onto it just like the generator params.
+ */
+export interface VibeLook {
+  /** Flowing strings, or the same field drawn as a halftone of dots. */
+  style: 'lines' | 'dots';
+  orientation: 'horizontal' | 'vertical';
+  /** Gradient pairs: warmer for major-family chords, cooler for minor and diminished. */
+  major: [string, string];
+  minor: [string, string];
+  /** Number of strings across the screen. */
+  lines: number;
+  /** Line width in CSS px (lines style). */
+  width: number;
+  /** Wave amplitude as a multiple of the line spacing. */
+  amp: number;
+  /** Drift speed (scaled by tempo). */
+  speed: number;
+  /** Base wave cycles across the screen. */
+  cycles: number;
+  /** Side-to-side lilt for shuffle feels, 0–1. */
+  sway: number;
+}
+
 export interface Vibe {
   id: string;
   name: string;
@@ -56,6 +81,7 @@ export interface Vibe {
   params: GeneratorParams;
   playback: VibePlayback;
   scalePreference: Record<Mode, ScaleId[]>;
+  look: VibeLook;
 }
 
 /** Collects every problem in a vibe definition (an empty array means it's valid). */
@@ -127,6 +153,27 @@ export function vibeProblems(v: Vibe): string[] {
   if (!(playback.swing >= 0 && playback.swing <= 1)) at('playback.swing', 'must be 0–1');
   if (!['straight', 'shuffle'].includes(playback.feel)) at('playback.feel', 'must be straight or shuffle');
   if (!['close', 'open', 'shell'].includes(playback.voicing)) at('playback.voicing', 'unknown voicing');
+
+  const look = v.look;
+  if (!look) at('look', 'missing');
+  else {
+    if (!['lines', 'dots'].includes(look.style)) at('look.style', 'must be lines or dots');
+    if (!['horizontal', 'vertical'].includes(look.orientation)) at('look.orientation', 'must be horizontal or vertical');
+    for (const k of ['major', 'minor'] as const) {
+      const pair = look[k];
+      if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((c) => /^#[0-9a-f]{6}$/i.test(c))) at(`look.${k}`, 'must be two #rrggbb colours');
+    }
+    const range = (k: keyof VibeLook, lo: number, hi: number) => {
+      const x = look[k] as number;
+      if (!(typeof x === 'number' && x >= lo && x <= hi)) at(`look.${k}`, `must be ${lo}–${hi}`);
+    };
+    range('lines', 4, 60);
+    range('width', 0.5, 6);
+    range('amp', 0.2, 5);
+    range('speed', 0.05, 2);
+    range('cycles', 0.2, 5);
+    range('sway', 0, 1);
+  }
   return p;
 }
 

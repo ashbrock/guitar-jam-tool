@@ -1,0 +1,42 @@
+/* DESIGN.md §6.5–6.9 */
+.panel {
+  position: fixed; left: var(--s-12); right: var(--s-12); bottom: max(var(--s-12), env(safe-area-inset-bottom)); z-index: 2;
+  margin: 0 auto; max-width: var(--panel-max); padding: var(--s-10); border-radius: var(--r-panel);
+  background: var(--glass); backdrop-filter: var(--blur-panel); -webkit-backdrop-filter: var(--blur-panel); border: 1px solid var(--line);
+}
+.row { display: flex; gap: var(--gap); align-items: center; }
+.settings { margin-top: var(--s-8); }
+.round { width: var(--target-primary); height: var(--target-primary); flex: none; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+.round[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; }
+.pair { display: inline-flex; flex: none; height: var(--target-primary); border-radius: var(--r-pill); background: var(--fill-2); }
+.half { width: var(--target-half); height: var(--target-primary); border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+.half[aria-pressed='true'] { background: var(--text); color: var(--ink); }
+@media (hover: hover) {
+  .half:not([aria-pressed='true']):hover { background: var(--hover); }
+  .half[aria-pressed='true']:hover { background: var(--text-hover); }
+}
+.half:not([aria-pressed='true']):active { background: var(--pressed); }
+.count { display: inline-grid; grid-template-columns: 1fr 1fr; place-items: center; padding: 15px 10px; font-size: var(--t-micro); font-weight: 500; line-height: 1; }
+/* During the count-in the digits light up one per beat: brightness and position, not colour. */
+.count:not([data-beat='']) span { opacity: 0.3; }
+.count[data-beat='1'] span:nth-child(1), .count[data-beat='2'] span:nth-child(2),
+.count[data-beat='3'] span:nth-child(3), .count[data-beat='4'] span:nth-child(4) { opacity: 1; }
+.reroll { flex: 1; min-width: 0; height: var(--target-primary); border-radius: var(--r-pill); font-size: var(--t-button); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: var(--s-8); white-space: nowrap; }
+.play { width: var(--target-primary); height: var(--target-primary); flex: none; border-radius: var(--r-pill); background: var(--go); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+@media (hover: hover) { .play:hover { box-shadow: inset 0 0 0 1px var(--text); } }
+/* Very narrow phones: Re-roll keeps its word and drops its icon so the row fits. */
+@media (max-width: 379px) { .reroll svg { display: none; } }
+.chip { height: var(--target-min); padding: 0 var(--s-14); border-radius: var(--r-pill); font-size: var(--t-chip); font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: var(--s-8); white-space: nowrap; }
+.chip.grow { flex: 1; justify-content: space-between; min-width: 0; }
+.chip .bpm { display: inline-block; min-width: 2ch; text-align: right; }
+.chip .k { color: var(--muted); margin-left: -4px; }
+.chip[aria-expanded='true'] { background: var(--fill-open); }
+.held { font-size: var(--t-micro); letter-spacing: 0.06em; padding: 2px 6px; border-radius: 6px; background: var(--text); color: var(--ink); }
+@media (min-width: 900px) {
+  .panel { padding: var(--s-12); }
+  .panel-grid { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 's a'; gap: var(--s-12); align-items: center; }
+  .actions { grid-area: a; justify-content: flex-end; }
+  .actions .reroll { width: 200px; flex: none; }
+  .settings { grid-area: s; margin-top: 0; }
+  .settings .chip.grow { flex: none; min-width: 180px; }
+}

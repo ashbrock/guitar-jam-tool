@@ -200,6 +200,8 @@ One breakpoint, **900 px** wide:
 | `--s-16` | 16 px | Picker padding; option side padding; card top and bottom padding |
 | `--s-24` | 24 px | Carousel gap (desktop) |
 
+Fine adjustments, used only where listed: **2 px** (option description top margin; HELD tag vertical padding), **4 px** (switch row right padding; credit and note side margins), **18 px** (space above a picker's second section, e.g. LENGTH), **15 × 10 px** (count-in digit padding inside its half).
+
 Safe areas: the top bar and panel respect `env(safe-area-inset-*)`, with a 12 px minimum at the bottom.
 
 ### 5.3 Targets

@@ -75,4 +75,9 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **A Sound picker (top right) holds Chords, Bass and Drums switches plus the credits.** Muting chords lets you play them yourself. The top bar had room once the Lines/Dots switch went, and these are set-and-forget controls.
 - **Each vibe has its own visualisation; there's no style switch.** The visual is part of the vibe's identity, like its groove. Until the visuals pass, it's strings or dots with a per-vibe look.
 - **Pause freezes the visuals instead of fading them.** The paused picture stays as a still of the moment, matching the paused chord that stays highlighted.
+- **The generative direction is now the app (`src/`), not just a prototype.** The prototype stays in `design/explorations/04-generative/` as a record. The app lives at the site root, built with Preact and signals.
+- **The visuals are split into pure maths (`src/visuals/harmony.ts`, tested) and a thin canvas renderer.** Chord ratios, waves, layer blending and the beat swell can then be tested without a browser, keeping with CLAUDE.md's "music logic in pure functions".
+- **Each vibe's look lives in its JSON file, validated with the rest of the vibe (SPEC A16).** A v2 that maps free text onto vibe parameters can then reach the visuals too.
+- **Jam state takes the engine and randomness as inputs.** The re-roll, hold, history, length and key rules are tested in Node with a seeded random source.
+- **One animation-frame loop reads the audio clock and drives the visuals, the playhead signal and the progress bar.** Components re-render at most once per beat; the 60 fps work writes straight to the canvas and one style property.
 

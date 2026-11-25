@@ -230,7 +230,7 @@ The Sound picker shows: "Wurlitzer EP200 samples by Greg Sullivan, CC BY 3.0. Ba
 
 ## 8. Solo mode
 
-> **Layout to be designed** in the generative style before it's built. The behaviour below carries over from the previous spec and still stands, except where noted. **[A13]**
+> **Layout to be designed** in the generative style before it's built. Until then the Solo tab shows a short "being designed" note, without the panel; switching to it stops playback (§3.2). The behaviour below carries over from the previous spec and still stands, except where noted. **[A13]**
 
 ### 8.1 Entering chords
 - Solo starts **empty** (unless filled by "Solo over this"). The empty state invites "What are we soloing over?" with three actions: **Add a chord**, **Type the whole progression**, **Bring the Jam progression over**. Play is disabled with the reason "Add a chord to play".

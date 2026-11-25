@@ -66,5 +66,10 @@
   "scalePreference": {
     "major": ["lydian", "majorPentatonic", "major"],
     "minor": ["dorian", "naturalMinor", "minorPentatonic"]
+  },
+  "look": {
+    "style": "dots", "orientation": "horizontal",
+    "major": ["#8fe3ff", "#e9f7ff"], "minor": ["#4f9dff", "#8fe3ff"],
+    "lines": 20, "width": 1.4, "amp": 3.2, "speed": 0.25, "cycles": 0.7, "sway": 0
   }
 }

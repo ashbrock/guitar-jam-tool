@@ -1,157 +1,205 @@
-// Jam mode state (SPEC.md §5). The progression is stored as key-relative degree slots, so changing the
-// key simply transposes it (locks included) and never re-rolls.
+// Jam mode state and rules (SPEC.md §4–5). Progressions are stored as key-relative degree slots, so a
+// tonic change transposes and never re-rolls. The engine and randomness are injected, so these rules
+// are tested without audio (jam.test.ts).
 import { batch, computed, signal } from '@preact/signals';
 import { VIBES, vibeById } from '../../data/vibes/index';
+import { clampTempo } from '../../audio/transport';
+import type { PlaybackSlot } from '../../audio/transport';
+import type { FeelSettings } from '../../audio/engine';
 import { spokenChord } from '../../theory/chords';
 import { resolveDegreeChord } from '../../theory/degrees';
 import { generate, type DegreeSlot } from '../../theory/generator';
-import type { Key } from '../../theory/keys';
+import { KEY_TONICS, formatKey, type Key, type Mode } from '../../theory/keys';
+import { pc, type Note } from '../../theory/notes';
 import { newSeed } from '../../theory/random';
-import { clampTempo } from '../../audio/transport';
+import { simplify, type SimpleChord } from '../../theory/simplify';
 import type { Vibe } from '../../theory/vibe';
-import { engine } from './playback';
 
 export const HISTORY_LIMIT = 20;
-
-/** SPEC.md §11 A1: first load is Neo-soul in D major. */
+/** SPEC.md A1: first load is Neo-soul in D major, 4 bars. */
 const DEFAULT_VIBE = 'neo-soul';
 const DEFAULT_KEY: Key = { tonic: { letter: 'D', acc: 0 }, mode: 'major' };
+const DEFAULT_LENGTH = 4;
+
+/** What Jam needs from the audio engine. */
+export interface JamSink {
+  setProgression(slots: readonly PlaybackSlot[], opts?: { fromTop?: boolean }): void;
+  setTempo(bpm: number): void;
+  setFeel(feel: FeelSettings): void;
+}
 
 interface Roll {
-  slots: DegreeSlot[];
   vibeId: string;
+  key: Key;
+  tempo: number;
+  slots: DegreeSlot[];
 }
 
-export const jamKey = signal<Key>(DEFAULT_KEY);
-export const jamVibeId = signal<string>(DEFAULT_VIBE);
-export const jamLength = signal<number>(4);
-export const jamSlots = signal<DegreeSlot[]>([]);
-export const jamHistory = signal<Roll[]>([]);
-/** Increments on every new roll, so cards can play the "deal" animation (DESIGN.md §10.2). */
-export const rollId = signal(0);
-export const jamTempo = signal<number>(vibeById(DEFAULT_VIBE)!.playback.tempo.default);
-/** Once the user sets tempo by hand, choosing a vibe no longer changes it (SPEC.md §4.2). */
-export const tempoTouched = signal(false);
-/** Polite screen-reader announcement (SPEC.md §5.3). */
-export const announcement = signal('');
+let sink: JamSink = { setProgression() {}, setTempo() {}, setFeel() {} };
+let random: () => number = Math.random;
+let seed: () => number = newSeed;
+let onNewProgression: (text: string) => void = () => {};
 
-export const jamVibe = computed<Vibe>(() => vibeById(jamVibeId.value) ?? VIBES[0]!);
-export const jamChords = computed(() => jamSlots.value.map((s) => resolveDegreeChord(s.degree, s.quality, jamKey.value, s.bassDegree)));
-export const allLocked = computed(() => jamSlots.value.length > 0 && jamSlots.value.every((s) => s.locked));
-export const canGoBack = computed(() => jamHistory.value.length > 0);
-
-function syncEngine(fromTop: boolean): void {
-  const chords = jamChords.value;
-  engine.setProgression(
-    jamSlots.value.map((s, i) => ({ chord: chords[i]!, bars: s.bars })),
-    { fromTop },
-  );
+/** Wires Jam to the engine (and, in tests, to a seeded random source). */
+export function configureJam(opts: { sink?: JamSink; random?: () => number; seed?: () => number; announce?: (text: string) => void }): void {
+  if (opts.sink) sink = opts.sink;
+  if (opts.random) random = opts.random;
+  if (opts.seed) seed = opts.seed;
+  if (opts.announce) onNewProgression = opts.announce;
 }
 
-function syncFeel(): void {
-  const v = jamVibe.value;
-  engine.setFeel({ groove: v.playback.groove, swing: v.playback.swing, voicing: v.playback.voicing });
+export const vibeId = signal(DEFAULT_VIBE);
+export const key = signal<Key>(DEFAULT_KEY);
+export const tempo = signal(vibeById(DEFAULT_VIBE)!.playback.tempo.default);
+export const keyHeld = signal(false);
+export const tempoHeld = signal(false);
+export const lengthBars = signal(DEFAULT_LENGTH);
+export const slots = signal<DegreeSlot[]>([]);
+export const history = signal<Roll[]>([]);
+
+export const vibe = computed<Vibe>(() => vibeById(vibeId.value) ?? VIBES[0]!);
+/** The progression as Jam shows and plays it: the simple chord set (SPEC.md §5.6). */
+export const chords = computed<SimpleChord[]>(() =>
+  slots.value.map((s) => simplify(resolveDegreeChord(s.degree, s.quality, key.value, s.bassDegree))),
+);
+export const canGoBack = computed(() => history.value.length > 0);
+
+const pick = <T>(xs: readonly T[]): T => xs[Math.floor(random() * xs.length)]!;
+
+function sendProgression(fromTop: boolean): void {
+  const cs = chords.value;
+  sink.setProgression(slots.value.map((s, i) => ({ chord: cs[i]!.chord, bars: s.bars })), { fromTop });
 }
 
-function announce(): void {
-  const names = jamChords.value.map(spokenChord).join(', ');
-  // Clear first so the same text is re-announced.
-  announcement.value = '';
-  queueMicrotask(() => (announcement.value = `New progression: ${names}`));
+function sendFeel(): void {
+  const p = vibe.value.playback;
+  sink.setFeel({ groove: p.groove, swing: p.swing, voicing: p.voicing });
 }
 
-function roll(vibeId: string, current: DegreeSlot[] | undefined): DegreeSlot[] {
-  const v = vibeById(vibeId) ?? VIBES[0]!;
-  const length = v.params.lengths.includes(jamLength.value) ? jamLength.value : v.params.lengths[0]!;
-  return generate({ params: v.params, mode: jamKey.value.mode, lengthBars: length, current, seed: newSeed() }).slots;
+function describe(): string {
+  const names = chords.value.map((c) => spokenChord(c.chord)).join(', ');
+  return `New progression in ${formatKey(key.value)} at ${tempo.value} BPM: ${names}`;
 }
 
-function pushHistory(): void {
-  const next = [...jamHistory.value, { slots: jamSlots.value, vibeId: jamVibeId.value }];
-  jamHistory.value = next.slice(-HISTORY_LIMIT);
+function remember(): void {
+  const h = [...history.value, { vibeId: vibeId.value, key: key.value, tempo: tempo.value, slots: slots.value }];
+  history.value = h.slice(-HISTORY_LIMIT);
 }
 
-/** New chords for every unlocked slot (SPEC.md §5.3). */
-export function reroll(): void {
-  if (allLocked.value) return;
-  batch(() => {
-    pushHistory();
-    jamSlots.value = roll(jamVibeId.value, jamSlots.value);
-    rollId.value++;
-  });
-  syncEngine(true);
-  announce();
+/** The chosen length if this vibe offers it; otherwise the longest it offers below it (Blues 12 → 8). */
+function fitLength(v: Vibe, want: number): number {
+  const ls = v.params.lengths;
+  return ls.includes(want) ? want : ([...ls].reverse().find((l) => l < want) ?? ls[0]!);
 }
 
-/** Step back to the previous roll. */
-export function back(): void {
-  const h = jamHistory.value;
-  const prev = h[h.length - 1];
-  if (!prev) return;
-  const vibeChanged = prev.vibeId !== jamVibeId.value;
-  batch(() => {
-    jamHistory.value = h.slice(0, -1);
-    jamSlots.value = prev.slots;
-    jamVibeId.value = prev.vibeId;
-    rollId.value++;
-  });
-  if (vibeChanged) applyVibeTempoAndFeel();
-  syncEngine(true);
-  announce();
+/** Generates a new progression for the current vibe, key mode and length, and starts it from bar 1. */
+function generateNew(): void {
+  lengthBars.value = fitLength(vibe.value, lengthBars.value);
+  slots.value = generate({ params: vibe.value.params, mode: key.value.mode, lengthBars: lengthBars.value, seed: seed() }).slots;
+  sendFeel();
+  sink.setTempo(tempo.value);
+  sendProgression(true);
+  onNewProgression(describe());
 }
 
-export function toggleLock(index: number): void {
-  jamSlots.value = jamSlots.value.map((s, i) => (i === index ? { ...s, locked: !s.locked } : s));
-}
-
-function applyVibeTempoAndFeel(): void {
-  if (!tempoTouched.value) setTempo(jamVibe.value.playback.tempo.default, false);
-  syncFeel();
-}
-
-/** Choosing a vibe regenerates unlocked slots right away; locks stay (SPEC.md §5.2). */
-export function selectVibe(id: string): void {
-  if (id === jamVibeId.value) return;
-  batch(() => {
-    pushHistory();
-    jamVibeId.value = id;
-    jamSlots.value = roll(id, jamSlots.value);
-    rollId.value++;
-  });
-  applyVibeTempoAndFeel();
-  syncEngine(true);
-  announce();
-}
-
-/** Changing key transposes everything, locks included, and never re-rolls (SPEC.md §4.1). */
-export function setKey(key: Key): void {
-  if (key.mode !== jamKey.value.mode) {
-    // Major and minor use different rules, so a mode change is a new roll that keeps the locks.
-    batch(() => {
-      pushHistory();
-      jamKey.value = key;
-      jamSlots.value = roll(jamVibeId.value, jamSlots.value);
-      rollId.value++;
-    });
-    syncEngine(true);
-    announce();
-    return;
-  }
-  jamKey.value = key;
-  syncEngine(false);
-}
-
-export function setTempo(bpm: number, manual = true): void {
-  const v = clampTempo(bpm);
-  jamTempo.value = v;
-  if (manual) tempoTouched.value = true;
-  engine.setTempo(v);
-}
-
-/** First load: a progression is already there, so Jam is never empty (SPEC.md §5.2). */
+/** First load (SPEC.md §5.1): a progression is ready before anything is tapped. */
 export function initJam(): void {
-  jamSlots.value = roll(jamVibeId.value, undefined);
-  syncFeel();
-  engine.setTempo(jamTempo.value);
-  syncEngine(true);
+  generateNew();
+}
+
+/** Re-roll (SPEC.md §5.3): new chords, and a new key and tempo unless held. */
+export function reroll(): void {
+  batch(() => {
+    remember();
+    if (!keyHeld.value) {
+      const m: Mode = random() < 0.5 ? 'major' : 'minor';
+      key.value = { tonic: pick(KEY_TONICS[m]), mode: m };
+    }
+    if (!tempoHeld.value) {
+      const t = vibe.value.playback.tempo;
+      tempo.value = clampTempo(t.min + random() * (t.max - t.min));
+    }
+    generateNew();
+  });
+}
+
+/** Back (SPEC.md §5.4): restore the previous roll exactly. Returns false at the oldest roll. */
+export function back(): boolean {
+  const h = history.value;
+  const prev = h[h.length - 1];
+  if (!prev) return false;
+  batch(() => {
+    history.value = h.slice(0, -1);
+    vibeId.value = prev.vibeId;
+    key.value = prev.key;
+    tempo.value = prev.tempo;
+    slots.value = prev.slots;
+    lengthBars.value = prev.slots.reduce((a, s) => a + s.bars, 0);
+    sendFeel();
+    sink.setTempo(tempo.value);
+    sendProgression(true);
+    onNewProgression(describe());
+  });
+  return true;
+}
+
+/** Vibe picker (SPEC.md §4.2): a new progression in the same key; tempo to the vibe default unless held. */
+export function chooseVibe(id: string): void {
+  if (!vibeById(id)) return;
+  batch(() => {
+    remember();
+    vibeId.value = id;
+    if (!tempoHeld.value) tempo.value = vibe.value.playback.tempo.default;
+    generateNew();
+  });
+}
+
+/** Length (SPEC.md §5.5): a new progression at that length, same key and tempo. */
+export function chooseLength(bars: number): void {
+  if (bars === lengthBars.value || !vibe.value.params.lengths.includes(bars)) return;
+  batch(() => {
+    remember();
+    lengthBars.value = bars;
+    generateNew();
+  });
+}
+
+/** Key picker, tonic (SPEC.md §4.3): transposes; nothing re-rolls; the loop keeps its place. */
+export function chooseTonic(tonic: Note): void {
+  if (pc(tonic) === pc(key.value.tonic)) return;
+  key.value = { tonic, mode: key.value.mode };
+  sendProgression(false);
+}
+
+/** Key picker, mode (SPEC.md §4.3): a new progression in the same tonic; the old one goes on the history. */
+export function chooseMode(m: Mode): void {
+  if (m === key.value.mode) return;
+  batch(() => {
+    remember();
+    const same = KEY_TONICS[m].find((t) => pc(t) === pc(key.value.tonic)) ?? KEY_TONICS[m][0]!;
+    key.value = { tonic: same, mode: m };
+    generateNew();
+  });
+}
+
+/** Tempo picker (SPEC.md §4.4). Clamped to 40–240. */
+export function setTempo(bpm: number): void {
+  const t = clampTempo(bpm);
+  if (t === tempo.value) return;
+  tempo.value = t;
+  sink.setTempo(t);
+}
+
+/** For tests: back to first-load state. */
+export function resetJam(): void {
+  batch(() => {
+    vibeId.value = DEFAULT_VIBE;
+    key.value = DEFAULT_KEY;
+    tempo.value = vibeById(DEFAULT_VIBE)!.playback.tempo.default;
+    keyHeld.value = false;
+    tempoHeld.value = false;
+    lengthBars.value = DEFAULT_LENGTH;
+    slots.value = [];
+    history.value = [];
+  });
 }
