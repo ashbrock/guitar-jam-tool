@@ -84,7 +84,7 @@ Lines are thin and blurred, so real values sit much closer to the over-`--bg` fi
 - **Off switch:** `--switch-off` alone is 1.73:1 against `--glass-strong`, under the 3:1 needed for controls. **Fix (NEW, approved):** a 1 px `--muted` inset border on the off track (7.39:1).
 
 ### 2.5 Visual palettes (decorative)
-Each vibe's look has two gradient pairs, one for major-family chords (warmer) and one for minor and diminished (cooler). These colours are **decorative only**: no text, no state, no information depends on them.
+Each vibe's look has two gradient pairs, one for major-family chords (warmer) and one for minor and diminished (cooler). They colour the particle waves (§3.5) and the 2D fallback styles. These colours are **decorative only**: no text, no state, no information depends on them.
 
 | Vibe | Major pair | Minor pair |
 |---|---|---|
@@ -168,18 +168,25 @@ A vibe can name a WebGL scene in its look (`"gl"`). Where WebGL 2 works, that sc
 
 A scene only supplies its Three.js scene, camera, bloom settings and a per-frame update.
 
-**Neo-soul: "particle waves"** (`gl/waves.ts`)
-Earlier pilots, liquid light and a lit orb (from Santosh Arron's MIT *audio-visualizer-three-js*), were tried and set aside; both are in git history.
-- **Picture:** a sea of about 30,800 points (220 × 140) receding to a horizon behind the chord card, seen from low over the water. Greyscale.
-- **Harmony:** each chord tone sends its own set of waves across the field, in its own direction and at its own ratio. The chord is a moving interference pattern: consonant chords roll calmly, tense ones chop. A chord change crossfades one pattern into the next, and sends a ring outward from just behind the card, like a drop in water (34 units per second).
-- **Audio and beat:** bass raises the swell, treble adds a fine shimmer, and the beat swell breathes the whole sea.
+**Every vibe: "particle waves"** (`gl/waves.ts`)
+Earlier pilots were tried and set aside; both are in git history:
+- liquid light;
+- a lit orb, from Santosh Arron's MIT *audio-visualizer-three-js*.
+
+The 2D styles (§3.2) remain the fallback.
+
+- **Picture:** about 66,000 particles (300 × 220) over a 240 × 190 field, seen from about 50° above. It fills the screen with no horizon but keeps a sense of depth and swell.
+  - Particles are nudged off the grid by a fixed pseudo-random amount and drift along a slow, curling current, so the field flows like streams rather than rows.
+  - The whole field sways gently.
+- **Harmony:** each chord tone sends its own set of waves across the field, in its own direction and at its own ratio. The chord is a moving interference pattern: consonant chords roll calmly, tense ones chop. A chord change crossfades one pattern into the next, and sends a ring outward from under the chord card, like a drop in water (34 units per second).
+- **Audio and beat:** bass raises the swell, treble adds a fine shimmer, and the beat swell breathes the whole field.
+- **Colour per vibe:** the vibe's palette (§2.5) washes slowly across the field: the major pair for major-family chords, the minor pair for minor and diminished, easing between them on changes. Crests lean to the second colour.
 - **Light:**
-  - Crests catch the light and troughs fall into shadow (`0.18 + 0.82 × smoothstep(−3, 4.5, height)`).
-  - The far field and the nearest rows fade out.
-  - Points are soft round sprites, sized by distance and capped at 3.2 px × resolution, so the near rows don't read as a grid.
+  - Crests catch the light and swell in size; troughs fall into shadow (`0.2 + 0.8 × smoothstep(−3, 4, height)`), never quite to black, so the field reads as one sea.
+  - Points are soft round sprites, capped at 3.6 px × resolution.
+- **Feel per vibe:** from the vibe's look, wave height comes from `amp` and flow strength from `sway`; speed comes from `speed` and tempo. So Dreamy rolls slow and tall, Heartland quicker, and Blues sways with the shuffle.
 - **Bloom:** strength 0.6, radius 0.35, threshold 0.18.
-- **Camera:** slightly higher on tall phones, so the wave fills more of the screen.
-- **Cost:** about 31k points is light work for a phone GPU. It can't be measured here (no GPU in the build container), so check on real phones.
+- **Cost:** about 66k additive points per frame is modest for a phone GPU, and resolution adapts. It can't be measured here (no GPU in the build container), so check on real phones.
 
 ---
 
@@ -403,5 +410,4 @@ To be designed with the Solo layout (SPEC A13). These rules carry over and are f
 | Solo layout and fretboard | Next design task (SPEC A13). |
 | Own accidentals | Replace the thin Noto ♭/♯ (§4.1). |
 | Toasts, blocked-audio message | Visual design pending (§8.3). |
-| WebGL scenes for the other five vibes | After the Neo-soul pilot is approved (§3.5). |
 | Wordmark | No product name yet. Until there is one, the top bar shows only the mode tabs. |

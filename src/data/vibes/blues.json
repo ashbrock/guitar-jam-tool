@@ -97,7 +97,7 @@
     "minor": ["minorBlues", "minorPentatonic", "dorian", "naturalMinor"]
   },
   "look": {
-    "style": "smoke",
+    "style": "smoke", "gl": "waves",
     "major": ["#2f7bff", "#36d1ff"], "minor": ["#1f4fd1", "#2f7bff"],
     "lines": 16, "width": 3.2, "amp": 1.6, "speed": 0.4, "cycles": 0.9, "sway": 0.6
   }

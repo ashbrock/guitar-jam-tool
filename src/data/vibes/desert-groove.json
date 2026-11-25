@@ -74,7 +74,7 @@
     "minor": ["dorian", "phrygian", "harmonicMinor", "minorPentatonic"]
   },
   "look": {
-    "style": "dunes",
+    "style": "dunes", "gl": "waves",
     "major": ["#ff7a3d", "#ffd23f"], "minor": ["#e0442b", "#ff9a3d"],
     "lines": 16, "width": 1.3, "amp": 1.2, "speed": 0.75, "cycles": 2.6, "sway": 0.1
   }

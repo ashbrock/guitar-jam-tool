@@ -68,7 +68,7 @@
     "minor": ["dorian", "naturalMinor", "minorPentatonic"]
   },
   "look": {
-    "style": "aurora",
+    "style": "aurora", "gl": "waves",
     "major": ["#8fe3ff", "#e9f7ff"], "minor": ["#4f9dff", "#8fe3ff"],
     "lines": 20, "width": 1.4, "amp": 1.6, "speed": 0.25, "cycles": 0.7, "sway": 0
   }
