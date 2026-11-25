@@ -11,12 +11,14 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/three": "^0.172.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.1"
   },
   "dependencies": {
     "@preact/signals": "^2.11.4",
-    "preact": "^11.2.0"
+    "preact": "^11.2.0",
+    "three": "^0.172.0"
   }
 }

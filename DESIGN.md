@@ -156,6 +156,24 @@ All easing is frame-rate independent (`1 − e^(−rate·dt)`). On pause, the dr
 - **Reduced motion:** no drift and no swell; chord changes switch shape and colour without crossfading. The visuals still appear when playing, but stand still.
 - **Hidden from assistive tech** (`aria-hidden`). The canvas carries no information that isn't in text.
 
+### 3.5 WebGL scenes (Three.js)
+A vibe can name a WebGL scene in its look (`"gl"`). Where WebGL 2 works, that scene draws instead of the 2D style; the 2D style stays as the fallback (no WebGL 2, Three.js fails to load, or the GL context is lost). Three.js is loaded the first time a scene is needed (on first Play), in its own chunk (about 123 KB gzipped), so the first screen is as fast as before. Both renderers draw the same `Scene` from the shared state (§3.1), so timing, crossfades, pause and reduced motion behave identically.
+
+**Pilot: Neo-soul, "liquid light"**
+- **Picture:** up to four streams of light, one per chord tone, flowing through a slowly folding liquid field over near-black.
+- **Harmony:** each stream follows its tone's ratio. A chord change blends the previous chord's shapes into the new one. A 7th chord's fourth stream fades in with the crossfade.
+- **Beat and change:** the beat swell thickens the streams slightly. A chord change brightens the middle briefly (`exp(−1.6 × seconds)`).
+- **Look:**
+  - Glow: a tight halo around each stream, so the background stays dark.
+  - Bloom: only the bright cores (strength 0.75, radius 0.45, threshold 0.32).
+  - Highlights: filmic (ACES) tone mapping, exposure 0.95.
+  - Finish: film grain (±1.75%) and a soft vignette.
+  - Colours: the vibe's palette (§2.5), converted from sRGB to linear for lighting.
+- **Cost:**
+  - Draws at up to 1.25× device resolution, and bloom works at reduced resolution.
+  - If frames keep running long (more than 24 ms for about 45 frames), resolution steps down by 0.2, to a floor of 0.6×.
+  - Can't be measured here (no GPU in the build container), so check on real phones.
+
 ---
 
 ## 4. Typography
@@ -379,4 +397,5 @@ To be designed with the Solo layout (SPEC A13). These rules carry over and are f
 | Solo layout and fretboard | Next design task (SPEC A13). |
 | Own accidentals | Replace the thin Noto ♭/♯ (§4.1). |
 | Toasts, blocked-audio message | Visual design pending (§8.3). |
+| WebGL scenes for the other five vibes | After the Neo-soul pilot is approved (§3.5). |
 | Wordmark | No product name yet. Until there is one, the top bar shows only the mode tabs. |

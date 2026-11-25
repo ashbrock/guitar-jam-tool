@@ -56,9 +56,15 @@ export interface VibePlayback {
 export const VISUAL_STYLES = ['ribbons', 'smoke', 'grooves', 'road', 'aurora', 'dunes'] as const;
 export type VisualStyle = (typeof VISUAL_STYLES)[number];
 
+/** WebGL scenes (DESIGN.md §3.5). A vibe with one uses it where WebGL 2 works; `style` is the fallback. */
+export const GL_SCENES = ['liquid'] as const;
+export type GlScene = (typeof GL_SCENES)[number];
+
 export interface VibeLook {
-  /** Which visualisation this vibe uses. */
+  /** The 2D visualisation (and the fallback when the vibe has a WebGL scene). */
   style: VisualStyle;
+  /** The WebGL scene, if this vibe has one. */
+  gl?: GlScene;
   /** Gradient pairs: warmer for major-family chords, cooler for minor and diminished. */
   major: [string, string];
   minor: [string, string];
@@ -161,6 +167,7 @@ export function vibeProblems(v: Vibe): string[] {
   if (!look) at('look', 'missing');
   else {
     if (!(VISUAL_STYLES as readonly string[]).includes(look.style)) at('look.style', `must be one of ${VISUAL_STYLES.join(', ')}`);
+    if (look.gl !== undefined && !(GL_SCENES as readonly string[]).includes(look.gl)) at('look.gl', `must be one of ${GL_SCENES.join(', ')}`);
     for (const k of ['major', 'minor'] as const) {
       const pair = look[k];
       if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((c) => /^#[0-9a-f]{6}$/i.test(c))) at(`look.${k}`, 'must be two #rrggbb colours');

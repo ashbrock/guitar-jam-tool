@@ -3,18 +3,18 @@
 // and sets the current card's progress bar directly (60 fps without re-rendering).
 import { useEffect } from 'preact/hooks';
 import type { RefObject } from 'preact';
-import { Visuals } from '../visuals/renderer';
+import { Visuals } from '../visuals/index';
 import { chords, slots, vibe } from './state/jam';
 import { engine, syncPlayhead } from './state/playback';
 
 /** The current card's progress fill, registered by the carousel. */
 export const progressBar: { el: HTMLElement | null; slot: number } = { el: null, slot: 0 };
 
-export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>): void {
+export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanvas: RefObject<HTMLCanvasElement | null>): void {
   useEffect(() => {
-    if (!canvas.current) return;
+    if (!canvas.current || !glCanvas.current) return;
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-    const visuals = new Visuals(canvas.current, bg);
+    const visuals = new Visuals(canvas.current, glCanvas.current, bg);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const onResize = () => visuals.resize();
     window.addEventListener('resize', onResize);

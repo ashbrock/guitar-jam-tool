@@ -428,3 +428,4 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A15** | Mic-reactive visuals in Solo. | Stretch goal, after v1. |
 | **A16** | Move each vibe's visual look into the vibe data files. | Working default for the rebuild. |
 | **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |
+| **A18** | Visuals use WebGL (Three.js, approved) where available, loaded on first Play, with the 2D styles as the fallback. Neo-soul is the pilot. | ✅ Decided (dependency approved). |

@@ -86,4 +86,8 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **Styles are separate modules with pure geometry helpers and a test that draws every style onto a recording canvas.** NaN coordinates, out-of-range alphas or drawing while hidden would fail in Node, without a browser.
 - **Hazy styles (smoke, aurora) draw at 1× resolution.** Large translucent fills were the bottleneck: 12 fps with the CPU slowed, against 31 and 17 after. The scaling softness suits haze anyway.
 - **The aurora uses jittered streaks of three widths.** Evenly spaced streaks of one width read as a bar chart.
+- **The visuals move to WebGL with Three.js (approved dependency).** The 2D canvas couldn't do glow, depth or texture at phone frame rates. Three.js brings tested bloom, tone mapping and post-processing, and room for real 3D later. Plain WebGL would have meant writing all that ourselves.
+- **Three.js loads on first Play, in its own chunk (about 123 KB gzipped).** The visuals are hidden before Play anyway, so the first screen pays nothing for them. The 2D styles remain the fallback.
+- **One shared visual state feeds both renderers.** Crossfades, pause, the beat swell and reduced motion are computed once and tested (`state.test.ts`). The WebGL scene can't drift from the rules, and the shader's inputs are a pure, tested mapping.
+- **Liquid light for the Neo-soul pilot: tight halos, bloom only on bright cores, filmic tone mapping.** The first pass washed the screen red: too much soft halo and too much bloom. A dark field between the streams keeps it premium, and keeps text readable in a dim room.
 

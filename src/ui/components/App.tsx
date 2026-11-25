@@ -14,7 +14,8 @@ const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.tagName
 
 export function App() {
   const canvas = useRef<HTMLCanvasElement>(null);
-  useFrameLoop(canvas);
+  const glCanvas = useRef<HTMLCanvasElement>(null);
+  useFrameLoop(canvas, glCanvas);
 
   useEffect(() => {
     // Keyboard (SPEC.md §9). Ignored while typing; Space on a focused button is left to the button.
@@ -62,6 +63,7 @@ export function App() {
   return (
     <>
       <canvas class="viz" ref={canvas} aria-hidden="true" />
+      <canvas class="viz" ref={glCanvas} aria-hidden="true" />
       <TopBar />
       <StatusPill />
       <main class="stage">
