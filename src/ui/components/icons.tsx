@@ -55,3 +55,8 @@ export const ChevronLeftIcon = () => (
     <path d="m15 6-6 6 6 6" />
   </I>
 );
+export const HashIcon = () => (
+  <I>
+    <path d="M9.5 4 8 20M16 4l-1.5 16M4.5 9h15.5M4 15h15.5" />
+  </I>
+);

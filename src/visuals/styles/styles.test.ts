@@ -143,7 +143,7 @@ describe('every style draws a sane frame', () => {
           const { ctx, log } = fakeContext();
           const scene: Scene = {
             w, h, look: v.look, layers, base: 1.3, t: 12.3, swell: 0.12, presence: 1,
-            colA: [255, 138, 61], colB: [255, 77, 126], changeAge: 0.4, beatPos: 7.3,
+            colA: [255, 138, 61], colB: [255, 77, 126], changeAge: 0.4, beatPos: 7.3, levels: { bass: 0.5, mid: 0.3, treble: 0.2 },
           };
           drawStyle(v.look.style, ctx, scene, '#0b0b0b');
           expect(log.points).toBeGreaterThan(50);
@@ -158,7 +158,7 @@ describe('every style draws a sane frame', () => {
   it('draws nothing visible at zero presence', () => {
     for (const v of VIBES) {
       const { ctx, log } = fakeContext();
-      drawStyle(v.look.style, ctx, { w: 390, h: 844, look: v.look, layers: [triad], base: 1, t: 0, swell: 0, presence: 0, colA: [1, 2, 3], colB: [4, 5, 6], changeAge: 0, beatPos: 0 }, '#0b0b0b');
+      drawStyle(v.look.style, ctx, { w: 390, h: 844, look: v.look, layers: [triad], base: 1, t: 0, swell: 0, presence: 0, colA: [1, 2, 3], colB: [4, 5, 6], changeAge: 0, beatPos: 0, levels: { bass: 0, mid: 0, treble: 0 } }, '#0b0b0b');
       for (const a of log.alphas) expect(a).toBe(0);
     }
   });

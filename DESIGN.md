@@ -159,18 +159,21 @@ All easing is frame-rate independent (`1 − e^(−rate·dt)`). On pause, the dr
 ### 3.5 WebGL scenes (Three.js)
 A vibe can name a WebGL scene in its look (`"gl"`). Where WebGL 2 works, that scene draws instead of the 2D style; the 2D style stays as the fallback (no WebGL 2, Three.js fails to load, or the GL context is lost). Three.js is loaded the first time a scene is needed (on first Play), in its own chunk (about 123 KB gzipped), so the first screen is as fast as before. Both renderers draw the same `Scene` from the shared state (§3.1), so timing, crossfades, pause and reduced motion behave identically.
 
-**Pilot: Neo-soul, "liquid light"**
-- **Picture:** up to four streams of light, one per chord tone, flowing through a slowly folding liquid field over near-black.
-- **Harmony:** each stream follows its tone's ratio. A chord change blends the previous chord's shapes into the new one. A 7th chord's fourth stream fades in with the crossfade.
-- **Beat and change:** the beat swell thickens the streams slightly. A chord change brightens the middle briefly (`exp(−1.6 × seconds)`).
+**Pilot: Neo-soul, "orb"**
+Starting point: Santosh Arron's *audio-visualizer-three-js* (MIT, 2021): a noise-deformed wireframe sphere between two wireframe terrains, reacting to bass and treble. We rebuilt it for current Three.js (the original's geometry APIs no longer exist), moved the deformation to the GPU, and tied it to the harmony as well as the audio.
+- **Picture:** a glowing wireframe sphere (icosahedron, detail 4, radius 18) framing the chord card. Wireframe terrains above and below fade into the dark with distance. Everything turns slowly, at the music's drift speed, so it stops on pause.
+- **Harmony:** the sphere's surface is one noise field per chord tone, each at that tone's ratio and weighted by how present the tone is. Consonant chords swell broadly; tense ones get busier. A chord change crossfades the previous shape into the new one and briefly swells the sphere.
+- **Audio:** the engine's output is analysed into bass, mid and treble (`src/audio/levels.ts`), smoothed (fast attack, slower release, held on pause, off under reduced motion). Bass pushes the sphere and ripples the floor; treble adds fine detail to the sphere and ripples the ceiling. The beat swell breathes it.
 - **Look:**
-  - Glow: a tight halo around each stream, so the background stays dark.
-  - Bloom: only the bright cores (strength 0.75, radius 0.45, threshold 0.32).
-  - Highlights: filmic (ACES) tone mapping, exposure 0.95.
-  - Finish: film grain (±1.75%) and a soft vignette.
-  - Colours: the vibe's palette (§2.5), converted from sRGB to linear for lighting.
+  - Lines: additive glow in the vibe's palette (§2.5); peaks lean to the second colour and glow brighter; the far side is dimmer.
+  - Bloom: subtle (strength 0.55, radius 0.2, threshold 0.25).
+  - Anti-aliasing: 4× MSAA on the scene target.
+  - Finish: film grain and a soft vignette, applied last, in display colour.
+- **Colour accuracy:**
+  - The background is drawn in the scene, so it comes out exactly `--bg`. A clear colour was converted twice and came out grey.
+  - No tone mapping: a filmic curve crushed the near-black background, and the lines are kept dim enough not to clip.
 - **Cost:**
-  - Draws at up to 1.25× device resolution, and bloom works at reduced resolution.
+  - Draws at up to 1.5× device resolution.
   - If frames keep running long (more than 24 ms for about 45 frames), resolution steps down by 0.2, to a floor of 0.6×.
   - Can't be measured here (no GPU in the build container), so check on real phones.
 
@@ -196,7 +199,7 @@ A vibe can name a WebGL scene in its look (`"gl"`). Where WebGL 2 works, that sc
 | `--t-fine` | 12 px | 400 | Credits, "BPM" under the tempo readout (tracking +0.1em) |
 | `--t-caption` | 13 px | 400 / 500 | Picker titles (uppercase, tracking +0.1em), option descriptions, loading pill, switch hints |
 | `--t-small` | 14 px | 500 | Top segmented control |
-| `--t-chip` | 15 px | 500 | Settings chips |
+| `--t-chip` | 15 px | 500 / 400 | The vibe row (name 500, key and tempo 400), the Settings button |
 | `--t-button` | 16 px | 500 | Re-roll label (uppercase, tracking +0.08em) |
 | `--t-body` | 17 px | 400 / 500 | Mode tabs, picker options, key buttons, body text |
 | `--t-step` | 24 px | 400 | Tempo − / + glyphs |
@@ -268,22 +271,21 @@ Everything is soft and round: it reads as an instrument, not a form.
 3. **Progress bar:** 3 px tall, `--r-pill`, `--track` at 0.14, filled with `--text`.
 4. **Chord chart:** see §7.
 5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
-6. **Back:** a 56 px circle, `--fill-2`, `--muted` icon.
-7. **Re-roll:** 56 px tall pill, always inverted (`--text` fill, `--ink` label), re-roll icon + "RE-ROLL" in `--t-button`. The widest control; grows to fill the row on phones (190 px at 360 px wide).
-8. **Play / Pause:** 56 px circle, `--go` fill, `--ink` icon. Pause shows two bars.
-9. **Settings chip:** 48 px pill, `--fill-2`, `--t-chip`. Vibe chip grows to fill the space and carries a chevron. Open: `--fill-open` and `aria-expanded="true"`. A **HELD** tag (inverted, `--t-micro`, 6 px radius) marks a held key or tempo.
-10. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
-11. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
-12. **Key grid:** Major/Minor in two columns, then 12 keys in six columns, 52 px tall, `--r-key`, `--fill-1`. Selected: inverted.
+6. **Action row (icon buttons):** five 56 px circles, spread across the row: **Undo** (curved arrow; `--fill-2`, `--muted`), **Re-roll** (two arrows; inverted: `--text` fill, `--ink` icon), **Play / Pause** (`--go` fill, `--ink` icon; the centre), **Tempo** (metronome icon) and **Key** (# icon), both `--fill-2`, `--muted`, opening their pickers (open: `--fill-open`, `--text`). Each has an accessible name that includes its value ("Tempo, 84 BPM", "Key, D major, held").
+7. **Held dot:** an 8 px `--text` dot at the top right of the Tempo or Key button, with a 2 px `--bg` ring, when that value is held.
+8. **Vibe row:** a full-width 48 px pill, `--fill-2`: the vibe name in `--t-chip` 500 on the left, the current key and tempo in `--t-chip` 400 `--muted` on the right ("D major · 84 BPM", truncating with an ellipsis), then a chevron. It opens the vibe picker. On desktop it sits left of the action row in one line.
+9. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
+10. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
+11. **Key grid:** Major/Minor in two columns, then 12 keys in six columns, 52 px tall, `--r-key`, `--fill-1`. Selected: inverted.
     **Length:** the same button style in one row ("4 bars", "8 bars", "12 bars"), under a "LENGTH" title in the vibe picker.
-13. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
-14. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
-15. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.
-13a. **Settings views:** the main view lists a **nav row** (like a switch row, with the label, a hint and a `--muted` right chevron) for Sound, then the Count-in and Metronome switch rows, 6 px apart. The Sound view replaces it in place: a 48 px **back control** (left chevron + "Sound" in `--t-body` 500, no fill until hover) instead of a title, then the part switches and credits. No slide animation between views.
-16. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Sound.
+12. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
+13. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
+14. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.
+12a. **Settings views:** the main view lists a **nav row** (like a switch row, with the label, a hint and a `--muted` right chevron) for Sound, then the Count-in and Metronome switch rows, 6 px apart. The Sound view replaces it in place: a 48 px **back control** (left chevron + "Sound" in `--t-body` 500, no fill until hover) instead of a title, then the part switches and credits. No slide animation between views.
+15. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Sound.
 
 ### 6.1 Icons
-Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, back (curved arrow), re-roll (two arrows), chevron (down, left, right), sliders (Settings). Icons never stand alone on Re-roll; Play and Back have accessible names.
+Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, undo (curved arrow), re-roll (two arrows), metronome (tempo), hash (key), chevron (down, left, right), sliders (Settings). The action row is icon-only; every button has an accessible name, and Tempo and Key include their current values.
 
 ---
 

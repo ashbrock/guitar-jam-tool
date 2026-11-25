@@ -6,6 +6,7 @@ import type { SimpleChord } from '../theory/simplify';
 import type { VibeLook } from '../theory/vibe';
 import { approach, baseCycles, beatSwell, chordRatios, type Layer } from './harmony';
 import type { Scene } from './scene';
+import { SILENT, type AudioLevels } from '../audio/levels';
 
 export interface VisualInput {
   look: VibeLook;
@@ -20,6 +21,17 @@ export interface VisualInput {
   beatPosition: number;
   tempo: number;
   reducedMotion: boolean;
+  /** Raw loudness by band from the engine's output. */
+  levels?: AudioLevels;
+}
+
+/** Level smoothing: quick to rise, slower to fall, so hits move the picture without flicker. */
+const ATTACK = 18;
+const RELEASE = 5;
+
+/** One smoothing step for a level (rates per second). */
+export function smoothLevel(cur: number, target: number, dt: number): number {
+  return approach(cur, target, dt, target > cur ? ATTACK : RELEASE);
 }
 
 export const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -45,6 +57,7 @@ export class VisualState {
   private coloured = false;
   private changeAge = 10;
   private beatPos = 0;
+  private levels: AudioLevels = { ...SILENT };
 
   /**
    * Advances the state to `now` (a performance.now() timestamp, ms) and returns the scene to draw,
@@ -94,6 +107,15 @@ export class VisualState {
     if (!still && playing) this.phase += dt * (f.tempo / 90) * 2.2 * look.speed * (0.3 + 0.7 * this.presence);
     if (still) this.swell = 0;
     else if (playing) this.swell = beatSwell(f.beatFraction);
+    if (still) this.levels = { ...SILENT };
+    else if (playing) {
+      const raw = f.levels ?? SILENT;
+      this.levels = {
+        bass: smoothLevel(this.levels.bass, raw.bass, dt),
+        mid: smoothLevel(this.levels.mid, raw.mid, dt),
+        treble: smoothLevel(this.levels.treble, raw.treble, dt),
+      };
+    }
 
     if (this.presence <= 0.003) return null;
     return {
@@ -109,6 +131,7 @@ export class VisualState {
       colB: this.colB,
       changeAge: still ? 10 : this.changeAge,
       beatPos: still ? 0 : this.beatPos,
+      levels: { ...this.levels },
     };
   }
 }

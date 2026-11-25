@@ -1,27 +1,32 @@
-/* DESIGN.md §6.5–6.9 */
+/* DESIGN.md §6: floating panel, action row, held dot, vibe row */
 .panel {
   position: fixed; left: var(--s-12); right: var(--s-12); bottom: max(var(--s-12), env(safe-area-inset-bottom)); z-index: 2;
   margin: 0 auto; max-width: var(--panel-max); padding: var(--s-10); border-radius: var(--r-panel);
   background: var(--glass); backdrop-filter: var(--blur-panel); -webkit-backdrop-filter: var(--blur-panel); border: 1px solid var(--line);
 }
 .row { display: flex; gap: var(--gap); align-items: center; }
+.actions { justify-content: space-between; }
 .settings { margin-top: var(--s-8); }
-.round { width: var(--target-primary); height: var(--target-primary); flex: none; border-radius: var(--r-pill); display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
-.round[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; }
-.reroll { flex: 1; min-width: 0; height: var(--target-primary); border-radius: var(--r-pill); font-size: var(--t-button); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; display: inline-flex; align-items: center; justify-content: center; gap: var(--s-8); white-space: nowrap; }
-.play { width: var(--target-primary); height: var(--target-primary); flex: none; border-radius: var(--r-pill); background: var(--go); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
-@media (hover: hover) { .play:hover { box-shadow: inset 0 0 0 1px var(--text); } }
-.chip { height: var(--target-min); padding: 0 var(--s-14); border-radius: var(--r-pill); font-size: var(--t-chip); font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: var(--s-8); white-space: nowrap; }
-.chip.grow { flex: 1; justify-content: space-between; min-width: 0; }
-.chip .bpm { display: inline-block; min-width: 2ch; text-align: right; }
-.chip .k { color: var(--muted); margin-left: -4px; }
+.icon-btn {
+  position: relative; width: var(--target-primary); height: var(--target-primary); flex: none; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; justify-content: center; color: var(--text);
+}
+.icon-btn.fill { color: var(--muted); }
+.icon-btn.inv { color: var(--ink); }
+.icon-btn.fill[aria-expanded='true'] { background: var(--fill-open); color: var(--text); }
+.icon-btn[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; }
+.icon-btn.play { background: var(--go); color: var(--ink); }
+@media (hover: hover) { .icon-btn.play:hover { box-shadow: inset 0 0 0 1px var(--text); } }
+/* A held key or tempo: a small dot on its button (shape and position, plus "held" in its name). */
+.held-dot { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--text); box-shadow: 0 0 0 2px var(--bg); }
+.chip { height: var(--target-min); padding: 0 var(--s-14); border-radius: var(--r-pill); font-size: var(--t-chip); font-weight: 500; display: inline-flex; align-items: center; gap: var(--s-8); white-space: nowrap; }
+.vibe-chip { flex: 1; min-width: 0; }
+.vibe-chip .vibe-name { flex: none; }
+.vibe-chip .vibe-meta { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; color: var(--muted); font-weight: 400; }
 .chip[aria-expanded='true'] { background: var(--fill-open); }
-.held { font-size: var(--t-micro); letter-spacing: 0.06em; padding: 2px 6px; border-radius: 6px; background: var(--text); color: var(--ink); }
 @media (min-width: 900px) {
   .panel { padding: var(--s-12); }
-  .panel-grid { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 's a'; gap: var(--s-12); align-items: center; }
+  .panel-grid { display: grid; grid-template-columns: 1fr auto; grid-template-areas: 's a'; gap: var(--s-12); align-items: center; }
   .actions { grid-area: a; justify-content: flex-end; }
-  .actions .reroll { width: 200px; flex: none; }
   .settings { grid-area: s; margin-top: 0; }
-  .settings .chip.grow { flex: none; min-width: 180px; }
 }

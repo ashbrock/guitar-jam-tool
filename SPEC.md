@@ -62,14 +62,14 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 │         │ ━━─  │              │  progress through the current chord
 │         └──────┘              │
 │ ╭───────────────────────────╮ │
-│ │ (⟲)  [   RE-ROLL   ]   (▶) │ │  floating panel, row 1: back, re-roll, play
-│ │ [Neo-soul ⌄] [D major] [84]│ │  row 2: settings chips (each opens a picker above)
+│ │ (⟲)  (↻)  (▶)  (♩)  (#)    │ │  floating panel, row 1: undo, re-roll, play, tempo, key
+│ │ [Neo-soul   D major·84 ⌄]  │ │  row 2: vibe (with the key and tempo shown quietly)
 │ ╰───────────────────────────╯ │
 └───────────────────────────────┘
 ```
 
-- **Phone (< 900 px wide):** the panel has two rows: playback on top, settings chips beneath, at the very bottom where the thumb rests.
-- **Desktop (≥ 900 px):** the panel is one row, max 760 px wide and centred: settings chips on the left, playback on the right. The carousel shows more chords either side.
+- **Phone (< 900 px wide):** the panel has two rows: five icon buttons on top, the vibe beneath, at the very bottom where the thumb rests.
+- **Desktop (≥ 900 px):** the panel is one row, max 760 px wide and centred: the vibe on the left, the icon buttons on the right. The carousel shows more chords either side.
 - **Pickers** open as a floating sheet directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). **Settings** drops down from its button in the top bar instead. Only one is open at a time. They close on Esc, a tap outside, or tapping their chip again. Opening or using a picker never stops playback.
 
 ### 3.1 State ownership
@@ -91,11 +91,13 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 ### 4.1 Playback row
 | Control | Behaviour |
 |---|---|
-| **Back** (⟲) | Steps back to the previous roll (§5.4). |
-| **Re-roll** | The primary action (§5.3). Wide, labelled. |
-| **Play / Pause** | Starts and pauses the loop. The largest round control, at bottom right. **[A7]** |
+| **Undo** (curved arrow) | Steps back to the previous roll (§5.4). |
+| **Re-roll** (two arrows) | The primary action (§5.3). Inverted, so it stands out. |
+| **Play / Pause** | Starts and pauses the loop. Green, in the centre of the row. **[A7]** |
+| **Tempo** (metronome icon) | Opens the tempo picker (§4.4). Its name includes the BPM; a dot marks it held. |
+| **Key** (#) | Opens the key picker (§4.3). Its name includes the key; a dot marks it held. |
 
-- Count-in and metronome live in Settings (§4.5), so the playback row is just Back, Re-roll and Play.
+- Count-in and metronome live in Settings (§4.5). The vibe has its own row below, showing the current key and tempo too, so they stay visible although Tempo and Key are icons.
 - **Looping is always on.** The whole progression loops.
 - **Pause** holds the playhead. **Play** resumes from the start of the bar that was playing (not mid-bar), after a count-in if count-in is on.
 - Playback states: `locked-audio` → `stopped` → `count-in` → `playing` ⇄ `paused`. How each looks is in DESIGN.md §8.
@@ -109,13 +111,13 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 - **Major / Minor** segmented control, then 12 tonics in two rows of six, spelled for the mode (D♭ and F♯ major; E♭ and B♭ minor; C♯ minor, not D♭ minor).
 - **Changing the tonic transposes** the current progression. Nothing re-rolls.
 - **Changing major ↔ minor makes a new progression** in the same tonic, because the two modes use different rules. The old one goes onto the history stack, so Back returns to it.
-- **Hold key** switch: "Re-roll won't change it". A held key shows a **HELD** tag on the key chip.
+- **Hold key** switch: "Re-roll won't change it". A held key shows a dot on the Key button and "held" in its name.
 - Spelling of chromatic chords follows the key (♭3, ♭7, ♯4 in major; the leading tone and ♭5 blue note in minor). The table lives in `src/theory/` and is tested.
 
 ### 4.4 Tempo picker
 - Range **40–240 BPM**, whole numbers. Big readout with **− / +** either side (1 BPM per tap), a slider, and **Tap tempo** (averages up to the last 5 taps; taps more than 2 s apart start again).
 - A line under the controls says the vibe's usual range ("Neo-soul usually sits between 65 and 100 BPM").
-- **Hold tempo** switch, with the same HELD tag on the chip.
+- **Hold tempo** switch, with the same dot on the Tempo button.
 - Tempo changes take effect at the next beat, never mid-beat.
 
 ### 4.5 Settings (global)
@@ -293,7 +295,7 @@ The notes you play (microphone pitch detection, nothing recorded or stored) coul
 
 - Shortcuts are ignored while a text field has focus.
 - The carousel is an ordered list. Each card's accessible name is the spoken chord ("E minor 7"). The current card has `aria-current`. No announcement on every chord change during playback.
-- Pickers are dialogs: focus moves into them on open and returns to their chip on close.
+- Pickers are dialogs: focus moves into them on open and returns to their button on close.
 - Toggle buttons use `aria-pressed`; switches use `role="switch"`; single choices use `role="radio"`.
 
 ---

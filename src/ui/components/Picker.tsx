@@ -1,4 +1,4 @@
-// Pickers (SPEC.md §3, DESIGN.md §6.10–6.14). One open at a time; they close on Esc, a tap outside,
+// Pickers (SPEC.md §3, DESIGN.md §6: picker components). One open at a time; they close on Esc, a tap outside,
 // or their trigger. Focus moves into the picker on open and back to its trigger on close.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { VIBES } from '../../data/vibes/index';

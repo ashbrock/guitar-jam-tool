@@ -2,6 +2,7 @@
 // styles only draw. Shared helpers for colour live here too.
 import type { VibeLook } from '../theory/vibe';
 import type { Layer } from './harmony';
+import type { AudioLevels } from '../audio/levels';
 
 export interface Scene {
   w: number;
@@ -24,6 +25,8 @@ export interface Scene {
   changeAge: number;
   /** Continuous position in beats from the start of the loop, from the audio clock (frozen while paused). */
   beatPos: number;
+  /** Smoothed loudness of what's playing, by band, 0–1 (held while paused; 0 under reduced motion). */
+  levels: AudioLevels;
 }
 
 /** A colour between A (0) and B (1), with alpha. */

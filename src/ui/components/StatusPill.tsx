@@ -1,4 +1,4 @@
-// The status pill (DESIGN.md §6.15): instrument loading, disabled-control reasons, audio problems.
+// The status pill (DESIGN.md §6, "Loading pill"): instrument loading, disabled-control reasons, audio problems.
 import { useEffect, useState } from 'preact/hooks';
 import { status, clearStatus } from '../state/ui';
 

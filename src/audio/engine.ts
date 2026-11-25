@@ -17,6 +17,7 @@ const INSTRUMENTS: { part: SampledPart; map: InstrumentMap; dir: string }[] = [
   { part: 'drums', map: virtuosityKit as InstrumentMap, dir: 'virtuosity-kit' },
 ];
 import { voiceChord, type VoicingStyle } from './voicing';
+import { bandLevels, SILENT, type AudioLevels } from './levels';
 
 export type EngineState = 'locked-audio' | TransportState;
 
@@ -70,6 +71,8 @@ export interface Engine {
   previewNote(midi: number): Promise<void>;
   /** What's audible right now, from the audio clock. Poll from requestAnimationFrame for visuals. */
   playhead(): Playhead & { state: EngineState };
+  /** Loudness by band of what's playing right now (for visuals). Silent before audio starts. */
+  levels(): AudioLevels;
   subscribe(listener: (e: EngineEvent) => void): () => void;
   dispose(): void;
 }
@@ -79,6 +82,8 @@ type ContextFactory = () => AudioContext;
 export function createEngine(options: EngineOptions = {}, makeContext: ContextFactory = () => new AudioContext({ latencyHint: 'interactive' })): Engine {
   let ctx: AudioContext | null = null;
   let voices: Voices | null = null;
+  let analyser: AnalyserNode | null = null;
+  let spectrum: Uint8Array<ArrayBuffer> | null = null;
   let loadStatus: LoadStatus = 'idle';
   let transport: Transport | null = null;
   const listeners = new Set<(e: EngineEvent) => void>();
@@ -102,6 +107,16 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
   function build(): void {
     ctx = makeContext();
     voices = new Voices(ctx);
+    // A read-only tap on the master output for the visuals. It feeds a muted gain into the destination
+    // so every browser keeps it processing; it adds nothing to the sound and nothing to the schedule.
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.6;
+    const mute = ctx.createGain();
+    mute.gain.value = 0;
+    voices.output.connect(analyser);
+    analyser.connect(mute).connect(ctx.destination);
+    spectrum = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
     voices.setParts(parts);
     options.onOutput?.(voices.output, ctx);
     const c = ctx;
@@ -229,6 +244,11 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
       // What's audible lags what's scheduled by the output latency; visuals follow the audible time.
       const latency = (ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0;
       return { state: lastState, ...transport.playheadAt(ctx.currentTime - latency) };
+    },
+    levels() {
+      if (!ctx || !analyser || !spectrum || ctx.state !== 'running') return SILENT;
+      analyser.getByteFrequencyData(spectrum);
+      return bandLevels(spectrum, ctx.sampleRate, analyser.fftSize);
     },
     subscribe(listener) {
       listeners.add(listener);

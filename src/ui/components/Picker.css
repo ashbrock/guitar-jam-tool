@@ -1,4 +1,4 @@
-/* DESIGN.md §6.10–6.14 */
+/* DESIGN.md §6: picker, options, key grid, switch row, tempo control */
 .pop {
   padding: var(--s-16); border-radius: var(--r-picker); background: var(--glass-strong);
   backdrop-filter: var(--blur-picker); -webkit-backdrop-filter: var(--blur-picker); border: 1px solid var(--line);

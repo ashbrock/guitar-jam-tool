@@ -78,7 +78,7 @@
     "minor": ["dorian", "minorPentatonic", "naturalMinor"]
   },
   "look": {
-    "style": "ribbons", "gl": "liquid",
+    "style": "ribbons", "gl": "orb",
     "major": ["#ff8a3d", "#ff4d7e"], "minor": ["#ff4d7e", "#c4467a"],
     "lines": 4, "width": 1.6, "amp": 2.4, "speed": 0.55, "cycles": 1.4, "sway": 0.35
   }

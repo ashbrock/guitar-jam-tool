@@ -34,6 +34,7 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
         beatPosition: p.bar * 4 + p.beat + p.beatFraction,
         tempo: engine.tempo,
         reducedMotion: reduced.matches,
+        levels: engine.levels(),
       });
 
       // Smooth progress through the current chord, from the audio clock. Held while paused.

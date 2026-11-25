@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { vibeById } from '../data/vibes/index';
 import { parseChord } from '../theory/chords';
 import { simplify } from '../theory/simplify';
-import { VisualState, type VisualInput } from './state';
+import { VisualState, smoothLevel, type VisualInput } from './state';
 
 const chord = (s: string) => {
   const r = parseChord(s);
@@ -56,5 +56,24 @@ describe('visual state', () => {
     const { scene } = run(s, 2, 0, () => input({ reducedMotion: true }));
     expect(scene!.swell).toBe(0);
     expect(scene!.t).toBe(0);
+  });
+});
+
+describe('audio levels', () => {
+  it('rise quickly and fall slowly', () => {
+    expect(smoothLevel(0, 1, 0.05)).toBeGreaterThan(0.5);
+    expect(smoothLevel(1, 0, 0.05)).toBeGreaterThan(0.7);
+  });
+
+  it('follow the audio while playing, hold while paused, and are zero under reduced motion', () => {
+    const s = new VisualState();
+    const loud = { bass: 0.8, mid: 0.4, treble: 0.2 };
+    const { scene, at } = run(s, 1, 0, () => input({ levels: loud }));
+    expect(scene!.levels.bass).toBeCloseTo(0.8, 2);
+    const { scene: paused } = run(s, 1, at, () => input({ phase: 'paused', levels: { bass: 0, mid: 0, treble: 0 } }));
+    expect(paused!.levels.bass).toBeCloseTo(0.8, 2);
+    const r = new VisualState();
+    const { scene: still } = run(r, 1, 0, () => input({ reducedMotion: true, levels: loud }));
+    expect(still!.levels).toEqual({ bass: 0, mid: 0, treble: 0 });
   });
 });

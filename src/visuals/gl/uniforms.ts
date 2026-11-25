@@ -1,7 +1,7 @@
-// Turns a Scene into the numbers the liquid-light shader reads. Pure, so it's tested without a GPU.
+// Turns a Scene into the numbers the WebGL scenes read. Pure, so it's tested without a GPU.
 import { voiceWeight, type Scene } from '../scene';
 
-export interface LiquidUniforms {
+export interface GlUniforms {
   /** The newest chord's ratios, padded to 4 (an absent voice repeats the root). */
   ratios: [number, number, number, number];
   /** The previous chord's ratios, for the crossfade. */
@@ -10,20 +10,24 @@ export interface LiquidUniforms {
   mix: number;
   /** How present each of the 4 voices is (a 7th's voice fades in with the chord). */
   voices: [number, number, number, number];
-  /** Colours as linear 0–1 RGB is done by the renderer; these are 0–1 sRGB. */
+  /** 0–1 sRGB; the renderer converts to linear. */
   colA: [number, number, number];
   colB: [number, number, number];
   time: number;
   swell: number;
   presence: number;
   base: number;
-  /** A soft glow after each chord change: 1 at the change, easing to 0 over about 2 s. */
+  /** A soft swell after each chord change: 1 at the change, easing to 0 over about 2 s. */
   pulse: number;
+  /** Smoothed loudness of what's playing. */
+  bass: number;
+  mid: number;
+  treble: number;
 }
 
 const pad4 = (r: readonly number[]): [number, number, number, number] => [r[0] ?? 1, r[1] ?? r[0] ?? 1, r[2] ?? r[0] ?? 1, r[3] ?? r[0] ?? 1];
 
-export function liquidUniforms(s: Scene): LiquidUniforms {
+export function glUniforms(s: Scene): GlUniforms {
   const layers = s.layers;
   const newest = layers[layers.length - 1];
   const prev = layers.length > 1 ? layers[layers.length - 2] : newest;
@@ -40,5 +44,8 @@ export function liquidUniforms(s: Scene): LiquidUniforms {
     presence: s.presence,
     base: s.base,
     pulse: Math.exp(-s.changeAge * 1.6),
+    bass: s.levels.bass,
+    mid: s.levels.mid,
+    treble: s.levels.treble,
   };
 }
