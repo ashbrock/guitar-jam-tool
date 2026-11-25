@@ -57,7 +57,7 @@ export const VISUAL_STYLES = ['ribbons', 'smoke', 'grooves', 'road', 'aurora', '
 export type VisualStyle = (typeof VISUAL_STYLES)[number];
 
 /** WebGL scenes (DESIGN.md §3.5). A vibe with one uses it where WebGL 2 works; `style` is the fallback. */
-export const GL_SCENES = ['orb'] as const;
+export const GL_SCENES = ['waves'] as const;
 export type GlScene = (typeof GL_SCENES)[number];
 
 export interface VibeLook {

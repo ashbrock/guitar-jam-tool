@@ -3,7 +3,7 @@
 // canvas style, which is also the fallback if WebGL fails or its context is lost.
 import { Canvas2DVisuals } from './renderer';
 import { VisualState, type VisualInput } from './state';
-import type { OrbVisuals } from './gl/orb';
+import type { GlVisuals } from './gl/stage';
 
 export type { VisualInput } from './state';
 
@@ -18,7 +18,7 @@ function webgl2Available(): boolean {
 export class Visuals {
   private state = new VisualState();
   private flat: Canvas2DVisuals;
-  private gl: OrbVisuals | null = null;
+  private gl: GlVisuals | null = null;
   private glStatus: 'idle' | 'loading' | 'ready' | 'failed';
   private showing: 'flat' | 'gl' = 'flat';
 
@@ -63,8 +63,8 @@ export class Visuals {
   private async loadGl(): Promise<void> {
     this.glStatus = 'loading';
     try {
-      const { OrbVisuals } = await import('./gl/orb');
-      this.gl = new OrbVisuals(this.glCanvas, this.background);
+      const { createWaves } = await import('./gl/waves');
+      this.gl = createWaves(this.glCanvas, this.background);
       this.gl.setFocus(this.focusY);
       this.glStatus = 'ready';
     } catch {

@@ -19,6 +19,8 @@ export interface GlUniforms {
   base: number;
   /** A soft swell after each chord change: 1 at the change, easing to 0 over about 2 s. */
   pulse: number;
+  /** Seconds since the last chord change (for ripples that travel outward). */
+  changeAge: number;
   /** Smoothed loudness of what's playing. */
   bass: number;
   mid: number;
@@ -44,6 +46,7 @@ export function glUniforms(s: Scene): GlUniforms {
     presence: s.presence,
     base: s.base,
     pulse: Math.exp(-s.changeAge * 1.6),
+    changeAge: s.changeAge,
     bass: s.levels.bass,
     mid: s.levels.mid,
     treble: s.levels.treble,

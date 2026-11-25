@@ -27,6 +27,10 @@ describe('GL uniforms', () => {
     expect(u.voices[3]).toBeCloseTo(0.25, 12);
   });
 
+  it('passes the change age through for travelling ripples', () => {
+    expect(glUniforms(scene([triad], { changeAge: 1.25 })).changeAge).toBe(1.25);
+  });
+
   it('passes the audio levels through', () => {
     const u = glUniforms(scene([triad]));
     expect([u.bass, u.mid, u.treble]).toEqual([0.6, 0.3, 0.1]);

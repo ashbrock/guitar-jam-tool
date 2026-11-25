@@ -159,31 +159,27 @@ All easing is frame-rate independent (`1 − e^(−rate·dt)`). On pause, the dr
 ### 3.5 WebGL scenes (Three.js)
 A vibe can name a WebGL scene in its look (`"gl"`). Where WebGL 2 works, that scene draws instead of the 2D style; the 2D style stays as the fallback (no WebGL 2, Three.js fails to load, or the GL context is lost). Three.js is loaded the first time a scene is needed (on first Play), in its own chunk (about 123 KB gzipped), so the first screen is as fast as before. Both renderers draw the same `Scene` from the shared state (§3.1), so timing, crossfades, pause and reduced motion behave identically.
 
-**Pilot: Neo-soul, "orb"**
-Starting point: Santosh Arron's *audio-visualizer-three-js* (MIT, 2021): a noise-deformed wireframe sphere reacting to bass and treble. We rebuilt it for current Three.js (the original's geometry APIs no longer exist), moved the deformation and lighting to the GPU, and tied it to the harmony as well as the audio. The original's floor and ceiling are left out.
-- **Picture:** a greyscale sphere (radius 21) centred on the current chord card, so the chord sits inside it. Two layers:
-  - **Shell:** a dark solid surface (icosahedron, detail 6) that gives the orb its body and hides the lines on the far side.
-  - **Wireframe:** glowing lines on top (detail 4, just outside the shell).
+**Shared stage** (`src/visuals/gl/stage.ts`): every WebGL scene gets the same plumbing:
+- **Renderer and effects:** bloom, then grain and a vignette applied last in display colour, with 4× MSAA.
+- **Background:** drawn in the scene so it's exactly `--bg`, with no tone mapping (a filmic curve crushed the near-black).
+- **Centring:** the view is offset so the scene centres on the chord card.
+- **Adaptive resolution:** up to 1.5×, stepping down by 0.2 to 0.6× if frames run long.
+- **Context loss:** falls back to the 2D style.
 
-  It turns slowly at the music's drift speed, so it stops on pause.
-- **Lighting:** a soft key light from the upper left, fixed to the camera so the lit and shadow sides stay put as the orb turns, plus a faint rim and a small highlight. Normals come from the deformed surface itself, so every bump the music pushes out catches the light.
-  - **Shell:** `0.008 + 0.16·diffuse + 0.3·specular + 0.03·rim`.
-  - **Lines:** `0.025 + 0.7·diffuse + 0.3·specular + 0.12·rim`.
-- **Centring:** the frame loop measures the carousel's centre, and the camera's view is shifted so the orb's centre lands there, on every screen size.
-- **Harmony:** the surface is one noise field per chord tone, each at that tone's ratio and weighted by how present the tone is. Consonant chords swell broadly; tense ones get busier. A chord change crossfades the previous shape into the new one and briefly swells the orb.
-- **Audio:** the engine's output is analysed into bass, mid and treble (`src/audio/levels.ts`), smoothed (fast attack, slower release, held on pause, off under reduced motion). Bass pushes the surface out; treble adds fine detail. The beat swell breathes it.
-- **Finish:**
-  - Bloom: subtle (strength 0.42, radius 0.22, threshold 0.32).
-  - Anti-aliasing: 4× MSAA.
-  - Grain and vignette: applied last, in display colour.
-  - Greyscale only, so the vibe palette (§2.5) doesn't apply to this scene.
-- **Colour accuracy:**
-  - The background is drawn in the scene, so it comes out exactly `--bg`. A clear colour was converted twice and came out grey.
-  - No tone mapping: a filmic curve crushed the near-black background.
-- **Cost:**
-  - Draws at up to 1.5× device resolution.
-  - If frames keep running long (more than 24 ms for about 45 frames), resolution steps down by 0.2, to a floor of 0.6×.
-  - Can't be measured here (no GPU in the build container), so check on real phones.
+A scene only supplies its Three.js scene, camera, bloom settings and a per-frame update.
+
+**Neo-soul: "particle waves"** (`gl/waves.ts`)
+Earlier pilots, liquid light and a lit orb (from Santosh Arron's MIT *audio-visualizer-three-js*), were tried and set aside; both are in git history.
+- **Picture:** a sea of about 30,800 points (220 × 140) receding to a horizon behind the chord card, seen from low over the water. Greyscale.
+- **Harmony:** each chord tone sends its own set of waves across the field, in its own direction and at its own ratio. The chord is a moving interference pattern: consonant chords roll calmly, tense ones chop. A chord change crossfades one pattern into the next, and sends a ring outward from just behind the card, like a drop in water (34 units per second).
+- **Audio and beat:** bass raises the swell, treble adds a fine shimmer, and the beat swell breathes the whole sea.
+- **Light:**
+  - Crests catch the light and troughs fall into shadow (`0.18 + 0.82 × smoothstep(−3, 4.5, height)`).
+  - The far field and the nearest rows fade out.
+  - Points are soft round sprites, sized by distance and capped at 3.2 px × resolution, so the near rows don't read as a grid.
+- **Bloom:** strength 0.6, radius 0.35, threshold 0.18.
+- **Camera:** slightly higher on tall phones, so the wave fills more of the screen.
+- **Cost:** about 31k points is light work for a phone GPU. It can't be measured here (no GPU in the build container), so check on real phones.
 
 ---
 
