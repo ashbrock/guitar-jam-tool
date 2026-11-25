@@ -8,10 +8,12 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const log: { event: AudioEvent; now: number }[] = [];
 let analyser: AnalyserNode | null = null;
 let audioCtx: AudioContext | null = null;
+let outputNode: AudioNode | null = null;
 const engine = createEngine({
   onSchedule: (event, now) => log.push({ event, now }),
   onOutput: (output, ctx) => {
     audioCtx = ctx;
+    outputNode = output;
     analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
     output.connect(analyser);
@@ -76,4 +78,4 @@ function frame() {
 frame();
 
 // Exposed for automated timing checks.
-(window as unknown as { __audio: unknown }).__audio = { engine, log, level, applyProgression, applyVibe, ctx: () => audioCtx };
+(window as unknown as { __audio: unknown }).__audio = { engine, log, level, applyProgression, applyVibe, ctx: () => audioCtx, output: () => outputNode };

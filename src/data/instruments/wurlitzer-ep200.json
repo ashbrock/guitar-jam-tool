@@ -1,0 +1,457 @@
+{
+  "name": "Wurlitzer EP200",
+  "files": [
+    "a1f.m4a",
+    "a1ff.m4a",
+    "a1mp.m4a",
+    "a1pp.m4a",
+    "a2mp.m4a",
+    "ab2pp.m4a",
+    "ab3f.m4a",
+    "ab3ff.m4a",
+    "ab3mp.m4a",
+    "ab3pp.m4a",
+    "ab4f.m4a",
+    "ab6f.m4a",
+    "ab6mp.m4a",
+    "b2f.m4a",
+    "b2ff.m4a",
+    "b4mp.m4a",
+    "c2f.m4a",
+    "c2ff.m4a",
+    "db4f.m4a",
+    "db4ff.m4a",
+    "db4mp.m4a",
+    "db4pp.m4a",
+    "db5f.m4a",
+    "db5ff.m4a",
+    "db5mp.m4a",
+    "db5pp.m4a",
+    "db6f.m4a",
+    "db6mp.m4a",
+    "e2mp.m4a",
+    "e3f.m4a",
+    "e3ff.m4a",
+    "e4ff.m4a",
+    "eb3mp.m4a",
+    "eb3pp.m4a",
+    "f2f.m4a",
+    "f2ff.m4a",
+    "g4ff.m4a",
+    "g4pp.m4a",
+    "g5f.m4a",
+    "g5ff.m4a",
+    "g5mp.m4a",
+    "gb4mp.m4a"
+  ],
+  "layers": [
+    {
+      "lovel": 1,
+      "hivel": 37,
+      "regions": [
+        {
+          "lokey": 33,
+          "hikey": 35,
+          "center": 33,
+          "tune": -5,
+          "volume": -3.2,
+          "file": "a1pp.m4a"
+        },
+        {
+          "lokey": 36,
+          "hikey": 38,
+          "center": 33,
+          "tune": -5,
+          "volume": -3.5,
+          "file": "a1pp.m4a"
+        },
+        {
+          "lokey": 39,
+          "hikey": 47,
+          "center": 44,
+          "tune": -8,
+          "volume": -4.2,
+          "file": "ab2pp.m4a"
+        },
+        {
+          "lokey": 48,
+          "hikey": 53,
+          "center": 51,
+          "tune": -10,
+          "volume": -4.7,
+          "file": "eb3pp.m4a"
+        },
+        {
+          "lokey": 54,
+          "hikey": 59,
+          "center": 56,
+          "tune": -12,
+          "volume": -5.5,
+          "file": "ab3pp.m4a"
+        },
+        {
+          "lokey": 60,
+          "hikey": 62,
+          "center": 61,
+          "tune": -2,
+          "volume": -5.2,
+          "file": "db4pp.m4a"
+        },
+        {
+          "lokey": 63,
+          "hikey": 68,
+          "center": 67,
+          "tune": -2,
+          "volume": -5.2,
+          "file": "g4pp.m4a"
+        },
+        {
+          "lokey": 69,
+          "hikey": 74,
+          "center": 73,
+          "tune": -5,
+          "volume": -5.4,
+          "file": "db5pp.m4a"
+        },
+        {
+          "lokey": 75,
+          "hikey": 80,
+          "center": 79,
+          "tune": -8,
+          "volume": -5.4,
+          "file": "g5mp.m4a"
+        },
+        {
+          "lokey": 81,
+          "hikey": 89,
+          "center": 85,
+          "tune": 6,
+          "volume": -5.6,
+          "file": "db6mp.m4a"
+        },
+        {
+          "lokey": 90,
+          "hikey": 96,
+          "center": 92,
+          "tune": 2,
+          "volume": -5.7,
+          "file": "ab6mp.m4a"
+        }
+      ]
+    },
+    {
+      "lovel": 38,
+      "hivel": 65,
+      "regions": [
+        {
+          "lokey": 33,
+          "hikey": 35,
+          "center": 33,
+          "tune": -5,
+          "volume": -3.8,
+          "file": "a1mp.m4a"
+        },
+        {
+          "lokey": 36,
+          "hikey": 41,
+          "center": 40,
+          "tune": -4,
+          "volume": -4.2,
+          "file": "e2mp.m4a"
+        },
+        {
+          "lokey": 42,
+          "hikey": 47,
+          "center": 45,
+          "tune": -2,
+          "volume": -4.7,
+          "file": "a2mp.m4a"
+        },
+        {
+          "lokey": 48,
+          "hikey": 53,
+          "center": 51,
+          "tune": -9,
+          "volume": -5.1,
+          "file": "eb3mp.m4a"
+        },
+        {
+          "lokey": 54,
+          "hikey": 59,
+          "center": 56,
+          "tune": -8,
+          "volume": -5.3,
+          "file": "ab3mp.m4a"
+        },
+        {
+          "lokey": 60,
+          "hikey": 62,
+          "center": 61,
+          "tune": 4,
+          "volume": -5.3,
+          "file": "db4mp.m4a"
+        },
+        {
+          "lokey": 63,
+          "hikey": 68,
+          "center": 66,
+          "tune": 7,
+          "volume": -5.4,
+          "file": "gb4mp.m4a"
+        },
+        {
+          "lokey": 69,
+          "hikey": 71,
+          "center": 71,
+          "tune": -5,
+          "volume": -5.2,
+          "file": "b4mp.m4a"
+        },
+        {
+          "lokey": 72,
+          "hikey": 74,
+          "center": 73,
+          "tune": 3,
+          "volume": -5.4,
+          "file": "db5mp.m4a"
+        },
+        {
+          "lokey": 75,
+          "hikey": 80,
+          "center": 79,
+          "tune": -8,
+          "volume": -5.4,
+          "file": "g5mp.m4a"
+        },
+        {
+          "lokey": 81,
+          "hikey": 89,
+          "center": 85,
+          "tune": 6,
+          "volume": -5.6,
+          "file": "db6mp.m4a"
+        },
+        {
+          "lokey": 90,
+          "hikey": 96,
+          "center": 92,
+          "tune": 2,
+          "volume": -5.7,
+          "file": "ab6mp.m4a"
+        }
+      ]
+    },
+    {
+      "lovel": 66,
+      "hivel": 89,
+      "regions": [
+        {
+          "lokey": 33,
+          "hikey": 35,
+          "center": 33,
+          "tune": -5,
+          "volume": -4.7,
+          "file": "a1f.m4a"
+        },
+        {
+          "lokey": 36,
+          "hikey": 38,
+          "center": 36,
+          "tune": -7,
+          "volume": -5,
+          "file": "c2f.m4a"
+        },
+        {
+          "lokey": 39,
+          "hikey": 44,
+          "center": 41,
+          "tune": -6,
+          "volume": -4.7,
+          "file": "f2f.m4a"
+        },
+        {
+          "lokey": 45,
+          "hikey": 50,
+          "center": 47,
+          "tune": -8,
+          "volume": -5,
+          "file": "b2f.m4a"
+        },
+        {
+          "lokey": 51,
+          "hikey": 53,
+          "center": 52,
+          "tune": -4,
+          "volume": -4.7,
+          "file": "e3f.m4a"
+        },
+        {
+          "lokey": 54,
+          "hikey": 59,
+          "center": 56,
+          "tune": -11,
+          "volume": -4.8,
+          "file": "ab3f.m4a"
+        },
+        {
+          "lokey": 60,
+          "hikey": 65,
+          "center": 61,
+          "tune": -2,
+          "volume": -4.8,
+          "file": "db4f.m4a"
+        },
+        {
+          "lokey": 66,
+          "hikey": 71,
+          "center": 68,
+          "tune": 0,
+          "volume": -5,
+          "file": "ab4f.m4a"
+        },
+        {
+          "lokey": 72,
+          "hikey": 77,
+          "center": 73,
+          "tune": 3,
+          "volume": -6,
+          "file": "db5f.m4a"
+        },
+        {
+          "lokey": 78,
+          "hikey": 80,
+          "center": 79,
+          "tune": -7,
+          "volume": -5.9,
+          "file": "g5f.m4a"
+        },
+        {
+          "lokey": 81,
+          "hikey": 89,
+          "center": 85,
+          "tune": 0,
+          "volume": -5.9,
+          "file": "db6f.m4a"
+        },
+        {
+          "lokey": 90,
+          "hikey": 96,
+          "center": 92,
+          "tune": 0,
+          "volume": -5.9,
+          "file": "ab6f.m4a"
+        }
+      ]
+    },
+    {
+      "lovel": 90,
+      "hivel": 127,
+      "regions": [
+        {
+          "lokey": 33,
+          "hikey": 35,
+          "center": 33,
+          "tune": -5,
+          "volume": -5.3,
+          "file": "a1ff.m4a"
+        },
+        {
+          "lokey": 36,
+          "hikey": 38,
+          "center": 36,
+          "tune": -7,
+          "volume": -5.3,
+          "file": "c2ff.m4a"
+        },
+        {
+          "lokey": 39,
+          "hikey": 44,
+          "center": 41,
+          "tune": -6,
+          "volume": -5.4,
+          "file": "f2ff.m4a"
+        },
+        {
+          "lokey": 45,
+          "hikey": 50,
+          "center": 47,
+          "tune": -8,
+          "volume": -5.4,
+          "file": "b2ff.m4a"
+        },
+        {
+          "lokey": 51,
+          "hikey": 53,
+          "center": 52,
+          "tune": -2,
+          "volume": -5.4,
+          "file": "e3ff.m4a"
+        },
+        {
+          "lokey": 54,
+          "hikey": 59,
+          "center": 56,
+          "tune": -8,
+          "volume": -5.4,
+          "file": "ab3ff.m4a"
+        },
+        {
+          "lokey": 60,
+          "hikey": 62,
+          "center": 61,
+          "tune": 2,
+          "volume": -5.4,
+          "file": "db4ff.m4a"
+        },
+        {
+          "lokey": 63,
+          "hikey": 65,
+          "center": 64,
+          "tune": -3,
+          "volume": -5.4,
+          "file": "e4ff.m4a"
+        },
+        {
+          "lokey": 66,
+          "hikey": 68,
+          "center": 67,
+          "tune": 3,
+          "volume": -5.4,
+          "file": "g4ff.m4a"
+        },
+        {
+          "lokey": 69,
+          "hikey": 77,
+          "center": 73,
+          "tune": -1,
+          "volume": -3.5,
+          "file": "db5ff.m4a"
+        },
+        {
+          "lokey": 78,
+          "hikey": 80,
+          "center": 79,
+          "tune": -7,
+          "volume": -4.9,
+          "file": "g5ff.m4a"
+        },
+        {
+          "lokey": 81,
+          "hikey": 89,
+          "center": 85,
+          "tune": 0,
+          "volume": -5.5,
+          "file": "db6f.m4a"
+        },
+        {
+          "lokey": 90,
+          "hikey": 96,
+          "center": 92,
+          "tune": 0,
+          "volume": -6,
+          "file": "ab6f.m4a"
+        }
+      ]
+    }
+  ]
+}

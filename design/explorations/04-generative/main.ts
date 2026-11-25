@@ -405,7 +405,8 @@ function renderPicker(name: PickerName): void {
   pop.setAttribute('aria-label', name === 'vibe' ? 'Vibe' : name === 'key' ? 'Key' : 'Tempo');
   if (name === 'vibe') {
     pop.innerHTML = `<h2>Vibe</h2><div class="opt-list" role="radiogroup">${VIBES.map((v, i) =>
-      `<button class="opt" role="radio" aria-checked="${i === vibeIndex}" data-i="${i}"><span>${v.name}<span class="d">${v.descriptor}</span></span></button>`).join('')}</div>`;
+      `<button class="opt" role="radio" aria-checked="${i === vibeIndex}" data-i="${i}"><span>${v.name}<span class="d">${v.descriptor}</span></span></button>`).join('')}</div>
+      <p class="credit">Wurlitzer EP200 samples by <a href="http://www.sullivang.net/" target="_blank" rel="noopener">Greg Sullivan</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>.</p>`;
     pop.querySelectorAll<HTMLButtonElement>('.opt').forEach((b) => b.addEventListener('click', () => {
       vibeIndex = Number(b.dataset.i);
       // A new vibe means a new progression; key stays, tempo moves to the vibe's default unless held.
@@ -517,6 +518,23 @@ function updateCarousel(p: ReturnType<typeof engine.playhead>): void {
 const PLAY = '<svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15L19.5 12z" fill="currentColor" stroke="none"/></svg>';
 const PAUSE = '<svg class="i" viewBox="0 0 24 24"><path d="M6.5 5h4v14h-4zM13.5 5h4v14h-4z" fill="currentColor" stroke="none"/></svg>';
 $('play').innerHTML = PLAY;
+// Instrument loading: a quiet status pill; the synth plays until the samples are ready.
+engine.subscribe((e) => {
+  if (e.type !== 'instrument') return;
+  const el = $('loading');
+  if (e.status === 'loading') {
+    el.hidden = false;
+    el.classList.remove('done');
+    el.textContent = `Loading ${e.name} · ${Math.round(e.progress * 100)}%`;
+  } else if (e.status === 'ready') {
+    el.textContent = `${e.name} ready`;
+    el.classList.add('done');
+    setTimeout(() => (el.hidden = true), 600);
+  } else if (e.status === 'failed') {
+    el.textContent = 'Couldn’t load the piano samples. Using the synth.';
+    setTimeout(() => (el.hidden = true), 4000);
+  }
+});
 engine.subscribe((e) => {
   if (e.type !== 'state') return;
   const active = e.state === 'playing' || e.state === 'count-in';

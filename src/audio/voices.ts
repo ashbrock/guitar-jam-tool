@@ -1,5 +1,9 @@
-// Web Audio instruments: electric piano, bass, click and a small drum kit, all synthesised (no samples).
-// Implements the transport's Sink: it only ever plays what it's told, at the time it's told.
+// Web Audio instruments: a sampled electric piano (with a synth fallback while it loads), bass, click and a
+// small drum kit, through a room reverb, gentle saturation and a compressor.
+// Implements the transport's Sink: it only ever plays what it's told, at the time it's told
+// (humanising only ever moves notes later, never earlier).
+import { jitterVelocity, lateBy, strumOffsets } from './humanize';
+import type { Sampler } from './sampler';
 import type { AudioEvent, Sink } from './transport';
 import { midiToFrequency } from './voicing';
 
@@ -19,6 +23,7 @@ export class Voices implements Sink {
   private readonly buses: Record<Part | 'countIn' | 'preview', GainNode>;
   private readonly noise: AudioBuffer;
   private active = new Set<Voice>();
+  private sampler: Sampler | null = null;
 
   constructor(private readonly ctx: BaseAudioContext, destination: AudioNode = ctx.destination) {
     // Gain staging: parts sum into a fast compressor, then a master trim that keeps peaks under 0 dBFS
@@ -33,17 +38,47 @@ export class Voices implements Sink {
     this.output.gain.value = 0.85;
     compressor.connect(this.output).connect(destination);
 
-    const bus = (level: number) => {
+    // Gentle tape-style saturation in front of the compressor: rounds off transients, adds warmth.
+    const warmth = ctx.createWaveShaper();
+    warmth.curve = saturationCurve(1.6);
+    warmth.oversample = '2x';
+    warmth.connect(compressor);
+
+    // A small room: a generated impulse response (no files), fed by per-part sends.
+    const reverb = ctx.createConvolver();
+    reverb.buffer = roomImpulse(ctx, 2.2);
+    const reverbReturn = ctx.createGain();
+    reverbReturn.gain.value = 0.9;
+    reverb.connect(reverbReturn).connect(compressor);
+
+    const bus = (level: number, send: number) => {
       const g = ctx.createGain();
       g.gain.value = level;
-      g.connect(compressor);
+      g.connect(warmth);
+      if (send > 0) {
+        const s = ctx.createGain();
+        s.gain.value = send;
+        g.connect(s).connect(reverb);
+      }
       return g;
     };
-    this.buses = { chords: bus(1), bass: bus(1), click: bus(1), drums: bus(1), countIn: bus(1), preview: bus(1) };
+    this.buses = {
+      chords: bus(1, 0.32),
+      bass: bus(1, 0.05),
+      click: bus(1, 0),
+      drums: bus(1, 0.14),
+      countIn: bus(1, 0),
+      preview: bus(1, 0.32),
+    };
 
     this.noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const data = this.noise.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  }
+
+  /** Use a sampled instrument for chords once it has loaded (until then the synth plays). */
+  setSampler(sampler: Sampler | null): void {
+    this.sampler = sampler;
   }
 
   /** Mutes and unmutes take effect straight away, with a 10 ms ramp to avoid clicks. */
@@ -94,6 +129,7 @@ export class Voices implements Sink {
       }
     }
     this.active.clear();
+    this.sampler?.silence(now);
   }
 
   /** A chord heard immediately (tapping a chord preview), regardless of part mutes. */
@@ -114,10 +150,32 @@ export class Voices implements Sink {
     sources[0]!.onended = () => this.active.delete(v);
   }
 
-  /** Electric piano: a sine "tine" with a decaying FM bark on the attack, through a gentle low-pass. */
+  /**
+   * Chords: rolled slightly low to high like real fingers, each note a touch different in level.
+   * Sampled Wurlitzer when loaded, otherwise the synth electric piano.
+   */
   private chord(notes: number[], t: number, duration: number, vel: number, bus: GainNode): void {
+    const start = t + lateBy();
+    const sorted = [...notes].sort((a, b) => a - b);
+    const offsets = strumOffsets(sorted.length, vel);
+    if (this.sampler?.ready) {
+      // Level per note so a full chord sits at about the same loudness as the synth did.
+      const level = 1.25 / Math.sqrt(Math.max(1, sorted.length));
+      sorted.forEach((n, i) => {
+        const v = jitterVelocity(vel);
+        const played = this.sampler!.play(n, start + offsets[i]!, duration - offsets[i]!, v, bus, level);
+        if (!played) this.synthNote(n, start + offsets[i]!, duration - offsets[i]!, v, sorted.length, bus);
+      });
+      return;
+    }
+    sorted.forEach((n, i) => this.synthNote(n, start + offsets[i]!, duration - offsets[i]!, jitterVelocity(vel), sorted.length, bus));
+  }
+
+  /** Synth electric piano note: a sine "tine" with a decaying FM bark on the attack, through a gentle low-pass. */
+  private synthNote(n: number, t: number, duration: number, vel: number, count: number, bus: GainNode): void {
+    const notes = [n];
     const ctx = this.ctx;
-    const level = (0.22 * vel) / Math.sqrt(Math.max(1, notes.length));
+    const level = (0.22 * vel) / Math.sqrt(Math.max(1, count));
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = 3200;
@@ -159,9 +217,12 @@ export class Voices implements Sink {
     sub.frequency.value = f;
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 900;
+    // A pluck: bright on the attack, closing down as the note settles.
+    filter.Q.value = 0.8;
+    filter.frequency.setValueAtTime(1500 + 900 * vel, t);
+    filter.frequency.exponentialRampToValueAtTime(420, t + 0.28);
     const env = ctx.createGain();
-    const level = 0.42 * vel;
+    const level = 0.42 * jitterVelocity(vel);
     const end = t + Math.max(0.06, duration * 0.92);
     env.gain.setValueAtTime(MIN, t);
     env.gain.exponentialRampToValueAtTime(level, t + 0.008);
@@ -242,4 +303,36 @@ export class Voices implements Sink {
   private hat(t: number, vel: number): void {
     this.noiseBurst(t, 0.045, 'highpass', 7000, 0.22 * vel);
   }
+}
+
+/** A soft-clipping curve (tanh), normalised so quiet signals pass at unity. */
+function saturationCurve(drive: number): Float32Array<ArrayBuffer> {
+  const n = 2048;
+  const curve = new Float32Array(new ArrayBuffer(n * 4));
+  const norm = Math.tanh(drive);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = Math.tanh(drive * x) / norm;
+  }
+  return curve;
+}
+
+/** A small, warm room: stereo noise with an exponential decay, darkened over time (no audio files). */
+function roomImpulse(ctx: BaseAudioContext, seconds: number): AudioBuffer {
+  const rate = ctx.sampleRate;
+  const length = Math.floor(rate * seconds);
+  const buffer = ctx.createBuffer(2, length, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buffer.getChannelData(ch);
+    let lp = 0;
+    for (let i = 0; i < length; i++) {
+      const t = i / rate;
+      // Darker as it decays: a one-pole low-pass whose cutoff falls over time.
+      const k = 0.55 * Math.exp(-t * 1.6) + 0.06;
+      lp += k * ((Math.random() * 2 - 1) - lp);
+      const pre = t < 0.012 ? 0 : 1; // short pre-delay
+      data[i] = lp * Math.exp(-t * 3.2) * pre;
+    }
+  }
+  return buffer;
 }

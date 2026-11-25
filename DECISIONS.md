@@ -56,3 +56,7 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **Approach notes get a sixth fretboard shape: a small hollow triangle in the landing hue.** They belong with landing notes, so they share its colour and differ by shape and size. The layer is off by default because it can light up most of the neck.
 - **Fretboard role priority puts Avoid above Scale.** Every avoid note is a scale note, so the spec's original order would have hidden them all.
 - **Bare alterations display in brackets, `C(♯11)`.** `C♯11` would read back as a C♯ chord. Found by a round-trip test.
+- **Chords use a sampled Wurlitzer EP200 (CC BY 3.0) instead of FM synthesis.** The synth sounded digital. A Wurlitzer suits every vibe and stays out of the guitar's way. The Rhodes sets we found were non-commercial only, so they were ruled out for a portfolio piece.
+- **Samples load in the background after the first tap; the synth covers until they're ready.** Play never waits on a download. A broken file only affects its own notes: five files from the first mirror were corrupt, and these had to be re-encoded from the original FLACs.
+- **The reverb impulse is generated in code, not downloaded.** Decaying, darkening noise gives a convincing room for zero bytes.
+- **Humanising only ever delays notes (roll ≤30 ms, push ≤5 ms).** Moving notes earlier could put them behind the scheduler's look-ahead. Timing is re-checked at 40 and 240 BPM.

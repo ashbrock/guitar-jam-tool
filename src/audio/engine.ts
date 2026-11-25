@@ -5,6 +5,8 @@ import { grooveById } from '../data/grooves';
 import { createTicker } from './clock';
 import { Transport, type Feel, type PlaybackSlot, type Playhead, type TransportState } from './transport';
 import { Voices, type PartLevels } from './voices';
+import { Sampler, type InstrumentMap, type LoadStatus } from './sampler';
+import wurlitzer from '../data/instruments/wurlitzer-ep200.json';
 import { voiceChord, type VoicingStyle } from './voicing';
 
 export type EngineState = 'locked-audio' | TransportState;
@@ -14,7 +16,9 @@ export type EngineEvent =
   /** The browser refused to start audio after a tap (SPEC.md §10.3). */
   | { type: 'blocked' }
   /** Another app took the audio (call, other media): playback was paused. */
-  | { type: 'interrupted' };
+  | { type: 'interrupted' }
+  /** The sampled instrument's loading status. Until 'ready', a synth plays in its place. */
+  | { type: 'instrument'; status: LoadStatus; name: string; progress: number };
 
 export interface FeelSettings {
   groove: string;
@@ -33,6 +37,8 @@ export interface EngineOptions {
 
 export interface Engine {
   readonly state: EngineState;
+  /** Loading status of the sampled chord instrument. */
+  readonly instrumentStatus: LoadStatus;
   /** Must be called from a user gesture (tap/click). Resolves true once audio is running. */
   unlock(): Promise<boolean>;
   /** Unlocks if needed, then starts (with count-in if on). Resolves false if empty or blocked. */
@@ -61,6 +67,9 @@ type ContextFactory = () => AudioContext;
 export function createEngine(options: EngineOptions = {}, makeContext: ContextFactory = () => new AudioContext({ latencyHint: 'interactive' })): Engine {
   let ctx: AudioContext | null = null;
   let voices: Voices | null = null;
+  let sampler: Sampler | null = null;
+  const instrument = wurlitzer as InstrumentMap;
+  const samplesUrl = `${import.meta.env.BASE_URL}samples/wurlitzer-ep200/`;
   let transport: Transport | null = null;
   const listeners = new Set<(e: EngineEvent) => void>();
   const emit = (e: EngineEvent) => listeners.forEach((l) => l(e));
@@ -119,12 +128,31 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
       emit({ type: 'blocked' });
       return false;
     }
+    loadInstrument();
     return true;
+  }
+
+  /** Loads the sampled instrument in the background after the first tap. Playback never waits for it. */
+  function loadInstrument(): void {
+    if (!ctx || !voices || sampler) return;
+    sampler = new Sampler(ctx, instrument, samplesUrl);
+    const v = voices;
+    const s = sampler;
+    emit({ type: 'instrument', status: 'loading', name: instrument.name, progress: 0 });
+    void s
+      .load((done, total) => emit({ type: 'instrument', status: 'loading', name: instrument.name, progress: done / total }))
+      .then((ok) => {
+        if (ok) v.setSampler(s);
+        emit({ type: 'instrument', status: s.status, name: instrument.name, progress: ok ? 1 : 0 });
+      });
   }
 
   const engine: Engine = {
     get state() {
       return lastState;
+    },
+    get instrumentStatus() {
+      return sampler?.status ?? 'idle';
     },
     get tempo() {
       return transport?.tempo ?? tempo;
