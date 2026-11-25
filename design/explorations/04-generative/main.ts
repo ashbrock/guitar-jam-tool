@@ -287,7 +287,7 @@ function chordHTML(c: Chord): string {
   return `${root[0]}${root.length > 1 ? `<span class="acc">${root.slice(1)}</span>` : ''}${m}${q ? `<sup>${q}</sup>` : ''}`;
 }
 
-/** A light, monochrome chord chart: nut at the top, low E on the left. Roots are small squares, other notes dots. */
+/** A light, monochrome chord chart: nut at the top, low E on the left, dots only. */
 function chartSVG(shape: PlacedShape, w: number): string {
   const top = w * 0.16, left = w * 0.12, right = w * 0.06, gs = (w - left - right) / 5, fh = gs * 1.22;
   const frets = 5, gridH = fh * frets, h = top + gridH + w * 0.03;
@@ -306,14 +306,13 @@ function chartSVG(shape: PlacedShape, w: number): string {
     o += `<rect x="${left + from * gs - r}" y="${y - r * 0.8}" width="${(to - from) * gs + 2 * r}" height="${r * 1.6}" rx="${r * 0.8}" fill="${ink}"/>`;
   }
   shape.frets.forEach((f, i) => {
-    const x = left + i * gs, root = shape.roots.includes(i);
+    const x = left + i * gs;
     const yTop = top - fh * 0.5, s = r * 0.7;
     if (f < 0) { o += `<path d="M${x - s} ${yTop - s}L${x + s} ${yTop + s}M${x + s} ${yTop - s}L${x - s} ${yTop + s}" stroke="var(--muted)" stroke-width="1.2" stroke-linecap="round"/>`; return; }
-    if (f === 0) { o += root ? `<rect x="${x - s}" y="${yTop - s}" width="${2 * s}" height="${2 * s}" fill="none" stroke="${ink}" stroke-width="1.2"/>` : `<circle cx="${x}" cy="${yTop}" r="${s}" fill="none" stroke="${ink}" stroke-width="1.2"/>`; return; }
+    if (f === 0) { o += `<circle cx="${x}" cy="${yTop}" r="${s}" fill="none" stroke="${ink}" stroke-width="1.2"/>`; return; }
     const y = top + (f - base + 0.5) * fh;
     const onBarre = shape.barre && f === shape.barre[0] && i >= shape.barre[1] && i <= shape.barre[2];
-    if (root) o += `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="1" fill="${ink}"/>`;
-    else if (!onBarre) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="${ink}"/>`;
+    if (!onBarre) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="${ink}"/>`;
   });
   return o + '</svg>';
 }
@@ -326,12 +325,7 @@ let lastRel: number[] = [];
 let lastCur = -2;
 let starts: number[] = [];
 
-function chartWidth(): number {
-  if (!wide()) return 156;
-  // Desktop: every chord in view, as large as the row allows.
-  const n = Math.max(1, slots.length);
-  return Math.min(190, Math.floor((Math.min(window.innerWidth, 1400) - 120 - (n - 1) * 20) / n) - 28);
-}
+const chartWidth = () => (wide() ? 210 : 156);
 
 function renderAll(): void {
   starts = [];
@@ -351,7 +345,7 @@ function renderAll(): void {
   list.querySelectorAll<HTMLElement>('.card').forEach((el) => {
     const go = () => {
       const i = Number(el.dataset.i);
-      if (engine.playhead().phase !== 'playing') selected = i;
+      if (engine.playhead().phase === 'stopped') selected = i;
       void engine.previewChord(slots[i]!.chord);
     };
     el.addEventListener('click', go);
@@ -361,40 +355,139 @@ function renderAll(): void {
   lastCur = -2;
   if (engine.playhead().phase !== 'playing') selected = 0;
 
-  $('settings').innerHTML = `
-    <button class="chip grow" id="vibe">${vibe().name}<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></button>
-    <button class="chip" id="key" aria-pressed="${keyHeld}">${formatKey(key)}${keyHeld ? '<span class="held">HELD</span>' : ''}</button>
-    <button class="chip" id="tempo" aria-pressed="${tempoHeld}" style="min-width:96px;justify-content:center">${tempo} <span class="k">BPM</span>${tempoHeld ? '<span class="held">HELD</span>' : ''}</button>`;
-  $('vibe').addEventListener('click', () => { vibeIndex = (vibeIndex + 1) % VIBES.length; roll(true); });
-  $('key').addEventListener('click', () => ((keyHeld = !keyHeld), renderAll()));
-  $('tempo').addEventListener('click', () => ((tempoHeld = !tempoHeld), renderAll()));
+  renderChips();
+  if (openPicker) renderPicker(openPicker);
 }
 
-/** Places cards around the current chord. Phone: a carousel. Desktop: all chords in one row. */
+// ---------- Pickers (vibe, key, tempo) ----------
+
+type PickerName = 'vibe' | 'key' | 'tempo';
+let openPicker: PickerName | null = null;
+const CHEV = '<svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m6 9 6 6 6-6"/></svg>';
+
+function renderChips(): void {
+  $('settings').innerHTML = `
+    <button class="chip grow" id="vibe" aria-haspopup="dialog" aria-expanded="${openPicker === 'vibe'}">${vibe().name}${CHEV}</button>
+    <button class="chip" id="key" aria-haspopup="dialog" aria-expanded="${openPicker === 'key'}">${formatKey(key)}${keyHeld ? '<span class="held">HELD</span>' : ''}</button>
+    <button class="chip" id="tempo" aria-haspopup="dialog" aria-expanded="${openPicker === 'tempo'}" style="min-width:96px;justify-content:center">${tempo} <span class="k">BPM</span>${tempoHeld ? '<span class="held">HELD</span>' : ''}</button>`;
+  for (const name of ['vibe', 'key', 'tempo'] as const) {
+    $(name).addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePicker(openPicker === name ? null : name);
+    });
+  }
+}
+
+function togglePicker(name: PickerName | null): void {
+  openPicker = name;
+  const pop = $('pop');
+  pop.hidden = !name;
+  if (name) renderPicker(name);
+  renderChips();
+}
+
+const holdRow = (id: string, on: boolean, label: string) =>
+  `<button class="hold" id="${id}" role="switch" aria-checked="${on}"><span>${label}<small>Re-roll won't change it</small></span><span class="sw"></span></button>`;
+
+function setTempo(v: number): void {
+  tempo = clampTempo(v);
+  engine.setTempo(tempo);
+  renderChips();
+  const num = document.getElementById('tempo-num');
+  if (num) num.firstChild!.textContent = String(tempo);
+  const range = document.getElementById('tempo-range') as HTMLInputElement | null;
+  if (range) range.value = String(tempo);
+}
+
+let taps: number[] = [];
+function renderPicker(name: PickerName): void {
+  const pop = $('pop');
+  pop.setAttribute('aria-label', name === 'vibe' ? 'Vibe' : name === 'key' ? 'Key' : 'Tempo');
+  if (name === 'vibe') {
+    pop.innerHTML = `<h2>Vibe</h2><div class="opt-list" role="radiogroup">${VIBES.map((v, i) =>
+      `<button class="opt" role="radio" aria-checked="${i === vibeIndex}" data-i="${i}"><span>${v.name}<span class="d">${v.descriptor}</span></span></button>`).join('')}</div>`;
+    pop.querySelectorAll<HTMLButtonElement>('.opt').forEach((b) => b.addEventListener('click', () => {
+      vibeIndex = Number(b.dataset.i);
+      // A new vibe means a new progression; key stays, tempo moves to the vibe's default unless held.
+      if (!tempoHeld) tempo = vibe().playback.tempo.default;
+      roll(false);
+      togglePicker(null);
+    }));
+  } else if (name === 'key') {
+    const tonics = KEY_TONICS[key.mode];
+    pop.innerHTML = `<h2>Key</h2>
+      <div class="seg2" role="radiogroup" aria-label="Mode">${(['major', 'minor'] as const).map((m) => `<button role="radio" aria-checked="${key.mode === m}" data-m="${m}">${m === 'major' ? 'Major' : 'Minor'}</button>`).join('')}</div>
+      <div class="keys" role="radiogroup" aria-label="Key">${tonics.map((t, i) => `<button role="radio" aria-checked="${pc(t) === pc(key.tonic)}" data-i="${i}">${formatKey({ tonic: t, mode: key.mode }).split(' ')[0]}</button>`).join('')}</div>
+      ${holdRow('hold-key', keyHeld, 'Hold key')}`;
+    pop.querySelectorAll<HTMLButtonElement>('.seg2 button').forEach((b) => b.addEventListener('click', () => {
+      const m = b.dataset.m as Mode;
+      if (m === key.mode) return;
+      const same = KEY_TONICS[m].find((t) => pc(t) === pc(key.tonic)) ?? KEY_TONICS[m][0]!;
+      key = { tonic: same, mode: m };
+      // Major and minor use different rules, so this is a new progression in the same tonic.
+      history.push({ vibeIndex, key, tempo, degreeSlots });
+      degreeSlots = generate({ params: vibe().params, mode: key.mode, lengthBars: degreeSlots.reduce((a, d) => a + d.bars, 0), seed: newSeed() }).slots;
+      resolve();
+      renderAll();
+    }));
+    pop.querySelectorAll<HTMLButtonElement>('.keys button').forEach((b) => b.addEventListener('click', () => {
+      key = { tonic: tonics[Number(b.dataset.i)]!, mode: key.mode };
+      resolve(); // same progression, transposed
+      renderAll();
+    }));
+    $('hold-key').addEventListener('click', () => { keyHeld = !keyHeld; renderAll(); });
+  } else {
+    const r = vibe().playback.tempo;
+    pop.innerHTML = `<h2>Tempo</h2>
+      <div class="tempo"><button id="t-down" aria-label="Slower">−</button><div class="num" id="tempo-num" aria-live="polite">${tempo}<span>BPM</span></div><button id="t-up" aria-label="Faster">+</button></div>
+      <input id="tempo-range" type="range" min="40" max="240" step="1" value="${tempo}" aria-label="Tempo" />
+      <button class="tap" id="tap">Tap tempo</button>
+      ${holdRow('hold-tempo', tempoHeld, 'Hold tempo')}
+      <p style="margin:10px 4px 0;font-size:13px;color:var(--muted)">${vibe().name} usually sits between ${r.min} and ${r.max} BPM.</p>`;
+    $('t-down').addEventListener('click', () => setTempo(tempo - 1));
+    $('t-up').addEventListener('click', () => setTempo(tempo + 1));
+    $('tempo-range').addEventListener('input', (e) => setTempo(Number((e.target as HTMLInputElement).value)));
+    $('tap').addEventListener('click', () => {
+      const now = performance.now();
+      taps = [...taps.filter((t) => now - t < 2000), now].slice(-5);
+      if (taps.length >= 2) setTempo(60000 / ((taps[taps.length - 1]! - taps[0]!) / (taps.length - 1)));
+    });
+    $('hold-tempo').addEventListener('click', () => { tempoHeld = !tempoHeld; renderAll(); });
+  }
+}
+
+// Close pickers on Esc or a click outside them.
+window.addEventListener('keydown', (e) => e.key === 'Escape' && openPicker && togglePicker(null));
+document.addEventListener('click', (e) => {
+  if (!openPicker) return;
+  const t = e.target as HTMLElement;
+  // A click inside the picker can re-render it, detaching the target; that's still an inside click.
+  if (!t.isConnected) return;
+  if (!t.closest('.pop') && !t.closest('.chip')) togglePicker(null);
+});
+
+/**
+ * The current chord is always centred; the rest of the loop sits either side and slides along as the
+ * progression moves. Up to a third of the loop is shown behind (dimmed) and the rest ahead.
+ */
 function layout(cur: number, animate: boolean): void {
   const n = slots.length;
-  const behind = n >= 5 ? 2 : n >= 3 ? 1 : 0;
+  const behind = Math.min(wide() ? 3 : 2, Math.floor((n - 1) / 3));
   const cw = chartWidth() + 28;
+  const small = wide() ? 0.68 : 0.6, gap = wide() ? 24 : 14;
+  const otherW = cw * small;
+  const maxAhead = wide() ? 4 : 3;
   document.querySelectorAll<HTMLElement>('.card').forEach((el, i) => {
-    let x: number, scale: number, rel: number;
-    if (wide()) {
-      rel = i - cur;
-      x = (i - (n - 1) / 2) * (cw + 20);
-      scale = rel === 0 ? 1 : 0.9;
-    } else {
-      rel = (((i - cur) % n) + n) % n;
-      if (rel >= n - behind) rel -= n;
-      const small = 0.6, gap = 14;
-      const otherW = cw * small;
-      x = rel === 0 ? 0 : Math.sign(rel) * (cw / 2 + gap + otherW / 2 + (Math.abs(rel) - 1) * (otherW + gap));
-      scale = rel === 0 ? 1 : small;
-    }
-    const wrapped = lastRel[i] !== undefined && Math.abs(lastRel[i]! - rel) > 1 && !wide();
+    let rel = (((i - cur) % n) + n) % n;
+    if (rel >= n - behind) rel -= n;
+    const x = rel === 0 ? 0 : Math.sign(rel) * (cw / 2 + gap + otherW / 2 + (Math.abs(rel) - 1) * (otherW + gap));
+    const scale = rel === 0 ? 1 : small;
+    const wrapped = lastRel[i] !== undefined && Math.abs(lastRel[i]! - rel) > 1;
     if (!animate || wrapped) el.style.transition = 'none';
     el.style.transform = `translate(calc(-50% + ${x}px), -50%) scale(${scale})`;
     el.classList.toggle('now', rel === 0);
     el.classList.toggle('past', rel < 0);
-    el.classList.toggle('hidden', !wide() && (rel < -2 || rel > 3));
+    el.classList.toggle('hidden', rel < -behind || rel > maxAhead);
     el.setAttribute('aria-current', String(rel === 0));
     if (!animate || wrapped) { void el.offsetWidth; el.style.transition = ''; }
     lastRel[i] = rel;
@@ -403,7 +496,8 @@ function layout(cur: number, animate: boolean): void {
 
 function updateCarousel(p: ReturnType<typeof engine.playhead>): void {
   const playing = p.phase === 'playing' && p.slotIndex !== null;
-  const cur = playing ? p.slotIndex! : selected;
+  const paused = p.phase === 'paused' && p.slotIndex !== null;
+  const cur = playing || paused ? p.slotIndex! : selected;
   if (cur !== lastCur) {
     layout(cur, lastCur !== -2);
     lastCur = cur;
@@ -411,6 +505,7 @@ function updateCarousel(p: ReturnType<typeof engine.playhead>): void {
   // Smooth progress through the current chord, from the audio clock.
   const bar = document.querySelector<HTMLElement>('.card.now .bar i');
   if (!bar) return;
+  if (paused) return; // hold the bar where it stopped
   if (!playing) { bar.style.width = '0%'; return; }
   const beats = slots[cur]!.bars * 4;
   const elapsed = p.bar * 4 + p.beat + p.beatFraction - starts[cur]!;
@@ -427,7 +522,7 @@ engine.subscribe((e) => {
   const active = e.state === 'playing' || e.state === 'count-in';
   $('play').innerHTML = active ? PAUSE : PLAY;
   $('play').setAttribute('aria-label', active ? 'Pause' : 'Play');
-  if (!active) { lastSlot = -2; lastCur = -2; }
+  if (!active) lastSlot = -2;
 });
 $('play').addEventListener('click', () => void engine.togglePlay());
 $('reroll').addEventListener('click', () => roll(true));
