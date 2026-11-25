@@ -5,17 +5,18 @@ import { VIBES } from '../../data/vibes/index';
 import { KEY_TONICS, formatKey } from '../../theory/keys';
 import { pc } from '../../theory/notes';
 import * as jam from '../state/jam';
-import { bassOn, chordsOn, drumsOn } from '../state/sound';
+import { bassOn, chordsOn, clickOn, countInOn, drumsOn } from '../state/sound';
+import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { openPicker, type PickerName } from '../state/ui';
 
 export const triggerId = (name: PickerName) => `trigger-${name}`;
-const TITLES: Record<PickerName, string> = { vibe: 'Vibe', key: 'Key', tempo: 'Tempo', sound: 'Sound' };
+const TITLES: Record<PickerName, string> = { vibe: 'Vibe', key: 'Key', tempo: 'Tempo', settings: 'Settings' };
 
 export function Picker({ name, placement }: { name: PickerName; placement: 'panel' | 'top' }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
-    const target = el?.querySelector<HTMLElement>('[aria-checked="true"]') ?? el?.querySelector<HTMLElement>('button, input');
+    const target = el?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]') ?? el?.querySelector<HTMLElement>('button, input');
     target?.focus({ preventScroll: true });
     return () => {
       // Only return focus if it was inside the picker (not if the user tapped elsewhere on purpose).
@@ -26,11 +27,11 @@ export function Picker({ name, placement }: { name: PickerName; placement: 'pane
   }, [name]);
   return (
     <div class={`pop pop-${placement}`} ref={ref} role="dialog" aria-modal="false" aria-label={TITLES[name]} data-picker>
-      <h2>{TITLES[name]}</h2>
+      {name !== 'settings' && <h2>{TITLES[name]}</h2>}
       {name === 'vibe' && <VibePicker />}
       {name === 'key' && <KeyPicker />}
       {name === 'tempo' && <TempoPicker />}
-      {name === 'sound' && <SoundPicker />}
+      {name === 'settings' && <SettingsPicker />}
     </div>
   );
 }
@@ -141,7 +142,44 @@ function TempoPicker() {
   );
 }
 
-function SoundPicker() {
+/** Settings (SPEC.md §4.5): Sound opens a second view in place; count-in and metronome are switches. */
+function SettingsPicker() {
+  const [view, setView] = useState<'main' | 'sound'>('main');
+  const root = useRef<HTMLDivElement>(null);
+  const go = (v: 'main' | 'sound') => {
+    setView(v);
+    // Move focus into the new view: its back button, or the row that opened the sub-view.
+    requestAnimationFrame(() => root.current?.querySelector<HTMLElement>(v === 'sound' ? '.view-back' : '#open-sound')?.focus());
+  };
+  return (
+    <div ref={root}>
+      {view === 'main' ? (
+        <>
+          <h2>Settings</h2>
+          <button class="nav-row fill-1" id="open-sound" onClick={() => go('sound')}>
+            <span>
+              Sound
+              <small>Chords, bass and drums</small>
+            </span>
+            <ChevronRightIcon />
+          </button>
+          <SwitchRow id="count-in" on={countInOn.value} label="Count-in" hint="One bar of clicks before playing" onToggle={() => (countInOn.value = !countInOn.value)} />
+          <SwitchRow id="metronome" on={clickOn.value} label="Metronome" hint="A click on every beat" onToggle={() => (clickOn.value = !clickOn.value)} />
+        </>
+      ) : (
+        <>
+          <button class="view-back" onClick={() => go('main')} aria-label="Back to Settings">
+            <ChevronLeftIcon />
+            <span>Sound</span>
+          </button>
+          <SoundView />
+        </>
+      )}
+    </div>
+  );
+}
+
+function SoundView() {
   return (
     <>
       <SwitchRow id="part-chords" on={chordsOn.value} label="Chords" hint="Wurlitzer electric piano" onToggle={() => (chordsOn.value = !chordsOn.value)} />

@@ -80,4 +80,6 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **Each vibe's look lives in its JSON file, validated with the rest of the vibe (SPEC A16).** A v2 that maps free text onto vibe parameters can then reach the visuals too.
 - **Jam state takes the engine and randomness as inputs.** The re-roll, hold, history, length and key rules are tested in Node with a seeded random source.
 - **One animation-frame loop reads the audio clock and drives the visuals, the playhead signal and the progress bar.** Components re-render at most once per beat; the 60 fps work writes straight to the canvas and one style property.
+- **Count-in and metronome move into a Settings button (top right), next to a Sound sub-view.** The bottom panel goes back to Back, Re-roll and Play plus the three chips, so it holds only what you reach for every few seconds. Timing options are set once per session, and Re-roll gets room for its icon even at 360 px.
+- **The count-in shows on the first chord card: its bar splits into four beats that fill one per beat.** The lit "1 2 / 3 4" digits went with the button, and the card is where your eyes already are.
 

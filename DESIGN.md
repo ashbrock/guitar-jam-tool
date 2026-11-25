@@ -50,7 +50,7 @@ All tokens are CSS custom properties on `:root`. Translucent values sit over the
 ### 2.2 Glass and fills
 | Token | Value | Use |
 |---|---|---|
-| `--glass` | `rgb(20 20 20 / 0.72)` + `backdrop-filter: blur(28px) saturate(1.2)` | The floating panel; the loading pill and the Sound button (blur 20px). |
+| `--glass` | `rgb(20 20 20 / 0.72)` + `backdrop-filter: blur(28px) saturate(1.2)` | The floating panel; the status pill and the Settings button (blur 20px). |
 | `--glass-strong` | `rgb(20 20 20 / 0.92)` + blur 28px | Pickers. More opaque, because they hold small text. |
 | `--card` | `rgb(11 11 11 / 0.55)` + blur 14px | Chord cards that aren't current. |
 | `--card-now` | `rgb(28 28 28 / 0.82)` + blur 14px | The current chord card. |
@@ -66,7 +66,7 @@ All tokens are CSS custom properties on `:root`. Translucent values sit over the
 | `--pressed` **NEW** | `rgb(255 255 255 / 0.14)` | Pressed on `--fill-1` / `--fill-2` controls. |
 
 ### 2.3 Selected and "on"
-Selected and on states **invert**: `--text` fill, `--ink` content. It reads at any distance and needs no colour. Used by: selected picker options, keys and lengths, Count-in and Metronome when on, the Re-roll button (always), the current chord's progress fill. Secondary text inside a selected option uses `--ink` at 70% (6.65:1).
+Selected and on states **invert**: `--text` fill, `--ink` content. It reads at any distance and needs no colour. Used by: selected picker options, keys and lengths, the Re-roll button (always), the current chord's progress fill and lit count-in beats. Secondary text inside a selected option uses `--ink` at 70% (6.65:1).
 
 ### 2.4 Contrast over the visuals
 Measured worst cases, with the glass over the **brightest visual colour** (`#e9f7ff`) and no blur:
@@ -200,7 +200,7 @@ One breakpoint, **900 px** wide:
 | `--s-16` | 16 px | Picker padding; option side padding; card top and bottom padding |
 | `--s-24` | 24 px | Carousel gap (desktop) |
 
-Fine adjustments, used only where listed: **2 px** (option description top margin; HELD tag vertical padding), **4 px** (switch row right padding; credit and note side margins), **18 px** (space above a picker's second section, e.g. LENGTH), **15 × 10 px** (count-in digit padding inside its half).
+Fine adjustments, used only where listed: **2 px** (option description top margin; HELD tag vertical padding), **4 px** (switch row right padding; credit and note side margins), **18 px** (space above a picker's second section, e.g. LENGTH), **−8 px** (the Sound view's back control pulls into the picker padding so its chevron aligns with the rows).
 
 Safe areas: the top bar and panel respect `env(safe-area-inset-*)`, with a 12 px minimum at the bottom.
 
@@ -229,7 +229,7 @@ Everything is soft and round: it reads as an instrument, not a form.
 ## 6. Components
 
 1. **Mode tabs (Jam · Solo):** plain text buttons, 48 px tall, `--t-body` 500. Current: `--text`; other: `--muted`. No underline or pill. *(Solo isn't designed yet: SPEC A13.)*
-   **Sound button** (top right): 48 px pill, `--glass`, sliders icon + "Sound" in `--t-chip`. Open: `--fill-open`. Its picker drops down below the top bar (right-aligned, 420 px on desktop, full width minus gutters on phones).
+   **Settings button** (top right): 48 px pill, `--glass`, sliders icon + "Settings" in `--t-chip`. Open: `--fill-open`. Its picker drops down below the top bar (right-aligned, 420 px on desktop, full width minus gutters on phones).
 2. **Carousel card:** a fixed width (chart + 28 px), `--r-card`, `--card` with blur. Chart above, chord name below, progress bar at the bottom.
    - **Current:** scale 1, `--card-now`, 1 px `--edge-now`, the progress bar visible.
    - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
@@ -238,8 +238,7 @@ Everything is soft and round: it reads as an instrument, not a form.
 4. **Chord chart:** see §7.
 5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
 6. **Back:** a 56 px circle, `--fill-2`, `--muted` icon.
-   **Count-in | Metronome pair:** one 56 px tall pill (`--fill-2`) holding two 48 px halves: "1 2 / 3 4" in `--t-micro` and a metronome icon. Each half inverts when on. During the count-in the digits dim to 30% except the current beat (brightness and position, not colour).
-7. **Re-roll:** 56 px tall pill, always inverted (`--text` fill, `--ink` label), re-roll icon + "RE-ROLL" in `--t-button`. The widest control. Grows to fill the row on phones. Under 380 px wide the icon is dropped (the label stays) so the row fits.
+7. **Re-roll:** 56 px tall pill, always inverted (`--text` fill, `--ink` label), re-roll icon + "RE-ROLL" in `--t-button`. The widest control; grows to fill the row on phones (190 px at 360 px wide).
 8. **Play / Pause:** 56 px circle, `--go` fill, `--ink` icon. Pause shows two bars.
 9. **Settings chip:** 48 px pill, `--fill-2`, `--t-chip`. Vibe chip grows to fill the space and carries a chevron. Open: `--fill-open` and `aria-expanded="true"`. A **HELD** tag (inverted, `--t-micro`, 6 px radius) marks a held key or tempo.
 10. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
@@ -249,10 +248,11 @@ Everything is soft and round: it reads as an instrument, not a form.
 13. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
 14. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
 15. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.
-16. **Credit line:** `--t-fine` `--muted` with underlined links, inside the Sound picker.
+13a. **Settings views:** the main view lists a **nav row** (like a switch row, with the label, a hint and a `--muted` right chevron) for Sound, then the Count-in and Metronome switch rows, 6 px apart. The Sound view replaces it in place: a 48 px **back control** (left chevron + "Sound" in `--t-body` 500, no fill until hover) instead of a title, then the part switches and credits. No slide animation between views.
+16. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Sound.
 
 ### 6.1 Icons
-Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, back (curved arrow), re-roll (two arrows), chevron, metronome, sliders (Sound). The count-in toggle is typographic ("1 2 / 3 4"), not an icon. Icons never stand alone on Re-roll; Play, Back, Count-in and Metronome have accessible names.
+Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, back (curved arrow), re-roll (two arrows), chevron (down, left, right), sliders (Settings). Icons never stand alone on Re-roll; Play and Back have accessible names.
 
 ---
 
@@ -290,7 +290,7 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 |---|---|---|---|
 | **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord centred. | Hidden. |
 | **Stopped** | Play icon. | First (or last tapped) chord centred; empty bar. | Hidden. |
-| **Count-in** (if on) | Pause icon; the count-in digits light one per beat. | First chord centred. | Hidden until beat 1. |
+| **Count-in** (if on) | Pause icon. | First chord centred; its progress bar is four segments (`--track-card`, 6 px apart) that fill with `--text` one per beat. | Hidden until beat 1. |
 | **Playing** | Pause icon. | Current chord centred, bar filling, cards sliding on each change. | Visible, moving. |
 | **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Frozen, still visible. |
 

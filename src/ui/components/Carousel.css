@@ -24,6 +24,10 @@
 .card .bar { width: 100%; height: 3px; border-radius: var(--r-pill); background: var(--track-card); overflow: hidden; opacity: 0; transition: opacity var(--dur-bar) ease; }
 .card .bar i { display: block; height: 100%; width: 0; background: var(--text); }
 .card-slot.now .bar { opacity: 1; }
+/* Count-in: the bar splits into four beats that fill one per beat (shows without sound). */
+.beats { width: 100%; height: 3px; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+.beats i { border-radius: var(--r-pill); background: var(--track-card); }
+.beats i.on { background: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   .card-slot { transition: opacity var(--dur-reduced) ease; }
 }

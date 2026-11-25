@@ -1,11 +1,11 @@
-// Top bar (DESIGN.md §6.1): mode tabs on the left, the Sound picker on the right.
+// Top bar (DESIGN.md §6.1): mode tabs on the left, Settings on the right.
 import { engine } from '../state/playback';
 import { mode, openPicker, type Mode } from '../state/ui';
-import { SlidersIcon } from './icons';
+import { SettingsIcon } from './icons';
 import { Picker, triggerId } from './Picker';
 
 export function TopBar() {
-  const open = openPicker.value === 'sound';
+  const open = openPicker.value === 'settings';
   const go = (m: Mode) => {
     if (m === mode.value) return;
     engine.pause(); // SPEC.md §3.2: switching modes stops playback
@@ -23,20 +23,20 @@ export function TopBar() {
           ))}
         </nav>
         <button
-          class="sound fill"
-          id={triggerId('sound')}
+          class="settings-btn fill"
+          id={triggerId('settings')}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={(e) => {
             e.stopPropagation();
-            openPicker.value = open ? null : 'sound';
+            openPicker.value = open ? null : 'settings';
           }}
         >
-          <SlidersIcon />
-          Sound
+          <SettingsIcon />
+          Settings
         </button>
       </header>
-      {open && <Picker name="sound" placement="top" />}
+      {open && <Picker name="settings" placement="top" />}
     </>
   );
 }

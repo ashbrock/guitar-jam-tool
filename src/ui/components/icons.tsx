@@ -38,10 +38,20 @@ export const MetronomeIcon = () => (
     <path d="M8.2 13h7.6" />
   </I>
 );
-export const SlidersIcon = () => (
+export const SettingsIcon = () => (
   <I>
     <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
     <circle cx="16" cy="7" r="2" />
     <circle cx="10" cy="17" r="2" />
+  </I>
+);
+export const ChevronRightIcon = () => (
+  <I>
+    <path d="m9 6 6 6-6 6" />
+  </I>
+);
+export const ChevronLeftIcon = () => (
+  <I>
+    <path d="m15 6-6 6 6 6" />
   </I>
 );

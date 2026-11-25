@@ -2,7 +2,7 @@
 import { signal } from '@preact/signals';
 
 export type Mode = 'jam' | 'solo';
-export type PickerName = 'vibe' | 'key' | 'tempo' | 'sound';
+export type PickerName = 'vibe' | 'key' | 'tempo' | 'settings';
 
 export const mode = signal<Mode>('jam');
 export const openPicker = signal<PickerName | null>(null);

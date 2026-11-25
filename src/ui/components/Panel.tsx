@@ -1,11 +1,10 @@
-// The floating panel (SPEC.md §4.1, DESIGN.md §6.5–6.9): playback row and settings chips. Pickers
+// The floating panel (SPEC.md §4.1, DESIGN.md §6.5–6.9): Back, Re-roll, Play, and the vibe, key and tempo chips. Pickers
 // for vibe, key and tempo open above it.
 import { formatKey } from '../../theory/keys';
 import * as jam from '../state/jam';
-import { engineState, playhead, togglePlay } from '../state/playback';
-import { clickOn, countInOn } from '../state/sound';
+import { engineState, togglePlay } from '../state/playback';
 import { openPicker, showStatus, type PickerName } from '../state/ui';
-import { BackIcon, ChevronIcon, MetronomeIcon, PauseIcon, PlayIcon, RerollIcon } from './icons';
+import { BackIcon, ChevronIcon, PauseIcon, PlayIcon, RerollIcon } from './icons';
 import { Picker, triggerId } from './Picker';
 
 function Chip({ name, grow, children }: { name: PickerName; grow?: boolean; children: preact.ComponentChildren }) {
@@ -30,25 +29,12 @@ const Held = () => <span class="held">HELD</span>;
 
 export function Panel() {
   const active = engineState.value === 'playing' || engineState.value === 'count-in';
-  const p = playhead.value;
-  const beat = p.phase === 'count-in' && p.countInBeat ? String(p.countInBeat) : '';
-  const panelPicker = openPicker.value && openPicker.value !== 'sound' ? openPicker.value : null;
+  const panelPicker = openPicker.value && openPicker.value !== 'settings' ? openPicker.value : null;
   return (
     <div class="panel">
       {panelPicker && <Picker name={panelPicker} placement="panel" />}
       <div class="panel-grid">
         <div class="row actions">
-          <div class="pair" role="group" aria-label="Timing">
-            <button class="half count" aria-pressed={countInOn.value} aria-label="Count-in" data-beat={beat} onClick={() => (countInOn.value = !countInOn.value)}>
-              <span>1</span>
-              <span>2</span>
-              <span>3</span>
-              <span>4</span>
-            </button>
-            <button class="half" aria-pressed={clickOn.value} aria-label="Metronome" onClick={() => (clickOn.value = !clickOn.value)}>
-              <MetronomeIcon />
-            </button>
-          </div>
           <button
             class="round fill"
             aria-label="Previous progression"

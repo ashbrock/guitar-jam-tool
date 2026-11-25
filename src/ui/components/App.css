@@ -5,8 +5,8 @@
 .tab { height: var(--target-min); padding: 0 var(--s-12); font-weight: 500; font-size: var(--t-body); color: var(--muted); }
 .tab.on { color: var(--text); }
 @media (hover: hover) { .tab:not(.on):hover { color: var(--text); } }
-.sound { height: var(--target-min); padding: 0 var(--s-16) 0 var(--s-12); border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: var(--s-8); font-size: var(--t-chip); font-weight: 500; backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill); }
-.sound[aria-expanded='true'] { background: var(--fill-open); }
+.settings-btn { height: var(--target-min); padding: 0 var(--s-16) 0 var(--s-12); border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: var(--s-8); font-size: var(--t-chip); font-weight: 500; backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill); }
+.settings-btn[aria-expanded='true'] { background: var(--fill-open); }
 .status { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; z-index: 3; margin: 0; padding: var(--s-8) var(--s-14); border-radius: var(--r-pill); max-width: calc(100% - 220px);
   background: var(--glass); backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill); font-size: var(--t-caption); color: var(--muted); text-align: center; transition: opacity var(--dur-loading) ease; }
 .status.fading { opacity: 0; }

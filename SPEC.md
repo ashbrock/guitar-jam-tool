@@ -54,7 +54,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 
 ```
 ┌───────────────────────────────┐
-│ Jam  Solo              Sound  │  top bar: mode tabs, Sound picker (loading pill centred when needed)
+│ Jam  Solo           Settings  │  top bar: mode tabs, Settings (status pill centred when needed)
 │                               │
 │   ┌──┐  ┌──────┐  ┌──┐  ┌──┐  │  centre: the carousel of chord cards
 │   │  │  │chart │  │  │  │  │  │  (Solo: fretboard, to be designed, §8)
@@ -62,7 +62,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 │         │ ━━─  │              │  progress through the current chord
 │         └──────┘              │
 │ ╭───────────────────────────╮ │
-│ │ (12|♪) (⟲) [ RE-ROLL ] (▶) │ │  floating panel, row 1: count-in|metronome, back, re-roll, play
+│ │ (⟲)  [   RE-ROLL   ]   (▶) │ │  floating panel, row 1: back, re-roll, play
 │ │ [Neo-soul ⌄] [D major] [84]│ │  row 2: settings chips (each opens a picker above)
 │ ╰───────────────────────────╯ │
 └───────────────────────────────┘
@@ -70,13 +70,13 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 
 - **Phone (< 900 px wide):** the panel has two rows: playback on top, settings chips beneath, at the very bottom where the thumb rests.
 - **Desktop (≥ 900 px):** the panel is one row, max 760 px wide and centred: settings chips on the left, playback on the right. The carousel shows more chords either side.
-- **Pickers** open as a floating sheet directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). The **Sound** picker drops down from its button in the top bar instead. Only one is open at a time. They close on Esc, a tap outside, or tapping their chip again. Opening or using a picker never stops playback.
+- **Pickers** open as a floating sheet directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). **Settings** drops down from its button in the top bar instead. Only one is open at a time. They close on Esc, a tap outside, or tapping their chip again. Opening or using a picker never stops playback.
 
 ### 3.1 State ownership
 | State | Owned by | Notes |
 |---|---|---|
 | Key, tempo, vibe, progression, holds, history | **Each mode separately** | Generating in Jam never overwrites Solo, and the reverse. |
-| Sound settings (click, drums, count-in) | Global | Apply to both modes. |
+| Settings (parts, count-in, metronome) | Global | Apply to both modes. |
 | Fretboard settings (tuning, handedness, labels, layers) | Global | Used in Solo. |
 | Playback | Global transport, playing the **active mode's** progression | |
 
@@ -91,13 +91,11 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 ### 4.1 Playback row
 | Control | Behaviour |
 |---|---|
-| **Count-in** (the "1 2 / 3 4" button) | Toggles a one-bar count-in before playback. **Off by default.** During the count-in its digits light up one per beat, so it reads without sound. |
-| **Metronome** (metronome icon) | Toggles the click during playback. **Off by default.** |
 | **Back** (⟲) | Steps back to the previous roll (§5.4). |
 | **Re-roll** | The primary action (§5.3). Wide, labelled. |
 | **Play / Pause** | Starts and pauses the loop. The largest round control, at bottom right. **[A7]** |
 
-- Count-in and Metronome share one pill (two halves), so the row fits a 360 px phone. Both are toggle buttons (`aria-pressed`).
+- Count-in and metronome live in Settings (§4.5), so the playback row is just Back, Re-roll and Play.
 - **Looping is always on.** The whole progression loops.
 - **Pause** holds the playhead. **Play** resumes from the start of the bar that was playing (not mid-bar), after a count-in if count-in is on.
 - Playback states: `locked-audio` → `stopped` → `count-in` → `playing` ⇄ `paused`. How each looks is in DESIGN.md §8.
@@ -120,16 +118,22 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 - **Hold tempo** switch, with the same HELD tag on the chip.
 - Tempo changes take effect at the next beat, never mid-beat.
 
-### 4.5 Sound settings (global)
-| Part | Default | Where |
-|---|---|---|
-| Chords | On | Sound picker. Turn off to play the chords yourself over bass and drums. |
-| Bass | On | Sound picker. |
-| Drums | **Off [A8]** | Sound picker. Kick, snare and hat in the vibe's groove. |
-| Metronome | **Off** | Playback row. Quarter notes, accent on beat 1. |
-| Count-in | **Off** | Playback row. One bar of clicks, heard even with the metronome off. |
+### 4.5 Settings (global)
+**Settings** (top right) opens on three rows:
 
-The **Sound** picker (top right) holds the three part switches and the instrument credits (§7.4). Changes take effect at the next scheduled note and never stop or restart the loop.
+| Row | Kind | Default | Behaviour |
+|---|---|---|---|
+| **Sound ›** | Opens a second view in place, with a back arrow | — | Chords, Bass and Drums switches, plus the instrument credits (§7.4). |
+| **Count-in** | Switch | **Off** | One bar of clicks before playback, heard even with the metronome off. While it plays, the first chord card's progress bar shows four beats filling one per beat, so it reads without sound. |
+| **Metronome** | Switch | **Off** | A click on every beat, accent on beat 1. |
+
+| Sound part | Default | Notes |
+|---|---|---|
+| Chords | On | Turn off to play the chords yourself over bass and drums. |
+| Bass | On | |
+| Drums | **Off [A8]** | Kick, snare and hat in the vibe's groove. |
+
+Focus moves into each view as it opens (the back arrow in Sound; the Sound row on return), and back to the Settings button when it closes. Changes take effect at the next scheduled note and never stop or restart the loop.
 
 ### 4.6 Editing while playing
 - Re-roll, Back, a vibe change or a key mode change: the new progression starts **at the next downbeat, from bar 1**.
@@ -224,7 +228,7 @@ No guitar in the backing, so it never clashes with the player.
 - A generated room reverb, gentle saturation and a compressor glue the parts together. Per-part reverb sends: chords wet, bass nearly dry.
 
 ### 7.4 Credits
-The Sound picker shows: "Wurlitzer EP200 samples by Greg Sullivan, CC BY 3.0. Bass: Swagbass by Karoryfer Samples. Drums: Virtuosity Drums by Versilian Studios (both CC0)." with links. Full credits and licences sit next to each sample set in `public/samples/`.
+Settings → Sound shows: "Wurlitzer EP200 samples by Greg Sullivan, CC BY 3.0. Bass: Swagbass by Karoryfer Samples. Drums: Virtuosity Drums by Versilian Studios (both CC0)." with links. Full credits and licences sit next to each sample set in `public/samples/`.
 
 ---
 
@@ -390,7 +394,7 @@ So a refresh, a locked phone or a discarded tab doesn't wipe work. **Not** savin
 | Tempo out of range (typed, tapped) | Clamped to 40–240. |
 | ½-bar chords at 240 BPM | Allowed; timing tests cover them. |
 | One-chord progression | The carousel shows one centred card; the loop is that chord. |
-| Sound picker and another picker | Only one opens at a time; opening one closes the other. |
+| Settings and another picker | Only one opens at a time; opening one closes the other. |
 | Samples slow or failing | Synth plays meanwhile; status pill reports (§7.2). |
 | Device or browser stalls | Sounds are scheduled 150 ms ahead on the audio clock, so short stalls are inaudible. After a longer stall, missed notes are skipped and playback continues on the beat. Never a burst of late notes. |
 | Background tab | The scheduler timer runs in a Web Worker, so playback usually continues. If the browser suspends audio, playback pauses. |
@@ -417,8 +421,8 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A8** | Drums off by default; switch in the vibe picker. | ✅ Decided. |
 | **A9** | Plain Web Audio, no Tone.js. | ✅ Decided. |
 | **A10** | Self-hosted fonts. | ✅ Decided. |
-| **A11** | Count-in is an option, off by default, on the "1 2 / 3 4" button. The metronome gets its own icon button. | ✅ Decided. |
-| **A12** | A Sound picker (top right) holds Chords, Bass and Drums switches and the credits. | ✅ Decided. |
+| **A11** | Count-in and metronome are switches in Settings, both off by default. The count-in shows on the first chord card. | ✅ Decided. |
+| **A12** | Settings (top right) → Sound holds Chords, Bass and Drums switches and the credits. | ✅ Decided. |
 | **A13** | **Solo mode layout** in the generative style, including where "Solo over this" lives. | **Open: next design task.** |
 | **A14** | Each vibe has its own visualisation; no style switch. Paused visuals freeze and stay visible. | ✅ Decided. Currently each vibe uses lines or dots with its own look; making all six clearly distinct is the next visuals task. |
 | **A15** | Mic-reactive visuals in Solo. | Stretch goal, after v1. |

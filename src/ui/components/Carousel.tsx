@@ -67,7 +67,7 @@ export function Carousel() {
     lastCur.current = cur;
     progressBar.el = el.querySelector<HTMLElement>('li.now .bar i');
     progressBar.slot = cur;
-  }, [cur, n, wide, cs]);
+  }, [cur, n, wide, cs, p.phase === 'count-in']);
 
   // A new progression: start the layout fresh (no slide from the old one).
   useLayoutEffect(() => {
@@ -96,9 +96,17 @@ export function Carousel() {
             >
               {shape && <ChordChart shape={shape} width={chartW} />}
               <ChordName chord={c.chord} />
-              <span class="bar" aria-hidden="true">
-                <i />
-              </span>
+              {isNow && p.phase === 'count-in' ? (
+                <span class="beats" aria-hidden="true">
+                  {[1, 2, 3, 4].map((b) => (
+                    <i class={p.countInBeat !== null && b <= p.countInBeat ? 'on' : ''} />
+                  ))}
+                </span>
+              ) : (
+                <span class="bar" aria-hidden="true">
+                  <i />
+                </span>
+              )}
             </button>
           </li>
         );
