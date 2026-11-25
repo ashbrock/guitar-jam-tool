@@ -64,5 +64,5 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **Only a small subset of each library ships (76 files, about 2.1 MB), built by a script.** The originals are hundreds of MB. We keep what our parts play, and the script makes the subset reproducible.
 - **Drum mics are pre-mixed per hit, offline.** That's one file per hit instead of three to fetch, decode and keep aligned at play time.
 - **Mapping data can give each kit piece its own velocity layers and alternate takes.** The kit's pieces don't share layer splits. Alternate takes stop the "machine gun" sound on repeated hats.
-- **Drums stay off by default (SPEC A8); 04 gets a drum toggle.** Real drums don't change the reason for A8. They just give people a reason to turn drums on.
+- **Drums stay off by default (SPEC A8); the switch lives in the vibe picker.** Real drums don't change the reason for A8. A fifth bar button wrapped Re-roll at 360 px, and drums are part of a vibe's groove.
 
