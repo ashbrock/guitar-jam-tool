@@ -43,6 +43,7 @@ let tempo = VIBES[0]!.playback.tempo.default;
 let keyHeld = false;
 let tempoHeld = false;
 let clickOn = false; // off by default
+let drumsOn = false; // off by default (SPEC A8): the first sound is musical, not a drum machine
 let degreeSlots: DegreeSlot[] = [];
 let slots: Slot[] = [];
 const history: { vibeIndex: number; key: Key; tempo: number; degreeSlots: DegreeSlot[] }[] = [];
@@ -51,7 +52,7 @@ const vibe = (): Vibe => VIBES[vibeIndex]!;
 const pick = <T>(xs: readonly T[]): T => xs[Math.floor(Math.random() * xs.length)]!;
 
 function applySound(): void {
-  engine.setParts({ chords: true, bass: true, click: clickOn, drums: false });
+  engine.setParts({ chords: true, bass: true, click: clickOn, drums: drumsOn });
 }
 
 function resolve(): void {
@@ -386,8 +387,8 @@ function togglePicker(name: PickerName | null): void {
   renderChips();
 }
 
-const holdRow = (id: string, on: boolean, label: string) =>
-  `<button class="hold" id="${id}" role="switch" aria-checked="${on}"><span>${label}<small>Re-roll won't change it</small></span><span class="sw"></span></button>`;
+const holdRow = (id: string, on: boolean, label: string, hint = "Re-roll won't change it") =>
+  `<button class="hold" id="${id}" role="switch" aria-checked="${on}"><span>${label}<small>${hint}</small></span><span class="sw"></span></button>`;
 
 function setTempo(v: number): void {
   tempo = clampTempo(v);
@@ -406,7 +407,9 @@ function renderPicker(name: PickerName): void {
   if (name === 'vibe') {
     pop.innerHTML = `<h2>Vibe</h2><div class="opt-list" role="radiogroup">${VIBES.map((v, i) =>
       `<button class="opt" role="radio" aria-checked="${i === vibeIndex}" data-i="${i}"><span>${v.name}<span class="d">${v.descriptor}</span></span></button>`).join('')}</div>
-      <p class="credit">Wurlitzer EP200 samples by <a href="http://www.sullivang.net/" target="_blank" rel="noopener">Greg Sullivan</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>.</p>`;
+      ${holdRow('drums', drumsOn, 'Drums', 'Kick, snare and hat in the vibe’s groove')}
+      <p class="credit">Wurlitzer EP200 samples by <a href="http://www.sullivang.net/" target="_blank" rel="noopener">Greg Sullivan</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Bass: Swagbass by <a href="https://karoryfer.com/" target="_blank" rel="noopener">Karoryfer Samples</a>. Drums: Virtuosity Drums by <a href="https://versilian-studios.com/" target="_blank" rel="noopener">Versilian Studios</a> (both CC0).</p>`;
+    $('drums').addEventListener('click', () => { drumsOn = !drumsOn; applySound(); renderAll(); });
     pop.querySelectorAll<HTMLButtonElement>('.opt').forEach((b) => b.addEventListener('click', () => {
       vibeIndex = Number(b.dataset.i);
       // A new vibe means a new progression; key stays, tempo moves to the vibe's default unless held.
@@ -525,13 +528,14 @@ engine.subscribe((e) => {
   if (e.status === 'loading') {
     el.hidden = false;
     el.classList.remove('done');
-    el.textContent = `Loading ${e.name} · ${Math.round(e.progress * 100)}%`;
+    el.textContent = `Loading instruments · ${Math.round(e.progress * 100)}%`;
   } else if (e.status === 'ready') {
-    el.textContent = `${e.name} ready`;
+    el.textContent = 'Instruments ready';
     el.classList.add('done');
     setTimeout(() => (el.hidden = true), 600);
   } else if (e.status === 'failed') {
-    el.textContent = 'Couldn’t load the piano samples. Using the synth.';
+    el.hidden = false;
+    el.textContent = `Couldn’t load ${e.failed.join(', ')}. Using the synth for ${e.failed.length > 1 ? 'those' : 'that'}.`;
     setTimeout(() => (el.hidden = true), 4000);
   }
 });
@@ -550,6 +554,7 @@ $('click').addEventListener('click', () => {
   $('click').setAttribute('aria-pressed', String(clickOn));
   applySound();
 });
+
 for (const m of ['lines', 'dots'] as const) {
   $(m).addEventListener('click', () => {
     mode = m;

@@ -74,12 +74,15 @@ Nothing here is wired into the app on `main` unless noted.
 - **Accessibility:** a dark pool behind the chord keeps text contrast. Reduced motion freezes the movement (chord changes still recolour). The canvas is hidden from screen readers; the chord has a spoken label.
 - **Chord set:** chords are simplified to the default set (triads, 7ths, sus, dim). Re-roll changes key and tempo unless held.
 
-### Sound: sampled Wurlitzer
+### Sound: sampled Wurlitzer, bass and drums
 - **Chords play a real recorded Wurlitzer EP200** (Greg Sullivan, CC BY 3.0; 42 files, 4 velocity layers, about 1.1 MB as AAC). Credited in the vibe picker and in `public/samples/wurlitzer-ep200/CREDITS.md`. We avoided guitar in the backing so it doesn't clash with the player.
 - **The samples load after the first tap and never block playback.** The old synth plays until they're ready, and a small pill shows progress. A bad or missing file only affects its own notes. If most of the files fail (offline), the synth stays.
 - **Mix:** a generated room reverb (no impulse file to download), gentle tape-style saturation and a compressor. Sends are per part: chords wet, bass nearly dry.
 - **Humanising:** chords roll low to high (at most 30 ms), velocities vary ±6%, and each hit lands 0–5 ms late. Notes only ever move later, so the look-ahead scheduler stays safe.
-- **Checked in Chromium:** loads in about 0.2 s locally, peaks at 0.52 and has no late events. Timing is exact at 40 and 240 BPM across the loop point.
+- **Bass is a real flatwound bass** (Karoryfer Swagbass, CC0): warm and round, the classic soul sound. It plays one note at a time like a player, slightly detached, with alternate takes so repeated notes differ.
+- **Drums are a real jazz kit, played with sticks** (Versilian Virtuosity Drums, CC0): kick, snare and closed hat. The close mics and overheads are pre-mixed per hit, with alternate takes. Drums stay off by default (SPEC A8). A new drum button next to the click turns them on.
+- **All three load one after another after the first tap** (chords first), about 3.2 MB in total. Each part switches from synth to samples as soon as its own instrument is ready. The pill shows combined progress and names any instrument that failed.
+- **Checked in Chromium:** each part sits at about the level its synth did. The bass is raised to sit about 3 dB under the chords; the old synth bass was louder than the chords. The full band peaks at 0.56, with no late events. Timing is exact at 40 and 240 BPM across the loop point.
 
 ### Ideas noted, not built
 - **Solo mode:** the notes you play (microphone pitch detection, no recording) could feed extra harmonics into the strings, so the visuals answer your solo.

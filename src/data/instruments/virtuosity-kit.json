@@ -1,0 +1,257 @@
+{
+ "name": "Virtuosity Drums",
+ "files": [
+  "kick_snoff_vl1_rr1.m4a",
+  "kick_snoff_vl1_rr2.m4a",
+  "kick_snoff_vl2_rr1.m4a",
+  "kick_snoff_vl2_rr2.m4a",
+  "kick_snoff_vl3_rr1.m4a",
+  "kick_snoff_vl3_rr2.m4a",
+  "kick_snoff_vl4_rr1.m4a",
+  "kick_snoff_vl4_rr2.m4a",
+  "snare_center_vl6.m4a",
+  "snare_center_vl12.m4a",
+  "snare_center_vl18.m4a",
+  "snare_center_vl24.m4a",
+  "snare_center_vl30.m4a",
+  "snare_center_vl36.m4a",
+  "hh_closed_vl1_rr1.m4a",
+  "hh_closed_vl1_rr2.m4a",
+  "hh_closed_vl2_rr1.m4a",
+  "hh_closed_vl2_rr2.m4a",
+  "hh_closed_vl3_rr1.m4a",
+  "hh_closed_vl3_rr2.m4a",
+  "hh_closed_vl4_rr1.m4a",
+  "hh_closed_vl4_rr2.m4a"
+ ],
+ "oneShot": true,
+ "veltrack": 0.5,
+ "layers": [
+  {
+   "lovel": 1,
+   "hivel": 31,
+   "regions": [
+    {
+     "lokey": 36,
+     "hikey": 36,
+     "center": 36,
+     "tune": 0,
+     "volume": 5.9,
+     "file": "kick_snoff_vl1_rr1.m4a",
+     "alternates": [
+      "kick_snoff_vl1_rr2.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 32,
+   "hivel": 63,
+   "regions": [
+    {
+     "lokey": 36,
+     "hikey": 36,
+     "center": 36,
+     "tune": 0,
+     "volume": 5.9,
+     "file": "kick_snoff_vl2_rr1.m4a",
+     "alternates": [
+      "kick_snoff_vl2_rr2.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 64,
+   "hivel": 95,
+   "regions": [
+    {
+     "lokey": 36,
+     "hikey": 36,
+     "center": 36,
+     "tune": 0,
+     "volume": 5.9,
+     "file": "kick_snoff_vl3_rr1.m4a",
+     "alternates": [
+      "kick_snoff_vl3_rr2.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 96,
+   "hivel": 127,
+   "regions": [
+    {
+     "lokey": 36,
+     "hikey": 36,
+     "center": 36,
+     "tune": 0,
+     "volume": 5.9,
+     "file": "kick_snoff_vl4_rr1.m4a",
+     "alternates": [
+      "kick_snoff_vl4_rr2.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 1,
+   "hivel": 31,
+   "regions": [
+    {
+     "lokey": 38,
+     "hikey": 38,
+     "center": 38,
+     "tune": 0,
+     "volume": 0.9,
+     "file": "snare_center_vl6.m4a",
+     "alternates": []
+    }
+   ]
+  },
+  {
+   "lovel": 32,
+   "hivel": 53,
+   "regions": [
+    {
+     "lokey": 38,
+     "hikey": 38,
+     "center": 38,
+     "tune": 0,
+     "volume": 0.9,
+     "file": "snare_center_vl12.m4a",
+     "alternates": []
+    }
+   ]
+  },
+  {
+   "lovel": 54,
+   "hivel": 74,
+   "regions": [
+    {
+     "lokey": 38,
+     "hikey": 38,
+     "center": 38,
+     "tune": 0,
+     "volume": 0.9,
+     "file": "snare_center_vl18.m4a",
+     "alternates": []
+    }
+   ]
+  },
+  {
+   "lovel": 75,
+   "hivel": 95,
+   "regions": [
+    {
+     "lokey": 38,
+     "hikey": 38,
+     "center": 38,
+     "tune": 0,
+     "volume": 0.9,
+     "file": "snare_center_vl24.m4a",
+     "alternates": []
+    }
+   ]
+  },
+  {
+   "lovel": 96,
+   "hivel": 111,
+   "regions": [
+    {
+     "lokey": 38,
+     "hikey": 38,
+     "center": 38,
+     "tune": 0,
+     "volume": 0.9,
+     "file": "snare_center_vl30.m4a",
+     "alternates": []
+    }
+   ]
+  },
+  {
+   "lovel": 112,
+   "hivel": 127,
+   "regions": [
+    {
+     "lokey": 38,
+     "hikey": 38,
+     "center": 38,
+     "tune": 0,
+     "volume": 0.9,
+     "file": "snare_center_vl36.m4a",
+     "alternates": []
+    }
+   ]
+  },
+  {
+   "lovel": 1,
+   "hivel": 31,
+   "regions": [
+    {
+     "lokey": 42,
+     "hikey": 42,
+     "center": 42,
+     "tune": 0,
+     "volume": 17,
+     "file": "hh_closed_vl1_rr1.m4a",
+     "alternates": [
+      "hh_closed_vl1_rr2.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 32,
+   "hivel": 63,
+   "regions": [
+    {
+     "lokey": 42,
+     "hikey": 42,
+     "center": 42,
+     "tune": 0,
+     "volume": 17,
+     "file": "hh_closed_vl2_rr1.m4a",
+     "alternates": [
+      "hh_closed_vl2_rr2.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 64,
+   "hivel": 95,
+   "regions": [
+    {
+     "lokey": 42,
+     "hikey": 42,
+     "center": 42,
+     "tune": 0,
+     "volume": 17,
+     "file": "hh_closed_vl3_rr1.m4a",
+     "alternates": [
+      "hh_closed_vl3_rr2.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 96,
+   "hivel": 127,
+   "regions": [
+    {
+     "lokey": 42,
+     "hikey": 42,
+     "center": 42,
+     "tune": 0,
+     "volume": 17,
+     "file": "hh_closed_vl4_rr1.m4a",
+     "alternates": [
+      "hh_closed_vl4_rr2.m4a"
+     ]
+    }
+   ]
+  }
+ ]
+}

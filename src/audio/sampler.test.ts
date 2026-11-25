@@ -1,11 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import wurlitzer from '../data/instruments/wurlitzer-ep200.json';
-import { CHORD_RANGE } from './voicing';
+import swagbass from '../data/instruments/swagbass.json';
+import virtuosityKit from '../data/instruments/virtuosity-kit.json';
+import { BASS_ROOT_LOW, CHORD_RANGE } from './voicing';
 import { MAX_STRUM, jitterVelocity, lateBy, strumOffsets } from './humanize';
 import { Sampler, pickRegion, toMidiVelocity, type InstrumentMap } from './sampler';
 import { createRng } from '../theory/random';
 
 const map = wurlitzer as InstrumentMap;
+const bass = swagbass as InstrumentMap;
+const kit = virtuosityKit as InstrumentMap;
 
 describe('Wurlitzer mapping data', () => {
   it('has four velocity layers covering 1–127 without gaps', () => {
@@ -29,7 +33,58 @@ describe('Wurlitzer mapping data', () => {
   });
 });
 
+describe('Swagbass and Virtuosity kit mapping data', () => {
+  it('every region and take names a listed file, and every file is used', () => {
+    for (const m of [bass, kit]) {
+      const used = new Set(m.layers.flatMap((l) => l.regions.flatMap((r) => [r.file, ...(r.alternates ?? [])])));
+      expect([...used].sort()).toEqual([...m.files].sort());
+    }
+  });
+
+  it('bass covers our whole bass range in every dynamic, within a whole step of a recording', () => {
+    // Root an octave+ above the lowest root, plus a fifth and a passing note: C2 up to about A3.
+    for (const l of bass.layers) {
+      for (let midi = BASS_ROOT_LOW - 1; midi <= BASS_ROOT_LOW + 22; midi++) {
+        const p = pickRegion(bass, midi, (l.lovel + l.hivel) / 2)!;
+        expect(Math.abs(midi - p.region.center), `note ${midi}`).toBeLessThanOrEqual(1);
+      }
+    }
+    expect(bass.mono).toBe(true);
+  });
+
+  it('kit maps kick, snare and closed hat across the full velocity range', () => {
+    for (const key of [36, 38, 42]) {
+      const layers = kit.layers.filter((l) => l.regions.some((r) => r.lokey === key)).sort((a, b) => a.lovel - b.lovel);
+      expect(layers[0]!.lovel).toBe(1);
+      expect(layers.at(-1)!.hivel).toBe(127);
+      for (let i = 1; i < layers.length; i++) expect(layers[i]!.lovel).toBe(layers[i - 1]!.hivel + 1);
+    }
+    expect(kit.oneShot).toBe(true);
+  });
+});
+
 describe('pickRegion', () => {
+  it('only considers layers that map the note (kit pieces have their own velocity layers)', () => {
+    for (let v = 1; v <= 127; v += 7) {
+      expect(pickRegion(kit, 38, v)!.file).toMatch(/^snare/);
+      expect(pickRegion(kit, 36, v)!.file).toMatch(/^kick/);
+      expect(pickRegion(kit, 42, v)!.file).toMatch(/^hh_closed/);
+    }
+  });
+
+  it('cycles round robins, and harder hits pick louder layers', () => {
+    const takes = [0, 1, 2, 3].map((r) => pickRegion(kit, 36, 70, r)!.file);
+    expect(takes[0]).not.toBe(takes[1]);
+    expect(takes[0]).toBe(takes[2]);
+    expect(pickRegion(kit, 36, 120)!.file).not.toBe(pickRegion(kit, 36, 10)!.file);
+  });
+
+  it('veltrack softens how much velocity changes level', () => {
+    const tracked = (m: InstrumentMap) => pickRegion(m, 36, 32)!.gain / pickRegion(m, 36, 63)!.gain;
+    const full = { ...kit, veltrack: 1 };
+    expect(tracked(kit)).toBeGreaterThan(tracked(full));
+  });
+
   it('picks the velocity layer and the region for the note', () => {
     const soft = pickRegion(map, 61, 20)!;
     const hard = pickRegion(map, 61, 110)!;

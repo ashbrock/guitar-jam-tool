@@ -4,9 +4,18 @@ import type { Chord } from '../theory/chords';
 import { grooveById } from '../data/grooves';
 import { createTicker } from './clock';
 import { Transport, type Feel, type PlaybackSlot, type Playhead, type TransportState } from './transport';
-import { Voices, type PartLevels } from './voices';
+import { Voices, type PartLevels, type SampledPart } from './voices';
 import { Sampler, type InstrumentMap, type LoadStatus } from './sampler';
 import wurlitzer from '../data/instruments/wurlitzer-ep200.json';
+import swagbass from '../data/instruments/swagbass.json';
+import virtuosityKit from '../data/instruments/virtuosity-kit.json';
+
+/** The sampled instruments, in load order: chords first, as they're heard most. */
+const INSTRUMENTS: { part: SampledPart; map: InstrumentMap; dir: string }[] = [
+  { part: 'chords', map: wurlitzer as InstrumentMap, dir: 'wurlitzer-ep200' },
+  { part: 'bass', map: swagbass as InstrumentMap, dir: 'swagbass' },
+  { part: 'drums', map: virtuosityKit as InstrumentMap, dir: 'virtuosity-kit' },
+];
 import { voiceChord, type VoicingStyle } from './voicing';
 
 export type EngineState = 'locked-audio' | TransportState;
@@ -17,8 +26,11 @@ export type EngineEvent =
   | { type: 'blocked' }
   /** Another app took the audio (call, other media): playback was paused. */
   | { type: 'interrupted' }
-  /** The sampled instrument's loading status. Until 'ready', a synth plays in its place. */
-  | { type: 'instrument'; status: LoadStatus; name: string; progress: number };
+  /**
+   * Loading of the sampled instruments, as one combined status. Until each is ready, a synth plays its
+   * part. 'failed' means at least one didn't load (`failed` names them); the others still play.
+   */
+  | { type: 'instrument'; status: LoadStatus; progress: number; failed: string[] };
 
 export interface FeelSettings {
   groove: string;
@@ -37,7 +49,7 @@ export interface EngineOptions {
 
 export interface Engine {
   readonly state: EngineState;
-  /** Loading status of the sampled chord instrument. */
+  /** Combined loading status of the sampled instruments. */
   readonly instrumentStatus: LoadStatus;
   /** Must be called from a user gesture (tap/click). Resolves true once audio is running. */
   unlock(): Promise<boolean>;
@@ -67,9 +79,7 @@ type ContextFactory = () => AudioContext;
 export function createEngine(options: EngineOptions = {}, makeContext: ContextFactory = () => new AudioContext({ latencyHint: 'interactive' })): Engine {
   let ctx: AudioContext | null = null;
   let voices: Voices | null = null;
-  let sampler: Sampler | null = null;
-  const instrument = wurlitzer as InstrumentMap;
-  const samplesUrl = `${import.meta.env.BASE_URL}samples/wurlitzer-ep200/`;
+  let loadStatus: LoadStatus = 'idle';
   let transport: Transport | null = null;
   const listeners = new Set<(e: EngineEvent) => void>();
   const emit = (e: EngineEvent) => listeners.forEach((l) => l(e));
@@ -128,23 +138,32 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
       emit({ type: 'blocked' });
       return false;
     }
-    loadInstrument();
+    void loadInstruments();
     return true;
   }
 
-  /** Loads the sampled instrument in the background after the first tap. Playback never waits for it. */
-  function loadInstrument(): void {
-    if (!ctx || !voices || sampler) return;
-    sampler = new Sampler(ctx, instrument, samplesUrl);
+  /**
+   * Loads the sampled instruments in the background after the first tap, one after another. Each part
+   * switches from synth to samples as soon as its own instrument is ready. Playback never waits.
+   */
+  async function loadInstruments(): Promise<void> {
+    if (!ctx || !voices || loadStatus !== 'idle') return;
+    loadStatus = 'loading';
+    const c = ctx;
     const v = voices;
-    const s = sampler;
-    emit({ type: 'instrument', status: 'loading', name: instrument.name, progress: 0 });
-    void s
-      .load((done, total) => emit({ type: 'instrument', status: 'loading', name: instrument.name, progress: done / total }))
-      .then((ok) => {
-        if (ok) v.setSampler(s);
-        emit({ type: 'instrument', status: s.status, name: instrument.name, progress: ok ? 1 : 0 });
-      });
+    const total = INSTRUMENTS.reduce((n, i) => n + i.map.files.length, 0);
+    let before = 0;
+    const failed: string[] = [];
+    emit({ type: 'instrument', status: 'loading', progress: 0, failed });
+    for (const inst of INSTRUMENTS) {
+      const s = new Sampler(c, inst.map, `${import.meta.env.BASE_URL}samples/${inst.dir}/`);
+      const ok = await s.load((done) => emit({ type: 'instrument', status: 'loading', progress: (before + done) / total, failed }));
+      if (ok) v.setSampler(inst.part, s);
+      else failed.push(inst.map.name);
+      before += inst.map.files.length;
+    }
+    loadStatus = failed.length ? 'failed' : 'ready';
+    emit({ type: 'instrument', status: loadStatus, progress: 1, failed });
   }
 
   const engine: Engine = {
@@ -152,7 +171,7 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
       return lastState;
     },
     get instrumentStatus() {
-      return sampler?.status ?? 'idle';
+      return loadStatus;
     },
     get tempo() {
       return transport?.tempo ?? tempo;

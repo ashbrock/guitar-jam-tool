@@ -60,3 +60,9 @@ One or two lines per significant decision, with the reason. Newest at the bottom
 - **Samples load in the background after the first tap; the synth covers until they're ready.** Play never waits on a download. A broken file only affects its own notes: five files from the first mirror were corrupt, and these had to be re-encoded from the original FLACs.
 - **The reverb impulse is generated in code, not downloaded.** Decaying, darkening noise gives a convincing room for zero bytes.
 - **Humanising only ever delays notes (roll ≤30 ms, push ≤5 ms).** Moving notes earlier could put them behind the scheduler's look-ahead. Timing is re-checked at 40 and 240 BPM.
+- **Bass and drums are sampled too, from CC0 libraries (Karoryfer Swagbass, Versilian Virtuosity Drums).** CC0 removes any licence risk. Flatwounds suit soul and neo-soul. A jazz kit played with sticks sounds like a player in the room, not a drum machine.
+- **Only a small subset of each library ships (76 files, about 2.1 MB), built by a script.** The originals are hundreds of MB. We keep what our parts play, and the script makes the subset reproducible.
+- **Drum mics are pre-mixed per hit, offline.** That's one file per hit instead of three to fetch, decode and keep aligned at play time.
+- **Mapping data can give each kit piece its own velocity layers and alternate takes.** The kit's pieces don't share layer splits. Alternate takes stop the "machine gun" sound on repeated hats.
+- **Drums stay off by default (SPEC A8); 04 gets a drum toggle.** Real drums don't change the reason for A8. They just give people a reason to turn drums on.
+

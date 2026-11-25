@@ -1,5 +1,5 @@
-// Web Audio instruments: a sampled electric piano (with a synth fallback while it loads), bass, click and a
-// small drum kit, through a room reverb, gentle saturation and a compressor.
+// Web Audio instruments: a sampled electric piano, bass and drum kit (each with a synth fallback while
+// it loads), plus a click, through a room reverb, gentle saturation and a compressor.
 // Implements the transport's Sink: it only ever plays what it's told, at the time it's told
 // (humanising only ever moves notes later, never earlier).
 import { jitterVelocity, lateBy, strumOffsets } from './humanize';
@@ -9,6 +9,17 @@ import { midiToFrequency } from './voicing';
 
 export type Part = 'chords' | 'bass' | 'click' | 'drums';
 export type PartLevels = Record<Part, boolean>;
+/** The parts that can use a sampled instrument. */
+export type SampledPart = 'chords' | 'bass' | 'drums';
+
+/** General MIDI drum keys, as used by the kit's mapping data. */
+const DRUM_KEY = { kick: 36, snare: 38, hat: 42 } as const;
+
+/**
+ * Per-part levels for the sampled instruments, set by ear and checked by measurement so each part sits
+ * at about the loudness its synth did (see the audio check in DECISIONS.md).
+ */
+const SAMPLE_LEVEL = { bass: 1.8, kick: 0.9, snare: 0.6, hat: 0.35 };
 
 interface Voice {
   sources: AudioScheduledSourceNode[];
@@ -23,7 +34,7 @@ export class Voices implements Sink {
   private readonly buses: Record<Part | 'countIn' | 'preview', GainNode>;
   private readonly noise: AudioBuffer;
   private active = new Set<Voice>();
-  private sampler: Sampler | null = null;
+  private samplers: Partial<Record<SampledPart, Sampler>> = {};
 
   constructor(private readonly ctx: BaseAudioContext, destination: AudioNode = ctx.destination) {
     // Gain staging: parts sum into a fast compressor, then a master trim that keeps peaks under 0 dBFS
@@ -76,9 +87,22 @@ export class Voices implements Sink {
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
   }
 
-  /** Use a sampled instrument for chords once it has loaded (until then the synth plays). */
-  setSampler(sampler: Sampler | null): void {
-    this.sampler = sampler;
+  /** Use a sampled instrument for a part once it has loaded (until then the synth plays). */
+  setSampler(part: SampledPart, sampler: Sampler | null): void {
+    if (sampler) this.samplers[part] = sampler;
+    else delete this.samplers[part];
+  }
+
+  /** The part's sampler if it's ready to play. */
+  private sampled(part: SampledPart): Sampler | null {
+    const s = this.samplers[part];
+    return s?.ready ? s : null;
+  }
+
+  /** Plays a drum hit from the sampled kit. False if it isn't loaded (the caller synthesises instead). */
+  private drumSample(piece: keyof typeof DRUM_KEY, t: number, vel: number): boolean {
+    const kit = this.sampled('drums');
+    return !!kit && kit.play(DRUM_KEY[piece], t, 0, jitterVelocity(vel), this.buses.drums, SAMPLE_LEVEL[piece]);
   }
 
   /** Mutes and unmutes take effect straight away, with a 10 ms ramp to avoid clicks. */
@@ -129,7 +153,7 @@ export class Voices implements Sink {
       }
     }
     this.active.clear();
-    this.sampler?.silence(now);
+    for (const s of Object.values(this.samplers)) s.silence(now);
   }
 
   /** A chord heard immediately (tapping a chord preview), regardless of part mutes. */
@@ -158,12 +182,13 @@ export class Voices implements Sink {
     const start = t + lateBy();
     const sorted = [...notes].sort((a, b) => a - b);
     const offsets = strumOffsets(sorted.length, vel);
-    if (this.sampler?.ready) {
+    const piano = this.sampled('chords');
+    if (piano) {
       // Level per note so a full chord sits at about the same loudness as the synth did.
       const level = 1.25 / Math.sqrt(Math.max(1, sorted.length));
       sorted.forEach((n, i) => {
         const v = jitterVelocity(vel);
-        const played = this.sampler!.play(n, start + offsets[i]!, duration - offsets[i]!, v, bus, level);
+        const played = piano.play(n, start + offsets[i]!, duration - offsets[i]!, v, bus, level);
         if (!played) this.synthNote(n, start + offsets[i]!, duration - offsets[i]!, v, sorted.length, bus);
       });
       return;
@@ -207,7 +232,16 @@ export class Voices implements Sink {
     }
   }
 
+  /** Bass: the sampled flatwound bass when loaded (slightly detached, like a player), else the synth. */
   private bass(note: number, t: number, duration: number, vel: number): void {
+    const start = t + lateBy();
+    const length = Math.max(0.06, duration * 0.92);
+    const sampled = this.sampled('bass');
+    if (sampled && sampled.play(note, start, length, jitterVelocity(vel), this.buses.bass, SAMPLE_LEVEL.bass)) return;
+    this.synthBass(note, start, duration, vel);
+  }
+
+  private synthBass(note: number, t: number, duration: number, vel: number): void {
     const ctx = this.ctx;
     const f = midiToFrequency(note);
     const tri = ctx.createOscillator();
@@ -253,6 +287,7 @@ export class Voices implements Sink {
   }
 
   private kick(t: number, vel: number): void {
+    if (this.drumSample('kick', t, vel)) return;
     const ctx = this.ctx;
     const osc = ctx.createOscillator();
     osc.frequency.setValueAtTime(140, t);
@@ -285,6 +320,7 @@ export class Voices implements Sink {
   }
 
   private snare(t: number, vel: number): void {
+    if (this.drumSample('snare', t, vel)) return;
     this.noiseBurst(t, 0.16, 'bandpass', 1800, 0.5 * vel);
     const ctx = this.ctx;
     const body = ctx.createOscillator();
@@ -301,6 +337,7 @@ export class Voices implements Sink {
   }
 
   private hat(t: number, vel: number): void {
+    if (this.drumSample('hat', t, vel)) return;
     this.noiseBurst(t, 0.045, 'highpass', 7000, 0.22 * vel);
   }
 }

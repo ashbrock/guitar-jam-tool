@@ -1,0 +1,377 @@
+{
+ "name": "Swagbass",
+ "files": [
+  "a2_p_rr3.m4a",
+  "a2_p_rr4.m4a",
+  "c3_p_rr3.m4a",
+  "c3_p_rr4.m4a",
+  "eb3_p_rr3.m4a",
+  "eb3_p_rr4.m4a",
+  "gb3_p_rr3.m4a",
+  "gb3_p_rr4.m4a",
+  "a3_p_rr3.m4a",
+  "a3_p_rr4.m4a",
+  "c4_p_rr3.m4a",
+  "c4_p_rr4.m4a",
+  "eb4_p_rr3.m4a",
+  "eb4_p_rr4.m4a",
+  "gb4_p_rr3.m4a",
+  "gb4_p_rr4.m4a",
+  "a4_p_rr3.m4a",
+  "a4_p_rr4.m4a",
+  "a2_f_rr3.m4a",
+  "a2_f_rr4.m4a",
+  "c3_f_rr3.m4a",
+  "c3_f_rr4.m4a",
+  "eb3_f_rr3.m4a",
+  "eb3_f_rr4.m4a",
+  "gb3_f_rr3.m4a",
+  "gb3_f_rr4.m4a",
+  "a3_f_rr3.m4a",
+  "a3_f_rr4.m4a",
+  "c4_f_rr3.m4a",
+  "c4_f_rr4.m4a",
+  "eb4_f_rr3.m4a",
+  "eb4_f_rr4.m4a",
+  "gb4_f_rr3.m4a",
+  "gb4_f_rr4.m4a",
+  "a4_f_rr3.m4a",
+  "a4_f_rr4.m4a",
+  "a2_fff_rr3.m4a",
+  "a2_fff_rr4.m4a",
+  "c3_fff_rr3.m4a",
+  "c3_fff_rr4.m4a",
+  "eb3_fff_rr3.m4a",
+  "eb3_fff_rr4.m4a",
+  "gb3_fff_rr3.m4a",
+  "gb3_fff_rr4.m4a",
+  "a3_fff_rr3.m4a",
+  "a3_fff_rr4.m4a",
+  "c4_fff_rr3.m4a",
+  "c4_fff_rr4.m4a",
+  "eb4_fff_rr3.m4a",
+  "eb4_fff_rr4.m4a",
+  "gb4_fff_rr3.m4a",
+  "gb4_fff_rr4.m4a",
+  "a4_fff_rr3.m4a",
+  "a4_fff_rr4.m4a"
+ ],
+ "mono": true,
+ "layers": [
+  {
+   "lovel": 1,
+   "hivel": 50,
+   "regions": [
+    {
+     "lokey": 0,
+     "hikey": 34,
+     "center": 33,
+     "tune": 0,
+     "volume": 0,
+     "file": "a2_p_rr3.m4a",
+     "alternates": [
+      "a2_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 35,
+     "hikey": 37,
+     "center": 36,
+     "tune": 0,
+     "volume": 0,
+     "file": "c3_p_rr3.m4a",
+     "alternates": [
+      "c3_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 38,
+     "hikey": 40,
+     "center": 39,
+     "tune": 0,
+     "volume": 0,
+     "file": "eb3_p_rr3.m4a",
+     "alternates": [
+      "eb3_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 41,
+     "hikey": 43,
+     "center": 42,
+     "tune": 0,
+     "volume": 0,
+     "file": "gb3_p_rr3.m4a",
+     "alternates": [
+      "gb3_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 44,
+     "hikey": 46,
+     "center": 45,
+     "tune": 0,
+     "volume": 0,
+     "file": "a3_p_rr3.m4a",
+     "alternates": [
+      "a3_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 47,
+     "hikey": 49,
+     "center": 48,
+     "tune": 0,
+     "volume": 0,
+     "file": "c4_p_rr3.m4a",
+     "alternates": [
+      "c4_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 50,
+     "hikey": 52,
+     "center": 51,
+     "tune": 0,
+     "volume": 0,
+     "file": "eb4_p_rr3.m4a",
+     "alternates": [
+      "eb4_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 53,
+     "hikey": 55,
+     "center": 54,
+     "tune": 0,
+     "volume": 0,
+     "file": "gb4_p_rr3.m4a",
+     "alternates": [
+      "gb4_p_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 56,
+     "hikey": 127,
+     "center": 57,
+     "tune": 0,
+     "volume": 0,
+     "file": "a4_p_rr3.m4a",
+     "alternates": [
+      "a4_p_rr4.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 51,
+   "hivel": 110,
+   "regions": [
+    {
+     "lokey": 0,
+     "hikey": 34,
+     "center": 33,
+     "tune": 0,
+     "volume": 0,
+     "file": "a2_f_rr3.m4a",
+     "alternates": [
+      "a2_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 35,
+     "hikey": 37,
+     "center": 36,
+     "tune": 0,
+     "volume": 0,
+     "file": "c3_f_rr3.m4a",
+     "alternates": [
+      "c3_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 38,
+     "hikey": 40,
+     "center": 39,
+     "tune": 0,
+     "volume": 0,
+     "file": "eb3_f_rr3.m4a",
+     "alternates": [
+      "eb3_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 41,
+     "hikey": 43,
+     "center": 42,
+     "tune": 0,
+     "volume": 0,
+     "file": "gb3_f_rr3.m4a",
+     "alternates": [
+      "gb3_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 44,
+     "hikey": 46,
+     "center": 45,
+     "tune": 0,
+     "volume": 0,
+     "file": "a3_f_rr3.m4a",
+     "alternates": [
+      "a3_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 47,
+     "hikey": 49,
+     "center": 48,
+     "tune": 0,
+     "volume": 0,
+     "file": "c4_f_rr3.m4a",
+     "alternates": [
+      "c4_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 50,
+     "hikey": 52,
+     "center": 51,
+     "tune": 0,
+     "volume": 0,
+     "file": "eb4_f_rr3.m4a",
+     "alternates": [
+      "eb4_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 53,
+     "hikey": 55,
+     "center": 54,
+     "tune": 0,
+     "volume": 0,
+     "file": "gb4_f_rr3.m4a",
+     "alternates": [
+      "gb4_f_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 56,
+     "hikey": 127,
+     "center": 57,
+     "tune": 0,
+     "volume": 0,
+     "file": "a4_f_rr3.m4a",
+     "alternates": [
+      "a4_f_rr4.m4a"
+     ]
+    }
+   ]
+  },
+  {
+   "lovel": 111,
+   "hivel": 127,
+   "regions": [
+    {
+     "lokey": 0,
+     "hikey": 34,
+     "center": 33,
+     "tune": 0,
+     "volume": 0,
+     "file": "a2_fff_rr3.m4a",
+     "alternates": [
+      "a2_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 35,
+     "hikey": 37,
+     "center": 36,
+     "tune": 0,
+     "volume": 0,
+     "file": "c3_fff_rr3.m4a",
+     "alternates": [
+      "c3_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 38,
+     "hikey": 40,
+     "center": 39,
+     "tune": 0,
+     "volume": 0,
+     "file": "eb3_fff_rr3.m4a",
+     "alternates": [
+      "eb3_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 41,
+     "hikey": 43,
+     "center": 42,
+     "tune": 0,
+     "volume": 0,
+     "file": "gb3_fff_rr3.m4a",
+     "alternates": [
+      "gb3_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 44,
+     "hikey": 46,
+     "center": 45,
+     "tune": 0,
+     "volume": 0,
+     "file": "a3_fff_rr3.m4a",
+     "alternates": [
+      "a3_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 47,
+     "hikey": 49,
+     "center": 48,
+     "tune": 0,
+     "volume": 0,
+     "file": "c4_fff_rr3.m4a",
+     "alternates": [
+      "c4_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 50,
+     "hikey": 52,
+     "center": 51,
+     "tune": 0,
+     "volume": 0,
+     "file": "eb4_fff_rr3.m4a",
+     "alternates": [
+      "eb4_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 53,
+     "hikey": 55,
+     "center": 54,
+     "tune": 0,
+     "volume": 0,
+     "file": "gb4_fff_rr3.m4a",
+     "alternates": [
+      "gb4_fff_rr4.m4a"
+     ]
+    },
+    {
+     "lokey": 56,
+     "hikey": 127,
+     "center": 57,
+     "tune": 0,
+     "volume": 0,
+     "file": "a4_fff_rr3.m4a",
+     "alternates": [
+      "a4_fff_rr4.m4a"
+     ]
+    }
+   ]
+  }
+ ]
+}
