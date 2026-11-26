@@ -37,7 +37,7 @@ describe('first load', () => {
     expect(bars()).toBe(4);
     expect(jam.tempo.value).toBe(jam.vibe.value.playback.tempo.default);
     expect(calls.progression.at(-1)!.fromTop).toBe(true);
-    expect(announced.at(-1)).toMatch(/^New progression in D major at \d+ BPM\. Verse: .+\. Chorus: .+\.$/);
+    expect(announced.at(-1)).toMatch(/^New progression in D major at \d+ BPM\. Verse: .+\. Chorus: .+\. Each plays twice\.$/);
   });
 
   it('only uses the simple chord set', () => {
@@ -158,13 +158,22 @@ describe('verse and chorus', () => {
     }
   });
 
-  it('plays straight through: the whole verse, then the whole chorus, on a loop', () => {
+  it('plays straight through: the verse twice, then the chorus twice, on a loop', () => {
     const { verse, chorus } = jam.song.value;
     const list = jam.playList.value;
-    expect(list).toHaveLength(verse.length + chorus.length);
-    expect(list.slice(0, verse.length).every((it, i) => it.section === 'verse' && it.index === i)).toBe(true);
-    expect(list.slice(verse.length).every((it, i) => it.section === 'chorus' && it.index === i)).toBe(true);
-    expect(jam.itemAt(verse.length)).toEqual({ section: 'chorus', index: 0, bars: chorus[0]!.bars });
+    const v = verse.length;
+    const c = chorus.length;
+    expect(list).toHaveLength(2 * v + 2 * c);
+    const at = (from: number, n: number, section: string, pass: number) =>
+      list.slice(from, from + n).every((it, i) => it.section === section && it.pass === pass && it.index === i);
+    expect(at(0, v, 'verse', 0)).toBe(true);
+    expect(at(v, v, 'verse', 1)).toBe(true);
+    expect(at(2 * v, c, 'chorus', 0)).toBe(true);
+    expect(at(2 * v + c, c, 'chorus', 1)).toBe(true);
+    expect(jam.itemAt(2 * v)).toEqual({ section: 'chorus', pass: 0, index: 0, bars: chorus[0]!.bars });
+    // Starts run on from one another, in bars.
+    const sum = (xs: readonly { bars: number }[]) => xs.reduce((a, x) => a + x.bars, 0);
+    expect(jam.playStarts.value[2 * v]).toBe(2 * sum(verse));
     expect(jam.itemAt(null)).toBeUndefined();
     // The engine gets the whole song.
     expect(calls.progression.at(-1)!.slots).toHaveLength(list.length);
@@ -176,7 +185,7 @@ describe('verse and chorus', () => {
     const sum = (xs: readonly { bars: number }[]) => xs.reduce((a, x) => a + x.bars, 0);
     expect(sum(jam.song.value.verse)).toBe(8);
     expect(sum(jam.song.value.chorus)).toBe(8);
-    expect(sum(calls.progression.at(-1)!.slots)).toBe(16);
+    expect(sum(calls.progression.at(-1)!.slots)).toBe(32);
   });
 
   it('re-roll, transpose and back keep both sections together', () => {

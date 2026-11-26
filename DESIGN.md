@@ -62,8 +62,8 @@ All tokens are CSS custom properties on `:root`. Translucent values sit over the
 | `--track` | `rgb(255 255 255 / 0.12)` | Progress bar track (panel); `0.14` on cards. |
 | `--switch-off` | `rgb(255 255 255 / 0.18)` | Switch track when off. See §2.4. |
 | `--chart-line` | `rgb(244 240 232 / 0.38)` | Chord chart strings and frets (3.23:1 on a card). |
-| `--halo` **NEW** | `0 0 4px rgb(11 11 11 / 0.9), 0 0 14px rgb(11 11 11 / 0.75)` | Text shadow for text directly on the visuals (chord names, timeline). |
-| `--halo-line` **NEW** | `0 0 6px rgb(11 11 11 / 0.6)` | The same, as a box shadow, for thin shapes on the visuals (timeline bars, count-in dots). |
+| `--halo` **NEW** | `0 0 4px rgb(11 11 11 / 0.9), 0 0 14px rgb(11 11 11 / 0.75)` | Text shadow for text directly on the visuals (chord names, song map labels). |
+| `--halo-line` **NEW** | `0 0 6px rgb(11 11 11 / 0.6)` | The same, as a box shadow, for thin shapes on the visuals (count-in dots). |
 | `--hover` **NEW** | `rgb(255 255 255 / 0.10)` | Hover on `--fill-1` / `--fill-2` controls. |
 | `--pressed` **NEW** | `rgb(255 255 255 / 0.14)` | Pressed on `--fill-1` / `--fill-2` controls. |
 
@@ -82,7 +82,7 @@ Measured worst cases, with the glass over the **brightest visual colour** (`#e9f
 
 Lines are thin and blurred, so real values sit much closer to the over-`--bg` figures (16.55 and 7.50 on the panel). Rules:
 - **Small text in `--muted` never sits on `--glass` or `--card`.** Panel chips use `--muted` only for the "BPM" unit, which is a 15 px label next to the number. **Check during the build** by sampling screenshots across vibes; if any reading falls under 4.5:1, raise the panel glass to 0.8.
-- Chord names and the bar timeline sit **directly on the visuals**, so they carry a soft dark halo (`--halo`, NEW): two blurred shadows in `--bg`. Chord names are ≥ 30 px Medium (large text, 3:1 needed). **Check during the build** by sampling screenshots across vibes that the halo keeps text ≥ 4.5:1 (timeline captions) and ≥ 3:1 (chord names) over the brightest particles.
+- Chord names and the song map's labels sit **directly on the visuals**, so they carry a soft dark halo (`--halo`, NEW): two blurred shadows in `--bg`. Chord names are ≥ 30 px Medium (large text, 3:1 needed). **Check during the build** by sampling screenshots across vibes that the halo keeps text ≥ 4.5:1 (song map labels) and ≥ 3:1 (chord names) over the brightest particles.
 - **Off switch:** `--switch-off` alone is 1.73:1 against `--glass-strong`, under the 3:1 needed for controls. **Fix (NEW, approved):** a 1 px `--muted` inset border on the off track (7.39:1).
 
 ### 2.5 Visual palettes (decorative)
@@ -262,7 +262,7 @@ Targets are at least 6 px apart.
 ### 5.4 Radii
 | Token | Value | Use |
 |---|---|---|
-| `--r-pill` | 999 px | Buttons, chips, pills, switches, timeline bars |
+| `--r-pill` | 999 px | Buttons, chips, pills, switches, count-in dots |
 | `--r-panel` | 28 px | The floating panel |
 | `--r-picker` | 24 px | Pickers |
 | `--r-card` | 22 px | Chord cards |
@@ -281,7 +281,12 @@ Everything is soft and round: it reads as an instrument, not a form.
    - **Current:** scale 1, chart card in `--card-now` with a 1 px `--edge-now`.
    - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
    - The card is a button (`role="button"`, focusable); its name is the spoken chord.
-3. **Bar timeline:** under the carousel, **directly on the visuals** (no strip), up to 560 px wide with 24 px side margins, 16 px below the cards. Text has `--halo`, bars and count-in dots have `--halo-line`.
+3. **Song map:** under the carousel, up to 560 px wide with 24 px side margins, 16 px below the cards. On desktop (≥ 900 px) the two sections sit side by side, up to 960 px wide, 24 px apart.
+   - **Section label line:** "VERSE" / "CHORUS" on the left, "×2" (or "1/2", "2/2", tabular figures) on the right, `--t-fine` 500, uppercase, `--muted` on `--halo`; `--text` for the section that's playing.
+   - **Lines:** four bars each, 6 px (`--gap`) between blocks and lines, 12 px between sections.
+   - **Block:** a share of the line by its bars, never narrower than its name. `--card`, 1 px `--line`, `--r-key`, 8 px × 6 px padding. Name in `--t-caption` 500 `--muted`, typeset like the card names (quality as a superscript). A chord split over a line end: its parts are square where they meet, and only the first carries the name.
+   - **Playing block:** `--card-now`, `--edge-now`, `--text` name (edge and brightness, not colour alone). A `--track` fill grows across it from the audio clock.
+   - **Short screens** (< 840 px tall, phone widths): the other section folds to its label line; sections 8 px apart, 8 px below the cards, blocks 6 px padding.
    - **Chord row:** names in `--t-caption` 500, each placed at the start of its chord (as a share of the section's bars). Playing: `--text`. Next: `--text` at 75%. Past: 45% opacity. Others: `--muted`.
    - **Bar row:** one 3 px dash per bar (`--track`, `--r-pill`, 6 px apart). Fills with `--text` as the bar plays, from the audio clock, never a CSS animation.
    - **Count-in:** while it plays, "Count-in" (`--t-caption` 500, uppercase, `--text`) with four 6 px dots filling one per beat appears just above the chord row, positioned so nothing moves.
@@ -341,7 +346,7 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 |---|---|---|---|
 | **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord centred. | Hidden. |
 | **Stopped** | Play icon. | First (or last tapped) chord centred; empty bar. | Hidden. |
-| **Count-in** (if on) | Pause icon. | First chord centred; "Count-in" with four dots filling one per beat appears just above the timeline. | Hidden until beat 1. |
+| **Count-in** (if on) | Pause icon. | First chord centred; "Count-in" with four dots filling one per beat appears just above the song map. | Hidden until beat 1. |
 | **Playing** | Pause icon. | Current chord centred, bar filling, cards sliding on each change. | Visible, moving. |
 | **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Frozen, still visible. |
 
@@ -368,7 +373,7 @@ The visuals use continuous rates, not durations (§3.3).
 
 ### 9.2 Rules
 - **The carousel moves on the chord change,** never before it. When the loop wraps, cards jumping from one end to the other move without animation, so nothing flies across the screen.
-- **The timeline's bars are never animated by CSS;** they're set each frame from the audio clock.
+- **The song map's fill is never animated by CSS;** it's set each frame from the audio clock.
 - Everything beat-related follows the audio clock, minus output latency, so visuals never lead the sound.
 
 ### 9.3 Reduced motion (`prefers-reduced-motion: reduce`)
@@ -379,7 +384,7 @@ The visuals use continuous rates, not durations (§3.3).
 | Picker rises | Appears without animation |
 | Pressed scale | Fill change only |
 
-The timeline keeps filling: it shows position, not decoration.
+The song map keeps filling: it shows position, not decoration.
 
 ---
 

@@ -7,7 +7,7 @@ import { muted } from '../state/sound';
 import { announcement, mode, openPicker, showStatus } from '../state/ui';
 import { useFrameLoop } from '../frame';
 import { Carousel } from './Carousel';
-import { Timeline } from './Timeline';
+import { SongMap } from './SongMap';
 import { Panel } from './Panel';
 import { StatusPill } from './StatusPill';
 import { TopBar } from './TopBar';
@@ -77,7 +77,7 @@ export function App() {
         {mode.value === 'jam' ? (
           <>
             <Carousel />
-            <Timeline />
+            <SongMap />
           </>
         ) : (
           <div class="solo-soon">

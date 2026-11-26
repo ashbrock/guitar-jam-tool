@@ -126,7 +126,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 | Row | Kind | Default | Behaviour |
 |---|---|---|---|
 | **Sound ›** | Opens a second view in place, with a back arrow | — | Chords, Bass and Drums switches, plus the instrument credits (§7.4). |
-| **Count-in** | Switch | **Off** | One bar of clicks before playback, heard even with the metronome off. While it plays, the bar timeline shows "Count-in" with four dots filling one per beat, so it reads without sound. |
+| **Count-in** | Switch | **Off** | One bar of clicks before playback, heard even with the metronome off. While it plays, "Count-in" shows above the song map with four dots filling one per beat, so it reads without sound. |
 | **Metronome** | Switch | **Off** | A click on every beat, accent on beat 1. |
 
 | Sound part | Default | Notes |
@@ -156,8 +156,12 @@ Focus moves into each view as it opens (the back arrow in Sound; the Sound row o
   - phone: up to 2 behind and 3 ahead;
   - desktop: up to 3 behind and 4 ahead.
 - **Past chords** are dimmed; **upcoming chords** are at full strength; the **current chord** is larger, on a brighter card with an edge (shape and size, not just colour).
-- **Bar timeline** (under the cards): one dash per bar of the section that's playing, with small chord names above the bar where each chord starts, so you can see how long each chord lasts and when the next change is coming. The current bar fills smoothly from the audio clock; past bars stay full. The playing chord's name is bright, the next one nearly as bright, past ones dimmed. Half-bar chords sit halfway along their bar.
-- **When paused,** the chord that was playing stays centred and highlighted, and the timeline freezes where it stopped.
+- **Song map** (under the cards): the whole song at a glance, like a lead sheet. **[A21]**
+  - A row for each section, labelled **Verse** and **Chorus**, with a block for each chord. A block's width follows how many bars the chord lasts, four bars to a line; a chord that runs over a line end continues on the next line.
+  - Each section shows **×2**. While it plays, that becomes which time through it is (**1/2**, **2/2**) and the section label brightens.
+  - The playing chord's block is highlighted (brighter, with an edge) and **fills smoothly from the audio clock**, so you can see the change coming.
+  - **Short screens** (under 840 px tall): only the section that's playing (the verse when stopped) shows its blocks; the other folds to its label line.
+- **When paused,** the chord that was playing stays centred and highlighted, and its block's fill freezes where it stopped.
 - **When stopped,** the first chord (or the last tapped) is centred, with an empty bar.
 - **Tapping a card plays the chord** once (a preview), whether or not the loop is running. When stopped, it also centres that card. Tapping never changes the loop.
 - Charts are the basic shape only (§2). A chord with no basic shape shows its name without a chart.
@@ -198,12 +202,12 @@ Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3
 - **Every roll is a song:** a **verse** and a contrasting **chorus**, in the same key and tempo, each the chosen length (`src/theory/song.ts`).
   - **Contrast:** the chorus starts on a different chord from the verse, leaning to the classic lift (IV, vi, ii, V or ♭VII in major; ♭VI, iv, ♭III or ♭VII in minor), using only chords the vibe has.
   - **Never identical:** the two are never the same progression. A fixed form like the 12-bar blues may share its first chord, but the chorus is still a different form.
-- **It just plays:** verse, then chorus, on a loop. There's nothing to switch while playing. The section names aren't shown for now (a better way to show them is to come); the bar timeline follows whichever section is playing. **[A20]**
+- **It just plays:** the verse **twice**, then the chorus **twice**, on a loop. There's nothing to switch while playing. The song map (§5.2) shows both sections and where you are. **[A20]**
 - **Shared by both sections:**
   - Re-roll, the vibe, the length and a key mode change make a new verse and chorus together.
   - A tonic change transposes both.
   - Back (`U`) restores both.
-- The screen-reader announcement lists both: "New progression in D major at 84 BPM. Verse: … Chorus: …".
+- The screen-reader announcement lists both: "New progression in D major at 84 BPM. Verse: … Chorus: … Each plays twice.".
 - **Later (v2, AI):** whole songs with intros, verses, choruses, bridges and outros, each with progressions suited to its part. The play list already takes any order of sections.
 
 ## 6. The visuals (behaviour)
@@ -446,4 +450,5 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |
 | **A18** | Visuals use WebGL (Three.js, approved) where available, loaded on first Play, with the 2D styles as the fallback. All six vibes use the particle-waves scene. | ✅ Decided (dependency approved). |
 | **A19** | Undo's button is replaced by Mute; Back stays on the keyboard (`U`). Bring it back somewhere on touch (e.g. a long-press on Re-roll) if it's missed. | Working default. |
-| **A20** | Verse and chorus play straight through (verse → chorus, looping); no switching. Length is bars per section. Bridges, intros and outros: v2, possibly AI-built. | ✅ Decided. |
+| **A20** | Verse and chorus play straight through (verse ×2 → chorus ×2, looping); no switching. Length is bars per section. Bridges, intros and outros: v2, possibly AI-built. | ✅ Decided. |
+| **A21** | A song map under the cards (a row per section, a block per chord sized by bars, the playing block filling) replaces the bar timeline. Short phones fold the section that isn't playing. | ✅ Decided. |

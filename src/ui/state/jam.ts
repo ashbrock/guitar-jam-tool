@@ -1,6 +1,6 @@
 // Jam mode state and rules (SPEC.md §4–5). A roll is a song: a verse and a contrasting chorus (§5.9),
 // stored as key-relative degree slots, so a tonic change transposes and never re-rolls. What the
-// engine plays the song straight through: verse, then chorus, on a loop (a play list).
+// engine plays the song straight through: the verse twice, then the chorus twice, on a loop (a play list).
 // The engine and randomness are injected, so these rules are tested without audio (jam.test.ts).
 import { batch, computed, signal } from '@preact/signals';
 import { VIBES, vibeById } from '../../data/vibes/index';
@@ -16,6 +16,7 @@ import { pc, type Note } from '../../theory/notes';
 import { newSeed } from '../../theory/random';
 import { simplify, type SimpleChord } from '../../theory/simplify';
 import type { Vibe } from '../../theory/vibe';
+import { slotStarts } from '../bars';
 
 export const HISTORY_LIMIT = 20;
 /** SPEC.md A1: first load is Neo-soul in D major, 4 bars. */
@@ -37,15 +38,19 @@ interface Roll {
   song: Song;
 }
 
-/** One chord in what the engine plays: which section it's from, its place there, and where the section starts in the list. */
+/** One chord in what the engine plays: which section it's from, which time through it, and its place there. */
 export interface PlayItem {
   section: Section;
+  /** 0 the first time through the section, 1 the second. */
+  pass: number;
   index: number;
   bars: DegreeSlot['bars'];
 }
 
 /** The order sections play in. */
 export const FORM: readonly Section[] = ['verse', 'chorus'];
+/** How many times each section plays before the next (SPEC.md §5.9). */
+export const REPEATS = 2;
 
 const EMPTY_SONG: Song = { verse: [], chorus: [] };
 
@@ -81,10 +86,14 @@ export const songChords = computed<Record<Section, SimpleChord[]>>(() => ({
   verse: toChords(song.value.verse, key.value),
   chorus: toChords(song.value.chorus, key.value),
 }));
-/** What the engine plays, in order: the verse, then the chorus. */
+/** What the engine plays, in order: the verse twice, then the chorus twice. */
 export const playList = computed<PlayItem[]>(() =>
-  FORM.flatMap((sec) => song.value[sec].map((s, index) => ({ section: sec, index, bars: s.bars }))),
+  FORM.flatMap((sec) =>
+    Array.from({ length: REPEATS }, (_, pass) => song.value[sec].map((s, index) => ({ section: sec, pass, index, bars: s.bars }))).flat(),
+  ),
 );
+/** Where each play-list item starts, in bars from the top of the loop. */
+export const playStarts = computed<number[]>(() => slotStarts(playList.value));
 
 /** Every chord in play order (the carousel's cards). */
 export const playChords = computed<SimpleChord[]>(() => playList.value.map((it) => songChords.value[it.section][it.index]!));
@@ -113,7 +122,7 @@ function sendFeel(): void {
 
 function describe(): string {
   const names = (sec: Section) => songChords.value[sec].map((c) => spokenChord(c.chord)).join(', ');
-  return `New progression in ${formatKey(key.value)} at ${tempo.value} BPM. Verse: ${names('verse')}. Chorus: ${names('chorus')}.`;
+  return `New progression in ${formatKey(key.value)} at ${tempo.value} BPM. Verse: ${names('verse')}. Chorus: ${names('chorus')}. Each plays twice.`;
 }
 
 function remember(): void {

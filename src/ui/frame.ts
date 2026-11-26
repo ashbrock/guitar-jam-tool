@@ -1,23 +1,15 @@
 // The one animation-frame loop. Each frame it reads the playhead from the audio clock, then:
 // updates the coarse playhead signal (components re-render at most once per beat), draws the visuals,
-// and sets the current card's progress bar directly (60 fps without re-rendering).
+// and fills the playing chord's block in the song map directly (60 fps without re-rendering).
 import { useEffect } from 'preact/hooks';
 import type { RefObject } from 'preact';
 import { Visuals } from '../visuals/index';
-import { barFill } from './bars';
-import { itemAt, playList, songChords, vibe } from './state/jam';
-import type { Section } from '../theory/song';
+import { blockFill, slotStarts } from './bars';
+import { itemAt, playList, playStarts, song, songChords, vibe } from './state/jam';
 import { engine, syncPlayhead } from './state/playback';
 
-/** The current card's progress fill, registered by the carousel. */
-/** The bar timeline, registered by its component: which section it shows, its length, and where it starts. */
-export const timeline: { el: HTMLElement | null; section: Section; bars: number; startBeats: number } = {
-  el: null,
-  section: 'verse',
-  bars: 0,
-  startBeats: 0,
-};
-
+/** The song map, registered by its component. */
+export const songMap: { el: HTMLElement | null } = { el: null };
 
 export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanvas: RefObject<HTMLCanvasElement | null>): void {
   useEffect(() => {
@@ -58,14 +50,19 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
         levels: engine.levels(),
       });
 
-      // The bar timeline fills smoothly from the audio clock. Held while paused; empty when stopped.
-      const tl = timeline.el;
-      if (tl && p.phase !== 'paused') {
-        const now = itemAt(p.slotIndex);
-        const playing = p.phase === 'playing' && now?.section === timeline.section;
-        const barsIn = playing ? (p.bar * 4 + p.beat + p.beatFraction - timeline.startBeats) / 4 : 0;
-        tl.querySelectorAll<HTMLElement>('.tl-bar i').forEach((el, k) => {
-          el.style.width = `${barFill(k, barsIn) * 100}%`;
+      // The playing chord's block fills smoothly from the audio clock. Held while paused; empty when stopped.
+      const map = songMap.el;
+      if (map && p.phase !== 'paused') {
+        const cur = p.phase === 'playing' ? itemAt(p.slotIndex) : undefined;
+        // Bars into the current time through the section: the loop position less where this chord
+        // starts in the loop, plus where it starts in its section.
+        const barsIn = cur
+          ? p.bar + (p.beat + p.beatFraction) / 4 - playStarts.value[p.slotIndex!]! + slotStarts(song.value[cur.section])[cur.index]!
+          : 0;
+        map.querySelectorAll<HTMLElement>('.sm-block').forEach((el) => {
+          const d = el.dataset;
+          const on = cur && d.sec === cur.section && Number(d.idx) === cur.index;
+          (el.firstElementChild as HTMLElement).style.width = `${on ? blockFill(barsIn, Number(d.start), Number(d.bars)) * 100 : 0}%`;
         });
       }
       raf = requestAnimationFrame(frame);
