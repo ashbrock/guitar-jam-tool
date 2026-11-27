@@ -50,40 +50,6 @@ export interface VibePlayback {
   tempo: { default: number; min: number; max: number };
 }
 
-/**
- * How the vibe looks in the generative visuals (DESIGN.md §3). Plain data, so a v2 can map free text
- * onto it just like the generator params.
- */
-/** The six visual styles, one per vibe (DESIGN.md §3.2). */
-export const VISUAL_STYLES = ['ribbons', 'smoke', 'grooves', 'road', 'aurora', 'dunes'] as const;
-export type VisualStyle = (typeof VISUAL_STYLES)[number];
-
-/** WebGL scenes (DESIGN.md §3.5). A vibe with one uses it where WebGL 2 works; `style` is the fallback. */
-export const GL_SCENES = ['waves'] as const;
-export type GlScene = (typeof GL_SCENES)[number];
-
-export interface VibeLook {
-  /** The 2D visualisation (and the fallback when the vibe has a WebGL scene). */
-  style: VisualStyle;
-  /** The WebGL scene, if this vibe has one. */
-  gl?: GlScene;
-  /** Gradient pairs: warmer for major-family chords, cooler for minor and diminished. */
-  major: [string, string];
-  minor: [string, string];
-  /** How many elements the style draws (smoke streams, record rings, road lines, dune ridges). */
-  lines: number;
-  /** Stroke width in CSS px (ribbons: thickness factor). */
-  width: number;
-  /** Wave amplitude as a multiple of the line spacing. */
-  amp: number;
-  /** Drift speed (scaled by tempo). */
-  speed: number;
-  /** Base wave cycles across the screen. */
-  cycles: number;
-  /** Side-to-side lilt for shuffle feels, 0–1. */
-  sway: number;
-}
-
 export interface Vibe {
   id: string;
   name: string;
@@ -92,7 +58,6 @@ export interface Vibe {
   params: GeneratorParams;
   playback: VibePlayback;
   scalePreference: Record<Mode, ScaleId[]>;
-  look: VibeLook;
 }
 
 /** Collects every problem in a vibe definition (an empty array means it's valid). */
@@ -176,26 +141,6 @@ export function vibeProblems(v: Vibe): string[] {
   if (!['straight', 'shuffle'].includes(playback.feel)) at('playback.feel', 'must be straight or shuffle');
   if (!['close', 'open', 'shell'].includes(playback.voicing)) at('playback.voicing', 'unknown voicing');
 
-  const look = v.look;
-  if (!look) at('look', 'missing');
-  else {
-    if (!(VISUAL_STYLES as readonly string[]).includes(look.style)) at('look.style', `must be one of ${VISUAL_STYLES.join(', ')}`);
-    if (look.gl !== undefined && !(GL_SCENES as readonly string[]).includes(look.gl)) at('look.gl', `must be one of ${GL_SCENES.join(', ')}`);
-    for (const k of ['major', 'minor'] as const) {
-      const pair = look[k];
-      if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((c) => /^#[0-9a-f]{6}$/i.test(c))) at(`look.${k}`, 'must be two #rrggbb colours');
-    }
-    const range = (k: keyof VibeLook, lo: number, hi: number) => {
-      const x = look[k] as number;
-      if (!(typeof x === 'number' && x >= lo && x <= hi)) at(`look.${k}`, `must be ${lo}–${hi}`);
-    };
-    range('lines', 4, 60);
-    range('width', 0.5, 6);
-    range('amp', 0.2, 5);
-    range('speed', 0.05, 2);
-    range('cycles', 0.2, 5);
-    range('sway', 0, 1);
-  }
   return p;
 }
 

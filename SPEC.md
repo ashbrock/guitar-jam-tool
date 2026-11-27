@@ -2,7 +2,7 @@
 
 > Status: **v2 draft, for review.** Rewritten around the generative direction (prototype 04). Product name still to be decided; "the app" is used throughout.
 > **[A#]** refers to the assumptions and open questions in §13. Everything else reflects decisions already made.
-> Visual details (colour, type, spacing, motion, the visuals themselves) live in `DESIGN.md`. This document defines *behaviour*.
+> Visual details (colour, type, spacing, motion) live in `DESIGN.md`. This document defines *behaviour*.
 > The previous version (Late Set, with chord locks) is in git history. `design/explorations/README.md` records how we got here.
 
 ---
@@ -11,17 +11,17 @@
 
 A browser tool for guitarists with two modes:
 
-- **Jam:** pick a vibe, hit Re-roll, and hear a chord progression straight away on a real-sounding band (Wurlitzer, bass, optional drums). Each chord appears as a chord chart. Built for band improvisation: fast, few decisions, big buttons.
+- **Jam:** pick a vibe, hit Re-roll, and hear a chord progression straight away on a real-sounding band (Wurlitzer, bass and drums). Each chord appears as a chord chart. Built for band improvisation: fast, few decisions, big buttons.
 - **Solo:** enter the progression of a song you're learning, set its tempo, loop it, and use a fretboard showing chord tones, scale options and landing notes to write lead lines.
 
-Behind both modes, **full-screen generative visuals** are drawn from the harmony that's playing. The visuals are part of the product, not decoration: they show the chord's character (consonant or restless, major or minor), the beat and the vibe.
+Most of the time the app is a silent chart for a band: generate, call the progression, play. Sound is there when you want it. (Full-screen generative visuals were explored and removed for this reason: see DECISIONS.md.)
 
 ### Product principles
 1. **Audible in one tap.** From a cold open, a progression should be playing within one tap in Jam and within a few taps in Solo.
 2. **Playable at arm's length.** Primary actions sit in the bottom thumb zone and stay large. You can operate it one-handed, guitar on, in a dim room.
-3. **The music is the picture.** Visuals are derived from what's playing and appear only while it plays. They never carry information that isn't also given in text.
+3. **Readable from across the room.** The chord, its length and where you are in the song read at a glance, without sound.
 4. **Theory on demand.** Charts and the fretboard answer "what can I play here?" first. Explanation is one tap away, never in the way.
-5. **Loops never lie.** Timing is the product. Nothing in the UI or the visuals is allowed to make playback drift, and visuals never run ahead of the sound.
+5. **Loops never lie.** Timing is the product. Nothing in the UI is allowed to make playback drift, and the song map never runs ahead of the sound.
 
 ### Out of scope for v1
 Accounts, saving and sharing (beyond restoring the current session, §11), recording, AI features, song libraries, time signatures other than 4/4, custom tunings, looping part of a progression, chord locks, extended chords in Jam (an option later, §5.6).
@@ -35,12 +35,11 @@ Accounts, saving and sharing (beyond restoring the current session, §11), recor
 | **Progression** | An ordered list of **slots** played in a loop. |
 | **Slot** | One chord plus its duration in bars (½, 1, 2 or 4). |
 | **Bar** | One bar of 4/4. The length of a progression is the sum of its slots' durations. |
-| **Vibe** | A named set of generator rules, playback feel and visual look (§10, DESIGN.md §3). Six ship in v1. |
+| **Vibe** | A named set of generator rules and playback feel (§10). Six ship in v1. |
 | **Roll** | One output of the generator, with its key and tempo. Jam keeps a history of rolls. |
 | **Hold** | A switch on key or tempo. Re-roll doesn't change a held value. |
 | **Chord chart** | The basic fingering of a chord: open if one exists, otherwise the lowest E- or A-shape barre, never more than 5 frets. |
 | **Song map** | The Verse and Chorus rows under the chord, a block per chord. The selected block is white. |
-| **Visuals** | The full-screen generative picture behind everything (DESIGN.md §3). |
 | **Chord tones** | The notes of the chord currently playing (or selected). |
 | **Landing notes** | The chord tones of the *next* chord, shown towards the end of the current one. Notes a half step either side of a landing note are **approach notes**, an optional layer. |
 | **Avoid notes** | Scale tones that clash with the current chord: a half step above a chord tone. **[A6]** |
@@ -145,7 +144,7 @@ Focus moves into each sheet as it opens (its back arrow; the row that opened it 
 
 ### 5.1 First load
 - Jam, vibe **Neo-soul**, key **D major**, the vibe's default tempo, a progression already generated. **[A1]** The screen is never empty.
-- Nothing plays until the first tap (§12.3). The visuals are hidden until playback starts.
+- Nothing plays until the first tap (§12.3).
 
 ### 5.2 The chord and the song map
 - **The chord view:** the **selected chord's** chart, with its name below in plain text ("Cmaj7", "F♯m7"). The selected chord is the one playing; while stopped or paused, it's the one picked (the first chord after a new roll). Tapping the chart plays the chord once.
@@ -181,8 +180,7 @@ Focus moves into each sheet as it opens (its back arrow; the row that opened it 
 - An **extended chords** option comes later. It will need charts beyond the basic shapes.
 
 ### 5.7 Visuals in Jam
-- The visuals fade in when playback starts and **freeze in place on pause** (DESIGN.md §3).
-- Each chord change crossfades the picture to the new harmony. The beat is a gentle swell. Each vibe has its own look.
+Removed (A24). Kept as a heading so section numbers stay stable.
 
 ### 5.8 Solo over this
 Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3.2). Where this lives in the UI is still to be designed **[A13]**.
@@ -201,17 +199,10 @@ Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3
 - The screen-reader announcement lists both: "New progression in D major at 84 BPM. Verse: … Chorus: … Each plays twice.".
 - **Later (v2, AI):** whole songs with intros, verses, choruses, bridges and outros, each with progressions suited to its part. The play list already takes any order of sections.
 
-## 6. The visuals (behaviour)
+---
 
-The picture is specified in DESIGN.md §3. Its behavioural rules:
-- **Derived from the music:** each chord's interval ratios shape the waves; the vibe sets palette, density, orientation and motion; tempo sets speed; the beat sets a swell.
-- **Present once playing:** fades in on play (about 0.5 s). **On pause the picture freezes and stays visible**; Play sets it moving again. Before the first play, the screen is dark.
-- **Clock-locked:** the beat swell is computed from the audio clock's beat position, so it never drifts and never leads the sound.
-- **Never flashes:** no brightness steps on the beat; changes are continuous. Safe at 240 BPM (WCAG 2.3.1).
-- **Reduced motion:** the picture holds still (no drift, no swell). Chord changes still change the shape and colour, without the crossfade.
-- **Decorative to assistive technology:** the canvas is hidden from screen readers. Everything it shows (the chord, the beat) is available in text.
-- **Visualisation:** every vibe uses the particle-waves scene in its own colours and feel (DESIGN.md §3.5), with the 2D styles as the fallback where WebGL isn't available. **[A14]**
-- Rendering runs on its own frame loop; the audio scheduler is independent, so a slow frame can't disturb timing.
+## 6. The visuals
+Removed (A24): the app has no generative visuals. Kept as a heading so section numbers stay stable.
 
 ---
 
@@ -284,8 +275,6 @@ Settings → Sound shows: "Wurlitzer EP200 samples by Greg Sullivan, CC BY 3.0. 
 
 All fretboard maths is a pure, tested function in `src/theory/`.
 
-### 8.5 Visuals in Solo (stretch)
-The notes you play (microphone pitch detection, nothing recorded or stored) could add harmonics to the visuals, so the picture answers your solo. A stretch goal, not a v1 commitment. It would need microphone permission and an HTTPS page. **[A15]**
 
 ---
 
@@ -337,7 +326,7 @@ interface Vibe {
 ```
 `GeneratorParams` (weighted section lengths, harmonic rhythm, minimum and maximum chords, repeats, closed or free loop, and per-mode vocabulary, starts, transitions and optional templates) is unchanged from the previous spec and implemented in `src/theory/vibe.ts`. Degrees are Roman numerals against the major scale (minor reads i, ♭III, iv, ♭VI, ♭VII); secondary dominants are `V/ii`.
 
-The **visual look** for each vibe (palette, density, orientation, motion) currently lives in the prototype's code. It should move into the vibe data so a v2 can map free text onto it too **[A16]**.
+
 
 ### 10.3 Generation rules
 1. **Templates** (optional, per length) are chosen by weight; `markov` is the weight of using the rules instead.
@@ -409,7 +398,6 @@ So a refresh, a locked phone or a discarded tab doesn't wipe work. **Not** savin
 | Samples slow or failing | Synth plays meanwhile; status pill reports (§7.2). |
 | Device or browser stalls | Sounds are scheduled 150 ms ahead on the audio clock, so short stalls are inaudible. After a longer stall, missed notes are skipped and playback continues on the beat. Never a burst of late notes. |
 | Background tab | The scheduler timer runs in a Web Worker, so playback usually continues. If the browser suspends audio, playback pauses. |
-| Slow device, heavy visuals | The visuals may drop frames; audio is unaffected. If frame times stay high, the visuals reduce their detail **[A17]**. |
 | Reduced motion | DESIGN.md §9.3. No functional difference. |
 | Rotate during playback | Layout changes; playback and the current chord are unaffected. |
 | Very narrow screens (≤ 340 px) | Every control stays ≥ 48 px; long chord names in the song map end in an ellipsis. |
@@ -435,13 +423,14 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A11** | Count-in and metronome are switches in Settings, both off by default. The count-in shows on the first chord card. | ✅ Decided. |
 | **A12** | Settings (top right) → Sound holds Chords, Bass and Drums switches and the credits. | ✅ Decided. |
 | **A13** | **Solo mode layout** in the generative style, including where "Solo over this" lives. | **Open: next design task.** |
-| **A14** | Each vibe has its own visualisation; no style switch. Paused visuals freeze and stay visible. | ✅ Decided: particle waves in each vibe's colours (DESIGN.md §3.5); 2D styles as fallback. |
-| **A15** | Mic-reactive visuals in Solo. | Stretch goal, after v1. |
-| **A16** | Move each vibe's visual look into the vibe data files. | Working default for the rebuild. |
-| **A17** | Visuals reduce detail on slow devices. | Working default; thresholds to be measured. |
-| **A18** | Visuals use WebGL (Three.js, approved) where available, loaded on first Play, with the 2D styles as the fallback. All six vibes use the particle-waves scene. | ✅ Decided (dependency approved). |
+| **A14** | Each vibe had its own visualisation. | ❌ Withdrawn: visuals removed (A24). |
+| **A15** | Mic-reactive visuals in Solo. | ❌ Withdrawn (A24). |
+| **A16** | Each vibe's visual look in its data file. | ❌ Withdrawn (A24). |
+| **A17** | Visuals reduce detail on slow devices. | ❌ Withdrawn (A24). |
+| **A18** | Visuals in WebGL (Three.js). | ❌ Withdrawn (A24); Three.js uninstalled. |
 | **A19** | Undo's button is replaced by Mute; Back stays on the keyboard (`U`). Bring it back somewhere on touch (e.g. a long-press on Re-roll) if it's missed. | Working default. |
 | **A20** | Verse and chorus play straight through (verse ×2 → chorus ×2, looping); no switching. Length is bars per section. Bridges, intros and outros: v2, possibly AI-built. | ✅ Decided. |
 | **A21** | A song map under the chord (a row per section, equal-width blocks with beat dots, the selected block white) replaces the bar timeline. Tapping a block pauses and selects it; Play starts from it. | ✅ Decided. |
 | **A22** | One chord chart instead of the carousel; top bar with a mode menu and My progressions; panel of Settings, Save, Re-roll (largest), Play, Mute, with the vibe below; Key, Tempo and Instruments in Settings. Black and white until hi-fi designs. | ✅ Decided. |
+| **A24** | No visuals: the generative visuals, Three.js, the 2D fallbacks and the audio analyser are removed. The app is mostly used silently alongside a band. | ✅ Decided. |
 | **A23** | Save progressions (heart) to My progressions, a full page; local to this browser, no accounts or sharing. Delete only for now. | ✅ Decided; next step. |

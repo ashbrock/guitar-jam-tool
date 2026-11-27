@@ -45,7 +45,7 @@ export interface Ticker {
 
 export type TransportState = 'stopped' | 'count-in' | 'playing' | 'paused';
 
-/** What the listener is hearing at a given moment (for visuals, which must never lead the sound). */
+/** What the listener is hearing at a given moment (for the UI, which must never lead the sound). */
 export interface Playhead {
   phase: TransportState;
   /** 1–4 during the count-in. */
@@ -55,7 +55,7 @@ export interface Playhead {
   /** Beat within the bar, 0–3. */
   beat: number;
   slotIndex: number | null;
-  /** How far through the current beat, 0–1, from the audio clock (for smooth visuals). */
+  /** How far through the current beat, 0–1, from the audio clock (for the beat dots). */
   beatFraction: number;
 }
 

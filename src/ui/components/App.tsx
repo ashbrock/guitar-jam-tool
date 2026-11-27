@@ -1,6 +1,6 @@
 // The single full-screen stage (SPEC.md §3): top bar, the selected chord's chart, the song map, and the
 // panel at the bottom.
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect } from 'preact/hooks';
 import * as jam from '../state/jam';
 import { togglePlay } from '../state/playback';
 import { muted } from '../state/sound';
@@ -15,9 +15,7 @@ import { TopBar } from './TopBar';
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
 
 export function App() {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const glCanvas = useRef<HTMLCanvasElement>(null);
-  useFrameLoop(canvas, glCanvas);
+  useFrameLoop();
 
   useEffect(() => {
     // Keyboard (SPEC.md §9). Ignored while typing; Space on a focused button is left to the button.
@@ -70,8 +68,6 @@ export function App() {
 
   return (
     <>
-      <canvas class="viz" ref={canvas} aria-hidden="true" />
-      <canvas class="viz" ref={glCanvas} aria-hidden="true" />
       <TopBar />
       <StatusPill />
       <main class="stage">

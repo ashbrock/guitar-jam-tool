@@ -1,5 +1,4 @@
 /* Stage, top bar and status pill (DESIGN.md §5 and §6) */
-.viz { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 .top { position: fixed; top: 0; left: 0; right: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: max(8px, env(safe-area-inset-top)) var(--s-12) 0; }
 .mode-btn { height: var(--target-min); padding: 0 var(--s-10) 0 var(--s-12); border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-body); font-weight: 500; }
 .link-btn { height: var(--target-min); padding: 0 var(--s-12); border-radius: var(--r-pill); font-size: var(--t-small); font-weight: 500; }

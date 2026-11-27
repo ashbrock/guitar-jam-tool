@@ -63,10 +63,5 @@
   "scalePreference": {
     "major": ["majorPentatonic", "major", "mixolydian"],
     "minor": ["minorPentatonic", "naturalMinor", "dorian"]
-  },
-  "look": {
-    "style": "road", "gl": "waves",
-    "major": ["#ffd23f", "#3ccf7d"], "minor": ["#3ccf7d", "#22a7b8"],
-    "lines": 14, "width": 2, "amp": 1.4, "speed": 0.9, "cycles": 1.6, "sway": 0
   }
 }

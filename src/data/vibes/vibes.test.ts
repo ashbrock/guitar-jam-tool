@@ -73,20 +73,3 @@ describe('every vibe generates usable progressions', () => {
     }
   }
 });
-
-describe('vibe looks (visuals)', () => {
-  it('every vibe has a valid look, and the six looks differ', () => {
-    for (const v of VIBES) expect(vibeProblems(v).filter((p) => p.includes('look'))).toEqual([]);
-    const keys = new Set(VIBES.map((v) => JSON.stringify(v.look)));
-    expect(keys.size).toBe(VIBES.length);
-  });
-
-  it('reports a bad look', () => {
-    const v = structuredClone(vibeById('dreamy')!) as Vibe;
-    v.look = { ...v.look, style: 'swirls' as 'road', major: ['#fff', '#000000'], lines: 0 };
-    const problems = vibeProblems(v).join('\n');
-    expect(problems).toContain('look.style');
-    expect(problems).toContain('look.major');
-    expect(problems).toContain('look.lines');
-  });
-});

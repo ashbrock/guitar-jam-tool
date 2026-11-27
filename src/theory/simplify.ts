@@ -2,7 +2,7 @@
 // qualities (9ths, 13ths, 6/9…) are rounded to the nearest of these for display, charts and playback.
 import { parseChord, type Chord } from './chords';
 
-/** The family a chord belongs to, for visuals and colour: dominant 7ths count as major. */
+/** The family a chord belongs to: dominant 7ths count as major. */
 export type ChordKind = 'major' | 'minor' | 'dim' | 'sus';
 
 export interface SimpleChord {

@@ -1,54 +1,20 @@
-// The one animation-frame loop. Each frame it reads the playhead from the audio clock, then:
-// updates the coarse playhead signal (components re-render at most once per beat), draws the visuals,
-// and lights the current beat's dot in the song map directly (without re-rendering).
+// The one animation-frame loop. Each frame it reads the playhead from the audio clock, updates the
+// coarse playhead signal (components re-render at most once per beat), and lights the current beat's
+// dot in the song map directly (without re-rendering), so the dots follow what's audible.
 import { useEffect } from 'preact/hooks';
-import type { RefObject } from 'preact';
-import { Visuals } from '../visuals/index';
 import { beatIndex, slotStarts } from './bars';
-import { itemAt, playList, playStarts, song, songChords, vibe } from './state/jam';
+import { itemAt, playStarts, song } from './state/jam';
 import { engine, syncPlayhead } from './state/playback';
 
 /** The song map, registered by its component. */
 export const songMap: { el: HTMLElement | null } = { el: null };
 
-export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanvas: RefObject<HTMLCanvasElement | null>): void {
+export function useFrameLoop(): void {
   useEffect(() => {
-    if (!canvas.current || !glCanvas.current) return;
-    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-    const visuals = new Visuals(canvas.current, glCanvas.current, bg);
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    // The visuals centre on the chord chart; measure where that sits.
-    const focus = () => {
-      const c = document.querySelector('.chord-view');
-      if (!c) return;
-      const r = c.getBoundingClientRect();
-      visuals.setFocus((r.top + r.height / 2) / window.innerHeight);
-    };
-    const onResize = () => {
-      visuals.resize();
-      focus();
-    };
-    focus();
-    window.addEventListener('resize', onResize);
     let raf = 0;
-
-    const frame = (now: number) => {
+    const frame = () => {
       const p = engine.playhead();
       syncPlayhead(p);
-      // The engine plays a play list (a section, or the song form); map its position to a chord.
-      const item = itemAt(p.slotIndex ?? 0) ?? playList.value[0];
-      const chord = item ? songChords.value[item.section][item.index] : undefined;
-      visuals.render(now, {
-        look: vibe.value.look,
-        chord,
-        slotIndex: p.slotIndex,
-        phase: p.phase,
-        beatFraction: p.beatFraction,
-        beatPosition: p.bar * 4 + p.beat + p.beatFraction,
-        tempo: engine.tempo,
-        reducedMotion: reduced.matches,
-        levels: engine.levels(),
-      });
 
       // The current beat's dot, from the audio clock. Only while playing: none when paused or stopped.
       const map = songMap.el;
@@ -69,9 +35,6 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
-    };
+    return () => cancelAnimationFrame(raf);
   }, []);
 }
