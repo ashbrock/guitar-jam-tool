@@ -25,8 +25,12 @@ describe('vibe data', () => {
     }
   });
 
-  it('only Blues offers 12 bars', () => {
-    expect(VIBES.filter((v) => v.params.lengths.includes(12)).map((v) => v.id)).toEqual(['blues']);
+  it('every vibe caps sections at 4 chords, each 1 or 2 bars, 4 or 8 bars long', () => {
+    for (const v of VIBES) {
+      expect(v.params.maxChords, v.id).toBe(4);
+      for (const h of v.params.harmonicRhythm) expect([1, 2], v.id).toContain(h.bars);
+      for (const l of v.params.lengths) expect([4, 8], v.id).toContain(l.bars);
+    }
   });
 
   it('rejects broken vibe data with readable problems', () => {
@@ -45,7 +49,7 @@ describe('vibe data', () => {
 describe('every vibe generates usable progressions', () => {
   for (const vibe of VIBES) {
     for (const mode of ['major', 'minor'] as const) {
-      for (const lengthBars of vibe.params.lengths) {
+      for (const { bars: lengthBars } of vibe.params.lengths) {
         it(`${vibe.id} ${mode} ${lengthBars} bars, 200 seeds, all 12 keys`, () => {
           let relaxedCount = 0;
           for (let seed = 1; seed <= 200; seed++) {
@@ -53,6 +57,8 @@ describe('every vibe generates usable progressions', () => {
             if (relaxed.length) relaxedCount++;
             expect(totalBars(slots)).toBe(lengthBars);
             expect(slots.length).toBeGreaterThanOrEqual(vibe.params.minChords);
+            expect(slots.length).toBeLessThanOrEqual(vibe.params.maxChords);
+            for (const s of slots) expect([1, 2]).toContain(s.bars);
             for (const s of slots) expect(vibe.params.modes[mode].vocabulary[s.degree], s.degree).toBeDefined();
             if (seed <= 10) {
               for (const tonic of KEY_TONICS[mode]) {

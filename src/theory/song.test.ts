@@ -13,13 +13,25 @@ describe('generateSong', () => {
     expect(a).toEqual(b);
   });
 
+  it('picks its length from the vibe, the same for both sections', () => {
+    for (const v of VIBES) {
+      const seen = new Set<number>();
+      for (let seed = 1; seed <= 60; seed++) {
+        const s = generateSong({ params: v.params, mode: 'major', seed });
+        expect(bars(s.chorus)).toBe(bars(s.verse));
+        seen.add(bars(s.verse));
+      }
+      expect([...seen].sort()).toEqual(v.params.lengths.map((l) => l.bars).sort());
+    }
+  });
+
   for (const v of VIBES) {
     for (const mode of ['major', 'minor'] as const) {
       it(`${v.name} (${mode}): verse and chorus are the same length and never the same progression`, () => {
         let newStarts = 0;
         const runs = 25;
         for (let seed = 1; seed <= runs; seed++) {
-          for (const len of v.params.lengths) {
+          for (const { bars: len } of v.params.lengths) {
             const s = generateSong({ params: v.params, mode, lengthBars: len, seed: seed * 31 + len });
             expect(bars(s.verse)).toBe(len);
             expect(bars(s.chorus)).toBe(len);
@@ -27,7 +39,7 @@ describe('generateSong', () => {
             if (s.chorus[0]!.degree !== s.verse[0]!.degree) newStarts++;
           }
         }
-        // The chorus almost always starts somewhere new (fixed forms like the 12-bar blues may not).
+        // The chorus almost always starts somewhere new.
         expect(newStarts / (runs * v.params.lengths.length)).toBeGreaterThan(0.6);
       });
     }

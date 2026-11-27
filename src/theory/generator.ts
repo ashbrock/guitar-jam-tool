@@ -46,6 +46,8 @@ interface Placed {
 }
 
 const entries = (w: Weights | undefined): [string, number][] => Object.entries(w ?? {});
+/** The vibe's longest chord: held chords never merge past it. */
+const longestChord = (p: GeneratorParams) => Math.max(...p.harmonicRhythm.map((h) => h.bars));
 
 /** Locked slots that still fit inside the requested length, with their start positions. */
 function fixedSlots(current: readonly DegreeSlot[] | undefined, length: number): Placed[] {
@@ -58,9 +60,13 @@ function fixedSlots(current: readonly DegreeSlot[] | undefined, length: number):
   return out;
 }
 
-/** Fills [start, end) with chord durations. Chords of a bar or more start on a bar line; ½-bar chords come in pairs. */
-function fillSpan(start: number, end: number, rng: Rng, rhythm: GeneratorParams['harmonicRhythm']): Bars[] {
+/**
+ * Fills [start, end) with chord durations, using at most `budget` chords where it can. Chords of a bar
+ * or more start on a bar line; ½-bar chords come in pairs.
+ */
+function fillSpan(start: number, end: number, rng: Rng, rhythm: GeneratorParams['harmonicRhythm'], budget: number): Bars[] {
   const out: Bars[] = [];
+  const longest = Math.max(...rhythm.map((h) => h.bars));
   let pos = start;
   while (pos < end - 1e-9) {
     const remaining = end - pos;
@@ -69,7 +75,10 @@ function fillSpan(start: number, end: number, rng: Rng, rhythm: GeneratorParams[
       pos += 0.5;
       continue;
     }
-    const options = rhythm.filter((h) => h.bars <= remaining).map((h) => [h.bars, h.w] as const);
+    const left = budget - out.length;
+    // Only durations that leave the rest of the span fillable with the chords left.
+    const fits = rhythm.filter((h) => h.bars <= remaining && remaining - h.bars <= longest * (left - 1) + 1e-9);
+    const options = (fits.length ? fits : rhythm.filter((h) => h.bars <= remaining)).map((h) => [h.bars, h.w] as const);
     const d = (pickWeighted(rng, options) ?? 1) as Bars;
     if (d === 0.5) {
       out.push(0.5, 0.5);
@@ -82,11 +91,24 @@ function fillSpan(start: number, end: number, rng: Rng, rhythm: GeneratorParams[
   return out;
 }
 
-function layout(length: number, fixed: Placed[], rng: Rng, rhythm: GeneratorParams['harmonicRhythm']): Placed[] {
+function layout(length: number, fixed: Placed[], rng: Rng, rhythm: GeneratorParams['harmonicRhythm'], maxChords: number): Placed[] {
   const out: Placed[] = [];
+  const longest = Math.max(...rhythm.map((h) => h.bars));
+  const stops = [...fixed, { start: length, bars: 0.5 as Bars, fixed: null }];
+  // The chord budget left for open spans, after the locked chords.
+  let budget = maxChords - fixed.length;
   let pos = 0;
-  for (const f of [...fixed, { start: length, bars: 0.5 as Bars, fixed: null }]) {
-    for (const bars of fillSpan(pos, f.start, rng, rhythm)) {
+  for (const [k, f] of stops.entries()) {
+    // Leave enough of the budget for the spans after this one.
+    let later = 0;
+    let p = f.start + f.bars;
+    for (const g of stops.slice(k + 1)) {
+      later += Math.ceil((g.start - p) / longest);
+      p = g.start + g.bars;
+    }
+    const span = fillSpan(pos, f.start, rng, rhythm, Math.max(1, budget - later));
+    budget -= span.length;
+    for (const bars of span) {
       out.push({ start: pos, bars, fixed: null });
       pos += bars;
     }
@@ -102,20 +124,20 @@ function pickQuality(rules: ModeRules, degree: string, rng: Rng): string {
   return pickWeighted(rng, entries(rules.vocabulary[degree])) ?? '';
 }
 
-/** Splits a run of identical template bars into aligned 4/2/1-bar chunks. */
-function chunkRun(start: number, length: number): { start: number; bars: Bars }[] {
+/** Splits a run of identical template bars into aligned 4/2/1-bar chunks, none longer than `longest`. */
+function chunkRun(start: number, length: number, longest: number): { start: number; bars: Bars }[] {
   const out: { start: number; bars: Bars }[] = [];
   let p = start;
   while (p < start + length) {
     const left = start + length - p;
-    const d = ([4, 2, 1] as const).find((x) => x <= left && p % x === 0) ?? 1;
+    const d = ([4, 2, 1] as const).find((x) => x <= left && x <= longest && p % x === 0) ?? 1;
     out.push({ start: p, bars: d });
     p += d;
   }
   return out;
 }
 
-function fromTemplate(degrees: string[], fixed: Placed[], rules: ModeRules, rng: Rng): DegreeSlot[] | null {
+function fromTemplate(degrees: string[], fixed: Placed[], rules: ModeRules, rng: Rng, longest = 4): DegreeSlot[] | null {
   // Locks must line up with whole bars of the template and match its degrees.
   for (const f of fixed) {
     if (f.start % 1 !== 0 || f.bars % 1 !== 0) return null;
@@ -132,7 +154,7 @@ function fromTemplate(degrees: string[], fixed: Placed[], rules: ModeRules, rng:
     }
     let end = bar;
     while (end < degrees.length && degrees[end] === degrees[bar] && !fixed.some((x) => x.start === end)) end++;
-    for (const c of chunkRun(bar, end - bar)) {
+    for (const c of chunkRun(bar, end - bar, longest)) {
       const degree = degrees[bar]!;
       out.push({ degree, quality: pickQuality(rules, degree, rng), bars: c.bars, locked: false });
     }
@@ -150,7 +172,7 @@ function markov(
 ): DegreeSlot[] | null {
   const { params } = input;
   const relax = (r: Relaxation) => level > LEVELS.indexOf(r);
-  const placed = layout(input.lengthBars, fixed, rng, params.harmonicRhythm);
+  const placed = layout(input.lengthBars, fixed, rng, params.harmonicRhythm, params.maxChords);
   if (placed.length < params.minChords && level < LEVELS.length) return null;
 
   const degs: (string | null)[] = placed.map((p) => p.fixed?.degree ?? null);
@@ -192,27 +214,29 @@ function markov(
   }
 
   const slots = mergeHeld(
+    longestChord(params),
     placed.map((p, i) => p.fixed ?? { degree: degs[i]!, quality: pickQuality(rules, degs[i]!, rng), bars: p.bars, locked: false }),
   );
   if (slots.length < params.minChords && level < LEVELS.length) return null;
+  if (slots.length > params.maxChords) return null;
   return slots;
 }
 
 /**
  * A repeated degree means "hold the chord": merges neighbouring unlocked slots on the same degree
- * (e.g. Em7(½) Em7(½) Em7 → Em7(2)) when the result is a valid, bar-aligned duration.
+ * (e.g. Em7(½) Em7(½) Em7 → Em7(2)) when the result is a valid, bar-aligned duration no longer than the vibe's longest chord.
  */
-function mergeHeld(slots: DegreeSlot[]): DegreeSlot[] {
+function mergeHeld(longest: number, slots: DegreeSlot[]): DegreeSlot[] {
   // Repeat until stable: I(1) I(1) I(2) → I(2) I(2) → I(4).
   let current = slots;
   for (;;) {
-    const next = mergeOnce(current);
+    const next = mergeOnce(current, longest);
     if (next.length === current.length) return next;
     current = next;
   }
 }
 
-function mergeOnce(slots: DegreeSlot[]): DegreeSlot[] {
+function mergeOnce(slots: DegreeSlot[], longest: number): DegreeSlot[] {
   const out: DegreeSlot[] = [];
   let pos = 0;
   let start = 0;
@@ -221,7 +245,7 @@ function mergeOnce(slots: DegreeSlot[]): DegreeSlot[] {
     const combined = prev ? prev.bars + s.bars : 0;
     if (
       prev && !prev.locked && !s.locked && prev.degree === s.degree &&
-      (combined === 1 || combined === 2 || combined === 4) && start % 1 === 0
+      (combined === 1 || combined === 2 || combined === 4) && combined <= longest && start % 1 === 0
     ) {
       out[out.length - 1] = { ...prev, bars: combined as Bars };
     } else {
@@ -264,8 +288,9 @@ export function generate(input: GenerateInput): GenerateResult {
         choices.push([-1, templates!.markov]);
         const pick = pickWeighted(rng, choices);
         if (pick !== null && pick >= 0) {
-          const t = fromTemplate(usableForms[pick]!.degrees, fixed, rules, rng);
-          slots = t && mergeHeld(t);
+          const t = fromTemplate(usableForms[pick]!.degrees, fixed, rules, rng, longestChord(input.params));
+          slots = t && mergeHeld(longestChord(input.params), t);
+          if (slots && slots.length > input.params.maxChords) slots = null;
         }
       }
       slots ??= markov(input, rules, fixed, rng, level);

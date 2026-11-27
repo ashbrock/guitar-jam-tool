@@ -7,8 +7,10 @@ import { vibeById } from '../data/vibes/index';
 
 /** A tiny, fully predictable vibe for testing the generator's rules in isolation. */
 const toy: GeneratorParams = {
-  lengths: [4, 8],
+  lengths: [{ bars: 4, w: 1 }, { bars: 8, w: 1 }],
   harmonicRhythm: [{ bars: 1, w: 1 }],
+  // High enough that these tests are about the rules, not the cap (tested separately below).
+  maxChords: 8,
   minChords: 2,
   allowRepeats: false,
   loop: 'closed',
@@ -156,10 +158,11 @@ describe('held chords', () => {
           const starts = slotStarts(slots);
           for (let i = 1; i < slots.length; i++) {
             if (slots[i]!.degree !== slots[i - 1]!.degree) continue;
-            // A repeat is only left in place when merging would make an invalid or misaligned length.
+            // A repeat is only left in place when merging would make an invalid, misaligned or too-long chord.
             const combined = slots[i]!.bars + slots[i - 1]!.bars;
             const aligned = starts[i - 1]! % 1 === 0;
-            expect([1, 2, 4].includes(combined) && aligned, `${id} ${mode} seed ${seed}`).toBe(false);
+            const longest = Math.max(...params.harmonicRhythm.map((h) => h.bars));
+            expect([1, 2, 4].includes(combined) && combined <= longest && aligned, `${id} ${mode} seed ${seed}`).toBe(false);
           }
         }
       }
@@ -167,50 +170,77 @@ describe('held chords', () => {
   });
 });
 
-describe('templates', () => {
-  const blues = vibeById('blues')!.params;
-
-  it('12-bar blues always follows a 12-bar form', () => {
-    const forms = blues.modes.major.templates!['12']!.forms.map((f) => f.degrees.join(' '));
-    for (let seed = 1; seed <= 100; seed++) {
-      const { slots } = generate({ params: blues, mode: 'major', lengthBars: 12, seed });
-      const perBar = slots.flatMap((s) => Array.from({ length: s.bars }, () => s.degree)).join(' ');
-      expect(forms).toContain(perBar);
+describe('chord cap', () => {
+  it('never makes more than maxChords chords, however the bars are split', () => {
+    const p: GeneratorParams = { ...toy, harmonicRhythm: [{ bars: 1, w: 3 }, { bars: 2, w: 1 }], maxChords: 4, allowRepeats: true, loop: 'free' };
+    for (let seed = 1; seed <= 200; seed++) {
+      for (const lengthBars of [4, 8]) {
+        const { slots } = generate({ params: p, mode: 'major', lengthBars, seed });
+        expect(slots.length).toBeLessThanOrEqual(4);
+        expect(totalBars(slots)).toBe(lengthBars);
+      }
     }
+  });
+
+  it('fills 8 bars with four 2-bar chords when 2 bars is the longest', () => {
+    const p: GeneratorParams = { ...toy, harmonicRhythm: [{ bars: 1, w: 5 }, { bars: 2, w: 1 }], maxChords: 4 };
+    for (let seed = 1; seed <= 50; seed++) {
+      const { slots } = generate({ params: p, mode: 'major', lengthBars: 8, seed });
+      expect(slots.map((s) => s.bars)).toEqual([2, 2, 2, 2]);
+    }
+  });
+
+  it('allows fewer chords than the cap', () => {
+    const p: GeneratorParams = { ...toy, harmonicRhythm: [{ bars: 1, w: 1 }, { bars: 2, w: 3 }], maxChords: 4 };
+    const counts = new Set<number>();
+    for (let seed = 1; seed <= 100; seed++) counts.add(generate({ params: p, mode: 'major', lengthBars: 4, seed }).slots.length);
+    expect([...counts].some((n) => n < 4)).toBe(true);
+  });
+
+  it('never holds a chord longer than the longest the vibe allows', () => {
+    const p: GeneratorParams = { ...toy, harmonicRhythm: [{ bars: 2, w: 1 }], maxChords: 4, allowRepeats: true, loop: 'free' };
+    for (let seed = 1; seed <= 100; seed++) {
+      for (const s of generate({ params: p, mode: 'major', lengthBars: 8, seed }).slots) expect(s.bars).toBeLessThanOrEqual(2);
+    }
+  });
+});
+
+describe('templates', () => {
+  const withForms = (forms: string[][], markov = 0, maxChords = 4): GeneratorParams => ({
+    ...toy,
+    maxChords,
+    harmonicRhythm: [{ bars: 1, w: 1 }, { bars: 2, w: 1 }],
+    modes: { ...toy.modes, major: { ...toy.modes.major, templates: { '4': { markov, forms: forms.map((degrees) => ({ w: 1, degrees })) } } } },
+  });
+  const perBar = (slots: readonly DegreeSlot[]) => slots.flatMap((s) => Array.from({ length: s.bars }, () => s.degree)).join(' ');
+
+  it('follows a fixed form exactly', () => {
+    const p = withForms([['I', 'vi', 'IV', 'V']]);
+    for (let seed = 1; seed <= 30; seed++) expect(perBar(generate({ params: p, mode: 'major', lengthBars: 4, seed }).slots)).toBe('I vi IV V');
   });
 
   it('merges repeated template bars into longer chords', () => {
-    let checked = 0;
-    for (let seed = 1; seed <= 30; seed++) {
-      const { slots } = generate({ params: blues, mode: 'minor', lengthBars: 12, seed });
-      const perBar = slots.flatMap((s) => Array.from({ length: s.bars }, () => s.degree));
-      if (perBar.slice(0, 4).every((d) => d === 'i')) {
-        expect(slots[0]!.bars).toBe(4);
-        checked++;
-      }
-    }
-    expect(checked).toBeGreaterThan(0);
+    const { slots } = generate({ params: withForms([['I', 'I', 'IV', 'V']]), mode: 'major', lengthBars: 4, seed: 3 });
+    expect(slots.map((s) => `${s.degree}:${s.bars}`).join(' ')).toBe('I:2 IV:1 V:1');
   });
 
   it('only uses forms that agree with the locks', () => {
-    const forms = blues.modes.major.templates!['12']!.forms.map((f) => f.degrees.join(' '));
+    const p = withForms([['I', 'I', 'IV', 'V'], ['I', 'vi', 'V', 'V']]);
     const current: DegreeSlot[] = [
-      { degree: 'I', quality: '7', bars: 1, locked: false },
-      { degree: 'IV', quality: '9', bars: 1, locked: true }, // quick-change bar 2
-      { degree: 'I', quality: '7', bars: 2, locked: false },
-      { degree: 'IV', quality: '7', bars: 2, locked: false },
-      { degree: 'I', quality: '7', bars: 2, locked: false },
-      { degree: 'V', quality: '7', bars: 1, locked: false },
-      { degree: 'IV', quality: '7', bars: 1, locked: false },
-      { degree: 'I', quality: '7', bars: 1, locked: false },
+      { degree: 'I', quality: 'maj7', bars: 2, locked: false },
+      { degree: 'IV', quality: 'maj7', bars: 1, locked: true },
       { degree: 'V', quality: '7', bars: 1, locked: false },
     ];
-    for (let seed = 1; seed <= 40; seed++) {
-      const { slots } = generate({ params: blues, mode: 'major', lengthBars: 12, current, seed });
+    for (let seed = 1; seed <= 30; seed++) {
+      const { slots } = generate({ params: p, mode: 'major', lengthBars: 4, current, seed });
       expect(slots[1]).toEqual(current[1]);
-      const perBar = slots.flatMap((s) => Array.from({ length: s.bars }, () => s.degree)).join(' ');
-      expect(forms).toContain(perBar);
+      expect(perBar(slots)).toBe('I I IV V');
     }
+  });
+
+  it('never uses a form with more chords than the cap', () => {
+    const p = withForms([['I', 'vi', 'IV', 'V']], 1, 3);
+    for (let seed = 1; seed <= 50; seed++) expect(generate({ params: p, mode: 'major', lengthBars: 4, seed }).slots.length).toBeLessThanOrEqual(3);
   });
 });
 

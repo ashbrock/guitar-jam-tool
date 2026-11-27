@@ -4,8 +4,9 @@
   "descriptor": "Lush 7ths and 9ths, lazy pocket",
   "references": ["Tom Misch", "D'Angelo", "Mac Ayres", "FKJ", "Christian Kuria"],
   "params": {
-    "lengths": [4, 8],
-    "harmonicRhythm": [{ "bars": 1, "w": 5 }, { "bars": 2, "w": 2 }, { "bars": 0.5, "w": 1 }],
+    "lengths": [{ "bars": 4, "w": 4 }, { "bars": 8, "w": 1 }],
+    "harmonicRhythm": [{ "bars": 1, "w": 5 }, { "bars": 2, "w": 2 }],
+    "maxChords": 4,
     "minChords": 3,
     "allowRepeats": false,
     "loop": "closed",

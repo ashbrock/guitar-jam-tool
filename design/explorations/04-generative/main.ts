@@ -82,7 +82,7 @@ function roll(changeKeyAndTempo: boolean): void {
   const v = vibe();
   // Keep the chosen length if this vibe offers it; otherwise the longest it offers below it
   // (leaving Blues at 12 bars drops to 8).
-  const lengths = v.params.lengths;
+  const lengths = v.params.lengths.map((l) => l.bars);
   if (!lengths.includes(lengthBars)) lengthBars = [...lengths].reverse().find((l) => l < lengthBars) ?? lengths[0]!;
   degreeSlots = generate({ params: v.params, mode: key.mode, lengthBars, seed: newSeed() }).slots;
   engine.setFeel({ groove: v.playback.groove, swing: v.playback.swing, voicing: v.playback.voicing });
@@ -443,7 +443,7 @@ function renderPicker(name: PickerName): void {
     pop.innerHTML = `<h2>Vibe</h2><div class="opt-list" role="radiogroup">${VIBES.map((v, i) =>
       `<button class="opt" role="radio" aria-checked="${i === vibeIndex}" data-i="${i}"><span>${v.name}<span class="d">${v.descriptor}</span></span></button>`).join('')}</div>
       <h2 class="sub">Length</h2>
-      <div class="lens" role="radiogroup" aria-label="Length">${vibe().params.lengths.map((l) =>
+      <div class="lens" role="radiogroup" aria-label="Length">${vibe().params.lengths.map(({ bars: l }) =>
         `<button role="radio" aria-checked="${l === lengthBars}" data-l="${l}">${l} bars</button>`).join('')}</div>`;
     pop.querySelectorAll<HTMLButtonElement>('.lens button').forEach((b) => b.addEventListener('click', () => {
       const l = Number(b.dataset.l);

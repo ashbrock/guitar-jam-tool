@@ -68,7 +68,7 @@ All tokens are CSS custom properties on `:root`. Translucent values sit over the
 | `--pressed` **NEW** | `rgb(255 255 255 / 0.14)` | Pressed on `--fill-1` / `--fill-2` controls. |
 
 ### 2.3 Selected and "on"
-Selected and on states **invert**: `--text` fill, `--ink` content. It reads at any distance and needs no colour. Used by: selected picker options, keys and lengths, the Re-roll button (always), the current chord's progress fill and lit count-in beats. Secondary text inside a selected option uses `--ink` at 70% (6.65:1).
+Selected and on states **invert**: `--text` fill, `--ink` content. It reads at any distance and needs no colour. Used by: selected picker options and keys, the Re-roll button (always), the current chord's progress fill and lit count-in beats. Secondary text inside a selected option uses `--ink` at 70% (6.65:1).
 
 ### 2.4 Contrast over the visuals
 Measured worst cases, with the glass over the **brightest visual colour** (`#e9f7ff`) and no blur:
@@ -299,7 +299,6 @@ Everything is soft and round: it reads as an instrument, not a form.
 9. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
 10. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
 11. **Key grid:** Major/Minor in two columns, then 12 keys in six columns, 52 px tall, `--r-key`, `--fill-1`. Selected: inverted.
-    **Length:** the same button style in one row ("4 bars", "8 bars", "12 bars"), under a "LENGTH" title in the vibe picker.
 12. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
 13. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
 14. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.

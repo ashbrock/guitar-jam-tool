@@ -1,8 +1,9 @@
 // A song for Jam (SPEC.md §5.9): a verse and a contrasting chorus, in the same key, tempo and length.
+// The vibe picks the length (4 or 8 bars a section); each section has at most its maxChords changes.
 // Pure and seeded, like the generator it builds on.
 import { generate, type DegreeSlot } from './generator';
 import type { Mode } from './keys';
-import { createRng } from './random';
+import { createRng, pickWeighted } from './random';
 import type { GeneratorParams } from './vibe';
 
 export type Section = 'verse' | 'chorus';
@@ -27,11 +28,16 @@ const sameDegrees = (a: readonly DegreeSlot[], b: readonly DegreeSlot[]) =>
 
 const ATTEMPTS = 24;
 
-/** Generates a verse, then a chorus that starts somewhere new and is never the same progression. */
-export function generateSong(input: { params: GeneratorParams; mode: Mode; lengthBars: number; seed: number }): Song {
+/**
+ * Generates a verse, then a chorus that starts somewhere new and is never the same progression. Both
+ * are the same length: `lengthBars` if given (tests), otherwise picked from the vibe's weighted lengths.
+ */
+export function generateSong(input: { params: GeneratorParams; mode: Mode; lengthBars?: number; seed: number }): Song {
   const rng = createRng(input.seed);
   const seed = () => Math.floor(rng() * 2 ** 31);
-  const verse = generate({ params: input.params, mode: input.mode, lengthBars: input.lengthBars, seed: seed() }).slots;
+  const lengthBars = input.lengthBars ?? pickWeighted(rng, input.params.lengths.map((l) => [l.bars, l.w] as const)) ?? 4;
+  input = { ...input, lengthBars };
+  const verse = generate({ params: input.params, mode: input.mode, lengthBars, seed: seed() }).slots;
   const home = verse[0]?.degree;
   const vocab = input.params.modes[input.mode].vocabulary;
   // Lift starts the vibe actually has, minus the verse's first chord. If none are left, any start but home.
@@ -40,11 +46,11 @@ export function generateSong(input: { params: GeneratorParams; mode: Mode; lengt
 
   let chorus = verse;
   for (let i = 0; i < ATTEMPTS && (sameDegrees(chorus, verse) || chorus[0]?.degree === home); i++) {
-    chorus = generate({ params: input.params, mode: input.mode, lengthBars: input.lengthBars, starts, seed: seed() }).slots;
+    chorus = generate({ params: input.params, mode: input.mode, lengthBars, starts, seed: seed() }).slots;
   }
   // Fixed forms (a 12-bar blues) may only ever start on home: then just make sure it's a different form.
   for (let i = 0; i < ATTEMPTS && sameDegrees(chorus, verse); i++) {
-    chorus = generate({ params: input.params, mode: input.mode, lengthBars: input.lengthBars, seed: seed() }).slots;
+    chorus = generate({ params: input.params, mode: input.mode, lengthBars, seed: seed() }).slots;
   }
   return { verse, chorus };
 }

@@ -4,8 +4,9 @@
   "descriptor": "Slow, wide and floating",
   "references": ["M83", "Pink Floyd"],
   "params": {
-    "lengths": [4, 8],
-    "harmonicRhythm": [{ "bars": 2, "w": 4 }, { "bars": 4, "w": 2 }, { "bars": 1, "w": 1 }],
+    "lengths": [{ "bars": 4, "w": 1 }, { "bars": 8, "w": 3 }],
+    "harmonicRhythm": [{ "bars": 2, "w": 4 }, { "bars": 1, "w": 1 }],
+    "maxChords": 4,
     "minChords": 2,
     "allowRepeats": false,
     "loop": "free",

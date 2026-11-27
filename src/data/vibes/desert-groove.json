@@ -4,8 +4,9 @@
   "descriptor": "Modal vamps with a dusty sway",
   "references": ["Khruangbin", "Hermanos Gutiérrez", "Carlos Santana"],
   "params": {
-    "lengths": [4, 8],
-    "harmonicRhythm": [{ "bars": 1, "w": 3 }, { "bars": 2, "w": 3 }, { "bars": 0.5, "w": 1 }, { "bars": 4, "w": 1 }],
+    "lengths": [{ "bars": 4, "w": 3 }, { "bars": 8, "w": 2 }],
+    "harmonicRhythm": [{ "bars": 1, "w": 3 }, { "bars": 2, "w": 3 }],
+    "maxChords": 4,
     "minChords": 2,
     "allowRepeats": true,
     "loop": "closed",

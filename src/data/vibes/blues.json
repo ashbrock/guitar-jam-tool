@@ -4,8 +4,9 @@
   "descriptor": "Dominant 7ths, shuffle and turnarounds",
   "references": ["BB King", "Christone \"Kingfish\" Ingram", "Marcus King", "Jimi Hendrix"],
   "params": {
-    "lengths": [4, 8, 12],
-    "harmonicRhythm": [{ "bars": 1, "w": 4 }, { "bars": 2, "w": 2 }, { "bars": 0.5, "w": 1 }],
+    "lengths": [{ "bars": 4, "w": 3 }, { "bars": 8, "w": 2 }],
+    "harmonicRhythm": [{ "bars": 1, "w": 4 }, { "bars": 2, "w": 2 }],
+    "maxChords": 4,
     "minChords": 2,
     "allowRepeats": true,
     "loop": "closed",
@@ -29,23 +30,6 @@
           "V/ii": { "ii": 3, "V": 1 },
           "ii": { "V": 4 },
           "bVI": { "V": 4 }
-        },
-        "templates": {
-          "12": {
-            "markov": 0,
-            "forms": [
-              { "w": 3, "degrees": ["I", "I", "I", "I", "IV", "IV", "I", "I", "V", "IV", "I", "V"] },
-              { "w": 3, "degrees": ["I", "IV", "I", "I", "IV", "IV", "I", "I", "V", "IV", "I", "V"] },
-              { "w": 1, "degrees": ["I", "IV", "I", "I", "IV", "#iv", "I", "V/ii", "ii", "V", "I", "V"] }
-            ]
-          },
-          "8": {
-            "markov": 1,
-            "forms": [
-              { "w": 2, "degrees": ["I", "V", "IV", "IV", "I", "V", "I", "V"] },
-              { "w": 1, "degrees": ["I", "I", "IV", "IV", "I", "V", "I", "V"] }
-            ]
-          }
         }
       },
       "minor": {
@@ -65,22 +49,6 @@
           "V": { "i": 4, "iv": 1 },
           "bVI": { "V": 3, "v": 1, "bVII": 1 },
           "bVII": { "i": 3 }
-        },
-        "templates": {
-          "12": {
-            "markov": 0,
-            "forms": [
-              { "w": 3, "degrees": ["i", "i", "i", "i", "iv", "iv", "i", "i", "bVI", "V", "i", "V"] },
-              { "w": 2, "degrees": ["i", "i", "i", "i", "iv", "iv", "i", "i", "bVI", "V", "i", "i"] },
-              { "w": 1, "degrees": ["i", "iv", "i", "i", "iv", "iv", "i", "i", "v", "iv", "i", "V"] }
-            ]
-          },
-          "8": {
-            "markov": 1,
-            "forms": [
-              { "w": 1, "degrees": ["i", "i", "iv", "iv", "i", "V", "i", "V"] }
-            ]
-          }
         }
       }
     }

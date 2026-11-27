@@ -4,8 +4,9 @@
   "descriptor": "Gospel turns and honest triads",
   "references": ["Leon Bridges", "Ray Charles", "Chris Stapleton", "Ray LaMontagne", "Norah Jones"],
   "params": {
-    "lengths": [4, 8],
-    "harmonicRhythm": [{ "bars": 1, "w": 4 }, { "bars": 2, "w": 3 }, { "bars": 0.5, "w": 1 }],
+    "lengths": [{ "bars": 4, "w": 3 }, { "bars": 8, "w": 1 }],
+    "harmonicRhythm": [{ "bars": 1, "w": 4 }, { "bars": 2, "w": 3 }],
+    "maxChords": 4,
     "minChords": 2,
     "allowRepeats": false,
     "loop": "closed",

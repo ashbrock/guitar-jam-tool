@@ -105,7 +105,7 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 ### 4.2 Vibe picker
 - A list of the six vibes, each with its name and a short descriptor. The current vibe is selected (`role="radio"`).
 - Choosing a vibe makes a **new progression in the same key**. Tempo moves to the vibe's default **unless tempo is held**. The picker closes.
-- **Length** (below the list): **4 bars** or **8 bars**, plus **12 bars** for Blues. Default 4. Changing it makes a new progression at that length, in the same key and tempo, and the picker stays open. Re-roll keeps the chosen length. Lengths come from the vibe file, not code. Leaving Blues at 12 bars drops to 8.
+- There's no length control: the vibe sets each song's length (§5.5).
 
 ### 4.3 Key picker
 - **Major / Minor** segmented control, then 12 tonics in two rows of six, spelled for the mode (D♭ and F♯ major; E♭ and B♭ minor; C♯ minor, not D♭ minor).
@@ -180,10 +180,10 @@ Focus moves into each view as it opens (the back arrow in Sound; the Sound row o
 - Mute took the Undo button's place, so Back is on the keyboard (`U`) for now. At the oldest roll it shows "No earlier progression yet". **[A19]**
 - After going back, Re-roll makes a new roll and discards the "forward" history, like a browser. No Forward control in v1.
 
-### 5.5 Length
-- Set in the vibe picker (§4.2): 4 or 8 bars **per section**, plus 12 for Blues. Default 4. So "8 bars" is an 8-bar verse and an 8-bar chorus. **[A3]**
-- The vibe's harmonic rhythm decides how many chords fill them (Dreamy: 2 chords over 4 bars; Neo-soul: 4–8).
-- Back restores a roll at its own length.
+### 5.5 Length and chord count
+- **At most 4 chord changes per section**, and fewer is fine (two or three). Each chord lasts **1 or 2 bars**. A later option may allow more chords; it only raises the vibe's `maxChords`. **[A3]**
+- **The vibe picks the length**, 4 or 8 bars per section, by weight (Dreamy mostly 8, Neo-soul mostly 4). Verse and chorus are always the same length. An 8-bar section is four 2-bar chords.
+- There's no length control. Back restores a roll at its own length.
 
 ### 5.6 Chord set
 - Jam uses a **simple chord set by default:** major, minor, 7, maj7, m7, sus2, sus4, and dim (for vii°). The generator's richer qualities (9ths, 13ths, 6/9) are simplified to the nearest of these for display, charts and playback.
@@ -201,10 +201,10 @@ Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3
 ### 5.9 Verse and chorus
 - **Every roll is a song:** a **verse** and a contrasting **chorus**, in the same key and tempo, each the chosen length (`src/theory/song.ts`).
   - **Contrast:** the chorus starts on a different chord from the verse, leaning to the classic lift (IV, vi, ii, V or ♭VII in major; ♭VI, iv, ♭III or ♭VII in minor), using only chords the vibe has.
-  - **Never identical:** the two are never the same progression. A fixed form like the 12-bar blues may share its first chord, but the chorus is still a different form.
+  - **Never identical:** the two are never the same progression. A fixed form may share its first chord, but the chorus is still a different form.
 - **It just plays:** the verse **twice**, then the chorus **twice**, on a loop. There's nothing to switch while playing. The song map (§5.2) shows both sections and where you are. **[A20]**
 - **Shared by both sections:**
-  - Re-roll, the vibe, the length and a key mode change make a new verse and chorus together.
+  - Re-roll, the vibe and a key mode change make a new verse and chorus together.
   - A tonic change transposes both.
   - Back (`U`) restores both.
 - The screen-reader announcement lists both: "New progression in D major at 84 BPM. Verse: … Chorus: … Each plays twice.".
@@ -344,15 +344,15 @@ interface Vibe {
   scalePreference: { major: ScaleId[]; minor: ScaleId[] };   // ordering for Solo suggestions
 }
 ```
-`GeneratorParams` (lengths, harmonic rhythm, minimum chords, repeats, closed or free loop, and per-mode vocabulary, starts, transitions and optional templates) is unchanged from the previous spec and implemented in `src/theory/vibe.ts`. Degrees are Roman numerals against the major scale (minor reads i, ♭III, iv, ♭VI, ♭VII); secondary dominants are `V/ii`.
+`GeneratorParams` (weighted section lengths, harmonic rhythm, minimum and maximum chords, repeats, closed or free loop, and per-mode vocabulary, starts, transitions and optional templates) is unchanged from the previous spec and implemented in `src/theory/vibe.ts`. Degrees are Roman numerals against the major scale (minor reads i, ♭III, iv, ♭VI, ♭VII); secondary dominants are `V/ii`.
 
 The **visual look** for each vibe (palette, density, orientation, motion) currently lives in the prototype's code. It should move into the vibe data so a v2 can map free text onto it too **[A16]**.
 
 ### 10.3 Generation rules
 1. **Templates** (optional, per length) are chosen by weight; `markov` is the weight of using the rules instead.
-2. **Durations** fill from the harmonic rhythm. Chords of a bar or more start on a bar line; ½-bar chords come in pairs.
+2. **Durations** fill from the harmonic rhythm, never using more than `maxChords` chords. Chords of a bar or more start on a bar line; ½-bar chords come in pairs (no vibe uses them now).
 3. **Chords** fill left to right from `starts`, then `transitions`. With a closed loop, the last chord must lead back to the first.
-4. **No repeats** unless allowed; allowed repeats merge into one held chord.
+4. **No repeats** unless allowed; allowed repeats merge into one held chord, never longer than the vibe's longest chord.
 5. **Quality** comes from the degree's vocabulary weights.
 6. **Never the same roll twice in a row.**
 7. **Relaxation:** if the rules can't be met in 50 attempts, relax them in order (repeats → loop → transitions), so the generator always returns a progression.
@@ -433,7 +433,7 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 |---|---|---|
 | **A1** | First load: Jam, Neo-soul, D major, progression ready. | Working default (as prototyped). |
 | **A2** | Restore the session from `localStorage` (§11). | ✅ Decided. Not yet built in the new direction. |
-| **A3** | Length control in the vibe picker: 4 / 8 bars, Blues also 12. Default 4. | ✅ Decided. |
+| **A3** | At most 4 chord changes per section (fewer allowed), each 1 or 2 bars; the vibe picks 4 or 8 bars. No length control. (Was: a 4 / 8 / 12-bar length control.) | ✅ Decided. |
 | **A4** | Solo default tempo 90 BPM. | Working default. |
 | **A5** | Solo vibe optional, default Plain (no drums). | Working default. |
 | **A6** | Avoid notes: a half step above a chord tone. Scale set as in §8.4. | Working default. |

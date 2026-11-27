@@ -49,7 +49,6 @@ export function SwitchRow({ id, on, label, hint, onToggle }: { id: string; on: b
 }
 
 function VibePicker() {
-  const lengths = jam.vibe.value.params.lengths;
   return (
     <>
       <div class="opt-list" role="radiogroup" aria-label="Vibe">
@@ -67,14 +66,6 @@ function VibePicker() {
               {v.name}
               <span class="d">{v.descriptor}</span>
             </span>
-          </button>
-        ))}
-      </div>
-      <h2 class="sub">Length</h2>
-      <div class="lens" role="radiogroup" aria-label="Length">
-        {lengths.map((l) => (
-          <button class="fill-1" role="radio" aria-checked={l === jam.lengthBars.value} onClick={() => jam.chooseLength(l)}>
-            {l} bars
           </button>
         ))}
       </div>

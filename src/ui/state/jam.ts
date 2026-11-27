@@ -19,10 +19,9 @@ import type { Vibe } from '../../theory/vibe';
 import { slotStarts } from '../bars';
 
 export const HISTORY_LIMIT = 20;
-/** SPEC.md A1: first load is Neo-soul in D major, 4 bars. */
+/** SPEC.md A1: first load is Neo-soul in D major. */
 const DEFAULT_VIBE = 'neo-soul';
 const DEFAULT_KEY: Key = { tonic: { letter: 'D', acc: 0 }, mode: 'major' };
-const DEFAULT_LENGTH = 4;
 
 /** What Jam needs from the audio engine. */
 export interface JamSink {
@@ -72,7 +71,6 @@ export const key = signal<Key>(DEFAULT_KEY);
 export const tempo = signal(vibeById(DEFAULT_VIBE)!.playback.tempo.default);
 export const keyHeld = signal(false);
 export const tempoHeld = signal(false);
-export const lengthBars = signal(DEFAULT_LENGTH);
 export const song = signal<Song>(EMPTY_SONG);
 export const history = signal<Roll[]>([]);
 
@@ -130,16 +128,9 @@ function remember(): void {
   history.value = h.slice(-HISTORY_LIMIT);
 }
 
-/** The chosen length if this vibe offers it; otherwise the longest it offers below it (Blues 12 → 8). */
-function fitLength(v: Vibe, want: number): number {
-  const ls = v.params.lengths;
-  return ls.includes(want) ? want : ([...ls].reverse().find((l) => l < want) ?? ls[0]!);
-}
-
-/** Generates a new song (verse and chorus) for the current vibe, key mode and length, from bar 1. */
+/** Generates a new song (verse and chorus) for the current vibe and key mode, from bar 1. The vibe picks its length. */
 function generateNew(): void {
-  lengthBars.value = fitLength(vibe.value, lengthBars.value);
-  song.value = generateSong({ params: vibe.value.params, mode: key.value.mode, lengthBars: lengthBars.value, seed: seed() });
+  song.value = generateSong({ params: vibe.value.params, mode: key.value.mode, seed: seed() });
   sendFeel();
   sink.setTempo(tempo.value);
   sendProgression(true);
@@ -178,7 +169,6 @@ export function back(): boolean {
     key.value = prev.key;
     tempo.value = prev.tempo;
     song.value = prev.song;
-    lengthBars.value = prev.song.verse.reduce((a, s) => a + s.bars, 0);
     sendFeel();
     sink.setTempo(tempo.value);
     sendProgression(true);
@@ -194,16 +184,6 @@ export function chooseVibe(id: string): void {
     remember();
     vibeId.value = id;
     if (!tempoHeld.value) tempo.value = vibe.value.playback.tempo.default;
-    generateNew();
-  });
-}
-
-/** Length (SPEC.md §5.5): a new progression at that length, same key and tempo. */
-export function chooseLength(bars: number): void {
-  if (bars === lengthBars.value || !vibe.value.params.lengths.includes(bars)) return;
-  batch(() => {
-    remember();
-    lengthBars.value = bars;
     generateNew();
   });
 }
@@ -242,7 +222,6 @@ export function resetJam(): void {
     tempo.value = vibeById(DEFAULT_VIBE)!.playback.tempo.default;
     keyHeld.value = false;
     tempoHeld.value = false;
-    lengthBars.value = DEFAULT_LENGTH;
     song.value = EMPTY_SONG;
     history.value = [];
   });

@@ -101,19 +101,16 @@ describe('vibe, length and key', () => {
     expect(jam.tempo.value).toBe(130);
   });
 
-  it('length: 4 and 8, Blues also 12; leaving Blues at 12 drops to 8; re-roll keeps it', () => {
-    jam.chooseLength(8);
-    expect(bars()).toBe(8);
-    jam.reroll();
-    expect(bars()).toBe(8);
-    jam.chooseLength(12); // not offered by Neo-soul
-    expect(bars()).toBe(8);
-    jam.chooseVibe('blues');
-    jam.chooseLength(12);
-    expect(bars()).toBe(12);
-    jam.chooseVibe('heartland');
-    expect(jam.lengthBars.value).toBe(8);
-    expect(bars()).toBe(8);
+  it('the vibe sets the length: 4 or 8 bars a section, at most 4 chords each', () => {
+    for (const id of ['neo-soul', 'blues', 'dreamy']) {
+      jam.chooseVibe(id);
+      for (let i = 0; i < 10; i++) {
+        jam.reroll();
+        expect([4, 8]).toContain(bars());
+        expect(jam.song.value.verse.length).toBeLessThanOrEqual(4);
+        expect(jam.song.value.chorus.length).toBeLessThanOrEqual(4);
+      }
+    }
   });
 
   it('a tonic change transposes without re-rolling or a new history entry, and keeps the loop position', () => {
@@ -180,12 +177,11 @@ describe('verse and chorus', () => {
     expect(jam.playChords.value).toHaveLength(list.length);
   });
 
-  it('length is bars per section', () => {
-    jam.chooseLength(8);
+  it('the engine gets each section twice', () => {
     const sum = (xs: readonly { bars: number }[]) => xs.reduce((a, x) => a + x.bars, 0);
-    expect(sum(jam.song.value.verse)).toBe(8);
-    expect(sum(jam.song.value.chorus)).toBe(8);
-    expect(sum(calls.progression.at(-1)!.slots)).toBe(32);
+    const { verse, chorus } = jam.song.value;
+    expect(sum(chorus)).toBe(sum(verse));
+    expect(sum(calls.progression.at(-1)!.slots)).toBe(4 * sum(verse));
   });
 
   it('re-roll, transpose and back keep both sections together', () => {

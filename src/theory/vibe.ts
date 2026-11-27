@@ -27,10 +27,12 @@ export interface ModeRules {
 }
 
 export interface GeneratorParams {
-  /** Bar lengths offered in Jam. */
-  lengths: number[];
+  /** Section lengths in bars (4 or 8), weighted. A song picks one for both its sections. */
+  lengths: { bars: number; w: number }[];
   /** Weighted chord durations in bars (½, 1, 2, 4). */
   harmonicRhythm: { bars: Bars; w: number }[];
+  /** At most this many chord changes per section (SPEC.md §5.5). A later "more chords" option raises it. */
+  maxChords: number;
   minChords: number;
   /** Whether the same degree may repeat back to back (vamps). */
   allowRepeats: boolean;
@@ -109,13 +111,22 @@ export function vibeProblems(v: Vibe): string[] {
 
   const { params, playback } = v;
   if (params.lengths.length === 0) at('lengths', 'none');
-  for (const l of params.lengths) if (![4, 8, 12].includes(l)) at('lengths', `${l} is not 4, 8 or 12`);
+  for (const l of params.lengths) {
+    if (![4, 8].includes(l.bars)) at('lengths', `${l.bars} is not 4 or 8`);
+    if (!(l.w > 0)) at('lengths', 'weights must be > 0');
+  }
   if (params.harmonicRhythm.length === 0) at('harmonicRhythm', 'none');
   for (const h of params.harmonicRhythm) {
     if (!(DURATIONS as readonly number[]).includes(h.bars)) at('harmonicRhythm', `${h.bars} bars is not allowed`);
     if (!(h.w > 0)) at('harmonicRhythm', 'weights must be > 0');
   }
   if (params.minChords < 1) at('minChords', 'must be at least 1');
+  if (!(params.maxChords >= params.minChords)) at('maxChords', 'must be at least minChords');
+  // Every length must be fillable within maxChords using the vibe's longest chord.
+  const longest = Math.max(...params.harmonicRhythm.map((h) => h.bars));
+  for (const l of params.lengths) {
+    if (l.bars > params.maxChords * longest) at('lengths', `${l.bars} bars can't be filled with ${params.maxChords} chords of up to ${longest} bars`);
+  }
 
   for (const mode of ['major', 'minor'] as Mode[]) {
     const rules = params.modes[mode];
@@ -146,10 +157,12 @@ export function vibeProblems(v: Vibe): string[] {
     for (const d of degrees) if (!seen.has(d)) at(`${mode}`, `"${d}" can never be reached`);
 
     for (const [len, set] of Object.entries(rules.templates ?? {})) {
-      if (!params.lengths.includes(Number(len))) at(`${mode}.templates.${len}`, 'length not offered');
+      if (!params.lengths.some((l) => l.bars === Number(len))) at(`${mode}.templates.${len}`, 'length not offered');
       if (!(set.markov >= 0)) at(`${mode}.templates.${len}`, 'markov weight must be ≥ 0');
       for (const f of set.forms) {
         if (f.degrees.length !== Number(len)) at(`${mode}.templates.${len}`, `form has ${f.degrees.length} bars`);
+        const changes = f.degrees.filter((d, i) => i === 0 || d !== f.degrees[i - 1]).length;
+        if (changes > params.maxChords) at(`${mode}.templates.${len}`, `form has ${changes} chords, more than ${params.maxChords}`);
         for (const d of f.degrees) if (!degrees.includes(d)) at(`${mode}.templates.${len}`, `"${d}" not in vocabulary`);
         if (!(f.w > 0)) at(`${mode}.templates.${len}`, 'weights must be > 0');
       }
