@@ -17,6 +17,10 @@
 .icon-btn.fill[aria-pressed='true'] { color: var(--ink); }
 .icon-btn.fill[aria-expanded='true'] { background: var(--fill-open); color: var(--text); }
 .icon-btn[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; }
+/* Save: only the heart fills when saved, not the button (overrides the pressed inversion). */
+.icon-btn.heart[aria-pressed='true'] { background: var(--fill-2); color: var(--text); }
+@media (hover: hover) { .icon-btn.heart[aria-pressed='true']:hover { background: var(--hover); } }
+.icon-btn.heart[aria-pressed='true']:active { background: var(--pressed); }
 /* Re-roll: the largest control, the tool's main act. NEW size. */
 .icon-btn.hero { width: var(--target-hero); height: var(--target-hero); }
 .icon-btn.hero svg.i { width: 28px; height: 28px; }

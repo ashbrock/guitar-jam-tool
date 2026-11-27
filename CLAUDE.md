@@ -45,4 +45,4 @@ This is a portfolio piece. Design quality, polish and clear decisions matter as 
 - Keep a running `DECISIONS.md`: one or two lines per significant design or technical decision, with the reason. I'll use it for the portfolio write-up.
 
 ## Out of scope for v1
-Accounts, saving/sharing, recording, AI features, song libraries.
+Accounts, sharing, syncing between devices, recording, AI features, song libraries. (Saving progressions is in scope, stored locally in the browser only.)

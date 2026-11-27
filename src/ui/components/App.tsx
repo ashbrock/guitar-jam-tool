@@ -4,11 +4,12 @@ import { useEffect } from 'preact/hooks';
 import * as jam from '../state/jam';
 import { togglePlay } from '../state/playback';
 import { muted } from '../state/sound';
-import { announcement, mode, openPicker, showStatus } from '../state/ui';
+import { announcement, mode, openPicker, page, showStatus } from '../state/ui';
 import { useFrameLoop } from '../frame';
 import { ChordView } from './ChordView';
 import { SongMap } from './SongMap';
 import { Panel } from './Panel';
+import { SavedPage, closeSaved } from './SavedPage';
 import { StatusPill } from './StatusPill';
 import { TopBar } from './TopBar';
 
@@ -24,7 +25,11 @@ export function App() {
         openPicker.value = null;
         return;
       }
-      if (typing(e.target) || e.metaKey || e.ctrlKey || e.altKey || mode.value !== 'jam') return;
+      if (e.key === 'Escape' && page.value === 'saved') {
+        closeSaved();
+        return;
+      }
+      if (typing(e.target) || e.metaKey || e.ctrlKey || e.altKey || mode.value !== 'jam' || page.value !== 'main') return;
       const onButton = e.target instanceof HTMLButtonElement;
       if (e.key === ' ' && !onButton) {
         e.preventDefault();
@@ -66,6 +71,18 @@ export function App() {
     };
   }, []);
 
+  // My progressions is a full page over Jam; Jam's state (and playback) carry on underneath.
+  if (page.value === 'saved') {
+    return (
+      <>
+        <SavedPage />
+        <StatusPill />
+        <p class="sr-only" aria-live="polite">
+          {announcement.value}
+        </p>
+      </>
+    );
+  }
   return (
     <>
       <TopBar />

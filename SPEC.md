@@ -24,7 +24,7 @@ Most of the time the app is a silent chart for a band: generate, call the progre
 5. **Loops never lie.** Timing is the product. Nothing in the UI is allowed to make playback drift, and the song map never runs ahead of the sound.
 
 ### Out of scope for v1
-Accounts, saving and sharing (beyond restoring the current session, §11), recording, AI features, song libraries, time signatures other than 4/4, custom tunings, looping part of a progression, chord locks, extended chords in Jam (an option later, §5.6).
+Accounts, sharing, syncing between devices (saved progressions stay in this browser, §5.10), recording, AI features, song libraries, time signatures other than 4/4, custom tunings, looping part of a progression, chord locks, extended chords in Jam (an option later, §5.6).
 
 ---
 
@@ -93,7 +93,7 @@ There is a **single screen**, black and white for now (colour comes with the hi-
 | Control | Behaviour |
 |---|---|
 | **Settings** (sliders) | Opens Settings (§4.5): Key, Tempo and Instruments. |
-| **Save** (heart) | Saves the progression to My progressions; filled when the current progression is saved, and tapping again removes it. Coming in the next step; until then it's disabled and says so. **[A23]** |
+| **Save** (heart) | Saves the progression to My progressions (§5.10); the heart fills when what's on screen is saved, and tapping again removes it. `aria-pressed`. **[A23]** |
 | **Re-roll** (two arrows) | The primary action (§5.3): the tool is for generating progressions quickly to play with a band. The largest button, in the centre, inverted. |
 | **Play / Pause** | Starts and pauses the loop. Play starts from the selected chord (§5.2). |
 | **Mute** (speaker) | Silences all sound while the loop and song map carry on in time: for playing with a band and following the chords. A toggle (`aria-pressed`); when on it's inverted with a crossed-out speaker. Off by default. Fades over about 20 ms, no click. |
@@ -199,6 +199,15 @@ Copies Jam's progression, key, tempo and vibe into Solo, then switches mode (§3
 - The screen-reader announcement lists both: "New progression in D major at 84 BPM. Verse: … Chorus: … Each plays twice.".
 - **Later (v2, AI):** whole songs with intros, verses, choruses, bridges and outros, each with progressions suited to its part. The play list already takes any order of sections.
 
+### 5.10 My progressions (saving) **[A23]**
+- **Save (heart):** saves the progression on screen: its verse, chorus, key, tempo and vibe. The heart is **filled** (the icon, not the button) when what's on screen exactly matches a saved progression; tap it again to remove it. Changing the tempo, key, vibe or chords after saving empties the heart, and saving again keeps that version too. A short status confirms ("Saved to My progressions").
+- **My progressions** (top right) opens a **full page** over Jam, newest first. Each entry shows the vibe, the date ("27 Nov"; with the year if it isn't this year), the key and tempo, and the verse and chorus chords. The one on the Jam screen now has an edge.
+- **Tapping an entry** puts it on the Jam screen from bar 1 and returns there; the progression that was there goes on the history, so Back (`U`) returns to it.
+- **Back to Jam** (or Esc) returns with **Jam exactly as it was**: chords, selected chord, and playback carry on underneath the page.
+- **Delete** is two taps: the bin turns into "Delete" to confirm (it reverts after 4 s or when focus leaves). No other management yet.
+- **Empty:** "Nothing saved yet. Tap the heart on the Jam screen to keep a progression here."
+- **Storage:** this browser only (`localStorage`), no accounts or sync. Malformed entries, or ones from a vibe that no longer exists, are skipped. If the browser won't store them (a private window, blocked storage), saving still works until the page is closed, and a status says so.
+
 ---
 
 ## 6. The visuals
@@ -289,7 +298,7 @@ All fretboard maths is a pure, tested function in `src/theory/`.
 | `←` `→` | Move focus between the song map's chords |
 | `Enter` | Select and play the focused chord (Jam); open it for editing (Solo) |
 | `+` `−` | Tempo ±1 (`Shift` for ±5) |
-| `Esc` | Close the open picker |
+| `Esc` | Close the open picker, or My progressions |
 
 - Shortcuts are ignored while a text field has focus.
 - Each section of the song map is a labelled group. Each block's accessible name is the spoken chord and its length ("E minor 7, 2 bars"); the selected one has `aria-current`. No announcement on every chord change during playback.
@@ -433,4 +442,4 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A21** | A song map under the chord (a row per section, equal-width blocks with beat dots, the selected block white) replaces the bar timeline. Tapping a block pauses and selects it; Play starts from it. | ✅ Decided. |
 | **A22** | One chord chart instead of the carousel; top bar with a mode menu and My progressions; panel of Settings, Save, Re-roll (largest), Play, Mute, with the vibe below; Key, Tempo and Instruments in Settings. Black and white until hi-fi designs. | ✅ Decided. |
 | **A24** | No visuals: the generative visuals, Three.js, the 2D fallbacks and the audio analyser are removed. The app is mostly used silently alongside a band. | ✅ Decided. |
-| **A23** | Save progressions (heart) to My progressions, a full page; local to this browser, no accounts or sharing. Delete only for now. | ✅ Decided; next step. |
+| **A23** | Save progressions (heart) to My progressions, a full page; local to this browser, no accounts or sharing. Delete only for now (§5.10). | ✅ Decided; built. |

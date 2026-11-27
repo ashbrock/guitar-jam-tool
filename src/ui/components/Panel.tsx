@@ -5,6 +5,7 @@ import { formatKey } from '../../theory/keys';
 import * as jam from '../state/jam';
 import { engineState, togglePlay } from '../state/playback';
 import { muted } from '../state/sound';
+import { currentSaved, toggleSave } from '../state/saved';
 import { openPicker, showStatus } from '../state/ui';
 import { ChevronIcon, HeartIcon, MutedIcon, PauseIcon, PlayIcon, RerollIcon, SettingsIcon, SoundIcon } from './icons';
 import { Picker, triggerId } from './Picker';
@@ -32,9 +33,14 @@ export function Panel() {
           >
             <SettingsIcon />
           </button>
-          {/* Saving arrives in the next step. */}
-          <button class="icon-btn fill" aria-label="Save progression" aria-disabled="true" onClick={() => showStatus('Saving is coming soon')}>
-            <HeartIcon />
+          {/* Filled when what's on screen is saved; tapping again removes it (shape, plus aria-pressed). */}
+          <button
+            class="icon-btn fill heart"
+            aria-label="Save progression"
+            aria-pressed={!!currentSaved.value}
+            onClick={() => showStatus(toggleSave() === 'saved' ? 'Saved to My progressions' : 'Removed from My progressions', 2000)}
+          >
+            <HeartIcon filled={!!currentSaved.value} />
           </button>
           <button class="icon-btn inv hero" aria-label="Re-roll" onClick={jam.reroll}>
             <RerollIcon />

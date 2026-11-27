@@ -161,7 +161,7 @@ Everything is soft and round: it reads as an instrument, not a form.
 
 Black and white for now: no accent colour until the hi-fi designs (SPEC A22).
 
-1. **Top bar:** **mode menu** on the left: "Jam" or "Solo" in `--t-body` 500 with a down chevron, a 48 px pill with no fill until hover (`--hover`) or open (`--fill-open`). It drops down a sheet with the two modes as picker options. **My progressions** on the right: `--t-small` 500 text button, 48 px tall (disabled until saving ships). *(Solo isn't designed yet: SPEC A13.)*
+1. **Top bar:** **mode menu** on the left: "Jam" or "Solo" in `--t-body` 500 with a down chevron, a 48 px pill with no fill until hover (`--hover`) or open (`--fill-open`). It drops down a sheet with the two modes as picker options. **My progressions** on the right: `--t-small` 500 text button, 48 px tall, no fill until hover. *(Solo isn't designed yet: SPEC A13.)*
 2. **Chord view:** the selected chord. **Only the chart is boxed:** a chart card (`--r-card`, `--card-now`, 1 px `--edge-now`, 14 px padding) holding the chord chart, scaled to the screen's height (§5.1). The name sits below it (14 px gap) in `--t-chord` 500, plain (§4.3). The whole thing is one button that plays the chord; hover lightens the chart card to `--hover`.
 3. **Song map:** under the chord view, 24 px below it, up to 560 px wide with 24 px side margins; 16 px between sections.
    - **Section head:** "Verse" / "Chorus" in `--t-small` 500 on the left (`--muted`; `--text` for the current section), "×2" (or "1/2", "2/2", tabular figures) in `--t-fine` `--muted` on the right, 8 px above the row.
@@ -172,7 +172,7 @@ Black and white for now: no accent colour until the hi-fi designs (SPEC A22).
    - **Count-in:** while it plays, "Count-in" (`--t-caption` 500, uppercase, `--text`) with four 6 px dots filling one per beat appears just above the song map, positioned so nothing moves.
 4. **Chord chart:** see §7.
 5. **Panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
-6. **Action row:** five circles spread across the row: **Settings** (sliders), **Save** (heart; filled when saved), **Re-roll** (72 px hero, two arrows, inverted: `--text` fill, `--ink` icon at 28 px), **Play / Pause** and **Mute** (speaker; when on, inverted with a crossed-out speaker). The others are 56 px, `--fill-2`, `--muted` icon; Settings open: `--fill-open`, `--text`. Every button has an accessible name.
+6. **Action row:** five circles spread across the row: **Settings** (sliders), **Save** (heart; when saved only the heart fills, `--text`, and the button keeps its `--fill-2`, so it doesn't read as another inverted control), **Re-roll** (72 px hero, two arrows, inverted: `--text` fill, `--ink` icon at 28 px), **Play / Pause** and **Mute** (speaker; when on, inverted with a crossed-out speaker). The others are 56 px, `--fill-2`, `--muted` icon; Settings open: `--fill-open`, `--text`. Every button has an accessible name.
 7. **Vibe row:** a full-width 48 px pill, `--fill-2`: the vibe name in `--t-chip` 500 on the left, the current key and tempo in `--t-chip` 400 `--muted` on the right ("D major · 84 BPM", truncating with an ellipsis), then a chevron. It opens the vibe sheet. On desktop it sits left of the action row in one line.
 8. **Sheet:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
 9. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
@@ -182,9 +182,10 @@ Black and white for now: no accent colour until the hi-fi designs (SPEC A22).
 13. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number, "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); the vibe's range in `--t-caption` `--muted`; then Hold tempo, Metronome and Count-in switch rows.
 14. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done. It also explains disabled controls when they're tapped.
 15. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Instruments.
+16. **My progressions page:** full screen over Jam on `--bg`, content up to 760 px wide. A 48 px back control ("‹ Jam"), then the title in `--t-step` 500. Each entry is a row: a button (`--fill-1`, `--r-option`, 12 × 16 px padding, hover `--hover`, pressed `--pressed`) with the vibe in `--t-body` 500 and the date in `--t-caption` `--muted` on one line, the key and tempo in `--t-small` `--text` below, then "Verse" / "Chorus" (`--text` 500) with the chords in `--t-small` `--muted`, 8 px below; line height fixed at 1.35 so ♯ and ♭ don't change row heights. The entry on the Jam screen now has a 1 px `--chart-line` inset edge (plus `aria-current`). Beside it, a 56 px wide delete button (`--fill-1`, bin icon in `--muted`); its confirm state is inverted with the word "Delete". Rows 6 px apart. Empty state: `--muted` text.
 
 ### 6.1 Icons
-Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, speaker and speaker-off (mute), re-roll (two arrows), heart (save; outlined, filled when saved), chevron (down, left, right), sliders (Settings). The action row is icon-only; every button has an accessible name.
+Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, speaker and speaker-off (mute), re-roll (two arrows), heart (save; outlined, filled when saved), bin (delete), chevron (down, left, right), sliders (Settings). The action row is icon-only; every button has an accessible name.
 
 ---
 

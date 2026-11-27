@@ -78,3 +78,9 @@ export const HeartIcon = ({ filled = false }: { filled?: boolean }) => (
     <path d="M12 19.5s-7.5-4.6-7.5-10.1A4.1 4.1 0 0 1 12 7.1a4.1 4.1 0 0 1 7.5 2.3c0 5.5-7.5 10.1-7.5 10.1z" fill={filled ? 'currentColor' : 'none'} />
   </I>
 );
+/** Delete. */
+export const TrashIcon = () => (
+  <I>
+    <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 10.5v6M14 10.5v6" />
+  </I>
+);

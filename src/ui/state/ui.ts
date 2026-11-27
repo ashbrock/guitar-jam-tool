@@ -5,6 +5,8 @@ export type Mode = 'jam' | 'solo';
 export type PickerName = 'vibe' | 'settings' | 'mode';
 
 export const mode = signal<Mode>('jam');
+/** The full-page My progressions view, over Jam (which keeps its state underneath). */
+export const page = signal<'main' | 'saved'>('main');
 export const openPicker = signal<PickerName | null>(null);
 
 /** A short message in the status pill at the top (loading, reasons, errors). */

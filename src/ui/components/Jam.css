@@ -28,7 +28,7 @@
   font-size: var(--t-chip); font-weight: 500; white-space: nowrap;
   transition: background-color var(--dur-switch) ease, color var(--dur-switch) ease;
 }
-.sm-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.sm-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 @media (hover: hover) { .sm-block:not(.now):hover { background: var(--fill-open); box-shadow: inset 0 0 0 1px var(--chart-line); } }
 /* The selected chord: solid white (fill and contrast, plus the growing beat dot while playing). */
 .sm-block.now { background: var(--text); color: var(--ink); }

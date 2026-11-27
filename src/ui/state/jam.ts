@@ -7,7 +7,7 @@ import { VIBES, vibeById } from '../../data/vibes/index';
 import { clampTempo } from '../../audio/transport';
 import type { PlaybackSlot } from '../../audio/transport';
 import type { FeelSettings } from '../../audio/engine';
-import { spokenChord } from '../../theory/chords';
+import { formatChord, spokenChord } from '../../theory/chords';
 import { resolveDegreeChord } from '../../theory/degrees';
 import type { DegreeSlot } from '../../theory/generator';
 import { generateSong, type Section, type Song } from '../../theory/song';
@@ -30,7 +30,8 @@ export interface JamSink {
   setFeel(feel: FeelSettings): void;
 }
 
-interface Roll {
+/** Everything that makes a progression: what history, Back and saving store. */
+export interface Roll {
   vibeId: string;
   key: Key;
   tempo: number;
@@ -84,6 +85,17 @@ export const songChords = computed<Record<Section, SimpleChord[]>>(() => ({
   verse: toChords(song.value.verse, key.value),
   chorus: toChords(song.value.chorus, key.value),
 }));
+/** The progression on screen, as a roll. */
+export const currentRoll = computed<Roll>(() => ({ vibeId: vibeId.value, key: key.value, tempo: tempo.value, song: song.value }));
+
+/** A roll's chord names per section, as Jam shows them ("Gmaj7", "F♯m7"). */
+export function rollChordNames(r: Roll): Record<Section, string[]> {
+  return {
+    verse: toChords(r.song.verse, r.key).map((c) => formatChord(c.chord)),
+    chorus: toChords(r.song.chorus, r.key).map((c) => formatChord(c.chord)),
+  };
+}
+
 /** What the engine plays, in order: the verse twice, then the chorus twice. */
 export const playList = computed<PlayItem[]>(() =>
   FORM.flatMap((sec) =>
@@ -167,6 +179,18 @@ export function reroll(): void {
   });
 }
 
+/** Puts a roll on screen and in the engine, from bar 1. */
+function apply(r: Roll): void {
+  vibeId.value = r.vibeId;
+  key.value = r.key;
+  tempo.value = r.tempo;
+  song.value = r.song;
+  sendFeel();
+  sink.setTempo(tempo.value);
+  sendProgression(true);
+  onNewProgression(describe());
+}
+
 /** Back (SPEC.md §5.4): restore the previous roll exactly. Returns false at the oldest roll. */
 export function back(): boolean {
   const h = history.value;
@@ -174,16 +198,18 @@ export function back(): boolean {
   if (!prev) return false;
   batch(() => {
     history.value = h.slice(0, -1);
-    vibeId.value = prev.vibeId;
-    key.value = prev.key;
-    tempo.value = prev.tempo;
-    song.value = prev.song;
-    sendFeel();
-    sink.setTempo(tempo.value);
-    sendProgression(true);
-    onNewProgression(describe());
+    apply(prev);
   });
   return true;
+}
+
+/** Loads a saved progression (SPEC.md §5.10). The one on screen goes on the history, so Back returns to it. */
+export function loadRoll(r: Roll): void {
+  if (!vibeById(r.vibeId)) return;
+  batch(() => {
+    remember();
+    apply({ vibeId: r.vibeId, key: r.key, tempo: r.tempo, song: r.song });
+  });
 }
 
 /** Vibe picker (SPEC.md §4.2): a new progression in the same key; tempo to the vibe default unless held. */

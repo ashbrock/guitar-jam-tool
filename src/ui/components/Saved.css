@@ -1,0 +1,34 @@
+/* DESIGN.md §6: My progressions, a full page over Jam. */
+.saved-page { position: fixed; inset: 0; z-index: 5; overflow-y: auto; background: var(--bg); padding: max(8px, env(safe-area-inset-top)) var(--s-12) max(var(--s-24), env(safe-area-inset-bottom)); }
+.saved-top { display: flex; align-items: center; height: var(--target-min); }
+.saved-top .view-back { margin: 0; }
+.saved-main { max-width: var(--panel-max); margin: 0 auto; }
+.saved-main h1 { margin: var(--s-16) 0 var(--s-16) 4px; font-size: var(--t-step); font-weight: 500; }
+.saved-main h1:focus { outline: none; }
+.saved-empty { margin: 0 4px; color: var(--muted); line-height: 1.5; }
+.saved-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); }
+.saved-item { display: flex; gap: var(--gap); align-items: stretch; }
+.saved-open {
+  flex: 1; min-width: 0; min-height: var(--target-primary); padding: var(--s-12) var(--s-16); border-radius: var(--r-option);
+  display: grid; gap: 2px; align-content: start; line-height: 1.35; text-align: left; background: var(--fill-1);
+}
+@media (hover: hover) { .saved-open:hover { background: var(--hover); } }
+.saved-open:active { background: var(--pressed); }
+/* The one on the Jam screen right now: an edge, plus aria-current. */
+.saved-open.now { box-shadow: inset 0 0 0 1px var(--chart-line); }
+.saved-head { display: flex; justify-content: space-between; gap: var(--s-12); align-items: baseline; }
+.saved-label { font-size: var(--t-body); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saved-date { flex: none; font-size: var(--t-caption); color: var(--muted); }
+.saved-meta { font-size: var(--t-small); color: var(--text); }
+.saved-chords { display: grid; gap: 2px; margin-top: var(--s-8); font-size: var(--t-small); color: var(--muted); }
+.saved-chords span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; word-spacing: 0.2em; }
+.saved-chords b { display: inline-block; min-width: 4.2em; font-weight: 500; color: var(--text); word-spacing: normal; }
+.saved-del {
+  flex: none; width: var(--target-primary); border-radius: var(--r-option); background: var(--fill-1); color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center; font-size: var(--t-small); font-weight: 500;
+}
+@media (hover: hover) { .saved-del:hover { background: var(--hover); color: var(--text); } }
+.saved-del:active { background: var(--pressed); }
+/* Second tap to delete: inverted and wider, with the word (not colour alone). */
+.saved-del.confirm { width: auto; padding: 0 var(--s-16); background: var(--text); color: var(--ink); }
+@media (hover: hover) { .saved-del.confirm:hover { background: var(--text-hover); color: var(--ink); } }
