@@ -1,0 +1,46 @@
+/* DESIGN.md §6: chord view (one boxed chart, plain name) and song map (equal blocks with beat dots). */
+.chord-view { display: flex; justify-content: center; }
+.chord-btn { display: flex; flex-direction: column; align-items: center; gap: var(--s-14); border-radius: var(--r-card); }
+.chart-card {
+  display: block; padding: var(--s-14); border-radius: var(--r-card);
+  background: var(--card-now); border: 1px solid var(--edge-now);
+  transition: background-color var(--dur-switch) ease;
+}
+@media (hover: hover) { .chord-btn:hover .chart-card { background: var(--hover); } }
+/* NEW: the chart scales with the screen's height so the song map always fits under it. */
+.chart { display: block; width: auto; height: clamp(120px, 100dvh - 515px, 260px); }
+.chart text { font-family: var(--font); }
+.no-chart { display: flex; align-items: center; justify-content: center; width: 180px; height: clamp(120px, 100dvh - 515px, 260px); font-size: var(--t-small); color: var(--muted); }
+/* Plain chord names (Cmaj7, F♯m7): no superscripts. */
+.chord-name { font-size: var(--t-chord); font-weight: 500; line-height: 1; letter-spacing: -0.02em; white-space: nowrap; }
+
+.song-map { position: relative; display: grid; gap: var(--s-16); width: min(100% - 2 * var(--s-24), 560px); margin-top: var(--s-24); }
+.sm-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--s-8); }
+.sm-head h2 { margin: 0; font-size: var(--t-small); font-weight: 500; color: var(--muted); }
+.sm-section.here .sm-head h2 { color: var(--text); }
+.sm-pass { font-size: var(--t-fine); color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Four equal columns: a section with fewer chords leaves the rest of the row empty. */
+.sm-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+.sm-block {
+  min-height: var(--target-primary); padding: var(--s-10) var(--gap);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-8);
+  border-radius: var(--r-key); background: var(--track-card); color: var(--text);
+  font-size: var(--t-chip); font-weight: 500; white-space: nowrap;
+  transition: background-color var(--dur-switch) ease, color var(--dur-switch) ease;
+}
+.sm-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+@media (hover: hover) { .sm-block:not(.now):hover { background: var(--fill-open); box-shadow: inset 0 0 0 1px var(--chart-line); } }
+/* The selected chord: solid white (fill and contrast, plus the growing beat dot while playing). */
+.sm-block.now { background: var(--text); color: var(--ink); }
+@media (hover: hover) { .sm-block.now:hover { background: var(--text-hover); } }
+/* NEW: beat dots, four a bar, bars a little apart. 4 px; the current beat grows to 1.75×. */
+.sm-dots { display: flex; gap: var(--gap); }
+.sm-bar { display: flex; gap: 3px; }
+.sm-bar i { width: 4px; height: 4px; border-radius: var(--r-pill); background: currentColor; opacity: 0.35; }
+.sm-bar i.on { opacity: 1; transform: scale(1.75); }
+/* Count-in: shown just above the song map while it plays, without moving anything. */
+.sm-countin { position: absolute; left: 0; bottom: calc(100% + var(--s-8)); display: inline-flex; align-items: center; gap: var(--s-8); font-size: var(--t-caption); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); }
+.sm-beats { display: inline-flex; gap: 4px; }
+.sm-beats i { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--track); }
+.sm-beats i.on { background: var(--text); }
+@media (prefers-reduced-motion: reduce) { .sm-block, .chart-card { transition: none; } }

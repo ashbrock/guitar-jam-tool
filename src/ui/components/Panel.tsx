@@ -1,78 +1,67 @@
-// The floating panel (SPEC.md §4.1, DESIGN.md §6: panel, action row, vibe row). Row 1: icon buttons for Mute, Re-roll, Play,
-// Tempo and Key. Row 2: the vibe, with the current key and tempo shown quietly beside it.
-// The vibe, tempo and key pickers open above the panel.
-import type { ComponentChildren } from 'preact';
+// The bottom panel (SPEC.md §4.1, DESIGN.md §6: panel, action row, vibe row). Row 1: Settings, Save,
+// Re-roll (the largest: the tool's main act), Play and Mute. Row 2: the vibe, with the key and tempo
+// beside it. The vibe and settings sheets open above the panel.
 import { formatKey } from '../../theory/keys';
 import * as jam from '../state/jam';
 import { engineState, togglePlay } from '../state/playback';
 import { muted } from '../state/sound';
-import { openPicker, type PickerName } from '../state/ui';
-import { ChevronIcon, HashIcon, MetronomeIcon, MutedIcon, PauseIcon, PlayIcon, RerollIcon, SoundIcon } from './icons';
+import { openPicker, showStatus } from '../state/ui';
+import { ChevronIcon, HeartIcon, MutedIcon, PauseIcon, PlayIcon, RerollIcon, SettingsIcon, SoundIcon } from './icons';
 import { Picker, triggerId } from './Picker';
-
-/** An icon button that opens a picker. A dot marks a held value. */
-function PickerButton({ name, label, held, children }: { name: PickerName; label: string; held?: boolean; children: ComponentChildren }) {
-  const open = openPicker.value === name;
-  return (
-    <button
-      class="icon-btn fill"
-      id={triggerId(name)}
-      aria-haspopup="dialog"
-      aria-expanded={open}
-      aria-label={label}
-      onClick={(e) => {
-        e.stopPropagation();
-        openPicker.value = open ? null : name;
-      }}
-    >
-      {children}
-      {held && <span class="held-dot" aria-hidden="true" />}
-    </button>
-  );
-}
 
 export function Panel() {
   const active = engineState.value === 'playing' || engineState.value === 'count-in';
-  const panelPicker = openPicker.value && openPicker.value !== 'settings' ? openPicker.value : null;
+  const sheet = openPicker.value === 'vibe' || openPicker.value === 'settings' ? openPicker.value : null;
   const keyText = formatKey(jam.key.value);
-  const tempo = jam.tempo.value;
-  const vibeOpen = openPicker.value === 'vibe';
+  const toggle = (name: 'vibe' | 'settings') => (e: MouseEvent) => {
+    e.stopPropagation();
+    openPicker.value = openPicker.value === name ? null : name;
+  };
   return (
     <div class="panel">
-      {panelPicker && <Picker name={panelPicker} placement="panel" />}
+      {sheet && <Picker name={sheet} placement="panel" />}
       <div class="panel-grid">
         <div class="row actions">
+          <button
+            class="icon-btn fill"
+            id={triggerId('settings')}
+            aria-haspopup="dialog"
+            aria-expanded={openPicker.value === 'settings'}
+            aria-label="Settings"
+            onClick={toggle('settings')}
+          >
+            <SettingsIcon />
+          </button>
+          {/* Saving arrives in the next step. */}
+          <button class="icon-btn fill" aria-label="Save progression" aria-disabled="true" onClick={() => showStatus('Saving is coming soon')}>
+            <HeartIcon />
+          </button>
+          <button class="icon-btn inv hero" aria-label="Re-roll" onClick={jam.reroll}>
+            <RerollIcon />
+          </button>
+          <button
+            class="icon-btn fill"
+            aria-label={active ? 'Pause' : engineState.value === 'locked-audio' ? 'Play (turns on sound)' : 'Play'}
+            onClick={() => void togglePlay()}
+          >
+            {active ? <PauseIcon /> : <PlayIcon />}
+          </button>
           <button class="icon-btn fill mute" aria-label="Mute" aria-pressed={muted.value} onClick={() => (muted.value = !muted.value)}>
             {muted.value ? <MutedIcon /> : <SoundIcon />}
           </button>
-          <button class="icon-btn inv" aria-label="Re-roll" onClick={jam.reroll}>
-            <RerollIcon />
-          </button>
-          <button class="icon-btn play" aria-label={active ? 'Pause' : engineState.value === 'locked-audio' ? 'Play (turns on sound)' : 'Play'} onClick={() => void togglePlay()}>
-            {active ? <PauseIcon /> : <PlayIcon />}
-          </button>
-          <PickerButton name="tempo" label={`Tempo, ${tempo} BPM${jam.tempoHeld.value ? ', held' : ''}`} held={jam.tempoHeld.value}>
-            <MetronomeIcon />
-          </PickerButton>
-          <PickerButton name="key" label={`Key, ${keyText}${jam.keyHeld.value ? ', held' : ''}`} held={jam.keyHeld.value}>
-            <HashIcon />
-          </PickerButton>
         </div>
         <div class="row settings">
           <button
             class="chip fill vibe-chip"
             id={triggerId('vibe')}
             aria-haspopup="dialog"
-            aria-expanded={vibeOpen}
-            aria-label={`Vibe, ${jam.vibe.value.name}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              openPicker.value = vibeOpen ? null : 'vibe';
-            }}
+            aria-expanded={openPicker.value === 'vibe'}
+            aria-label={`Vibe, ${jam.vibe.value.name}, ${keyText}, ${jam.tempo.value} BPM`}
+            onClick={toggle('vibe')}
           >
             <span class="vibe-name">{jam.vibe.value.name}</span>
             <span class="vibe-meta" aria-hidden="true">
-              {keyText} · {tempo} BPM
+              {keyText} · {jam.tempo.value} BPM
             </span>
             <ChevronIcon />
           </button>

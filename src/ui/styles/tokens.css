@@ -77,6 +77,8 @@
   --target-min: 48px;
   --target-half: 48px;
   --target-key: 52px;
+  /** NEW: the one hero control (Re-roll). */
+  --target-hero: 72px;
 
   /* §5.4 Radii */
   --r-pill: 999px;
@@ -98,8 +100,6 @@
   --dur-reduced: 200ms;
 
   /* §5.1 Layout */
-  --chart-w: 156px;
-  --carousel-h: 300px;
   --panel-max: 760px;
   --picker-w: 420px;
 }
@@ -107,7 +107,5 @@
 @media (min-width: 900px) {
   :root {
     --t-chord: 30px;
-    --chart-w: 210px;
-    --carousel-h: 420px;
   }
 }

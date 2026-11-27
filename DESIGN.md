@@ -222,9 +222,7 @@ The 2D styles (§3.2) remain the fallback.
 Chord names are smaller on desktop because the chart beside them is larger there. Text never scales with the viewport and honours browser zoom.
 
 ### 4.3 Chord symbols
-- Root letter at full size. An accidental on the root at 72%, raised 0.28em.
-- A minor `m` sits on the baseline at full size ("Em").
-- Quality (`7`, `maj7`, `sus4`, `dim`) is superscript at 55%, raised 0.75em.
+- **Plain text**, all at one size and on one baseline: "Cmaj7", "F♯m7", "B♭sus4". No superscripts (changed from the raised-quality lead-sheet style for legibility at a glance).
 - The accessible name is spoken text ("B flat major 7"), from `src/theory/`.
 
 ---
@@ -233,8 +231,9 @@ Chord names are smaller on desktop because the chart beside them is larger there
 
 ### 5.1 Breakpoint
 One breakpoint, **900 px** wide:
-- **Phone (< 900):** panel with two rows (playback above, chips below). Charts 156 px wide. Carousel 300 px tall.
-- **Desktop (≥ 900):** panel in one row, max 760 px wide, centred (chips left, actions right; Re-roll a fixed 200 px). Charts 210 px wide. Carousel 420 px tall. Pickers 420 px wide.
+- **Phone (< 900):** panel with two rows (actions above, vibe below).
+- **Desktop (≥ 900):** panel in one row, max 760 px wide, centred (vibe left, actions right). Sheets 420 px wide.
+- **The chart scales with the screen's height** so the song map always fits under it: its height is `clamp(120px, 100dvh − 515px, 260px)` (**NEW**).
 
 ### 5.2 Spacing
 | Token | Value | Use |
@@ -243,9 +242,9 @@ One breakpoint, **900 px** wide:
 | `--s-8` | 8 px | Between the two panel rows; icon-to-label gap |
 | `--s-10` | 10 px | Panel padding (phone); gap between panel and picker |
 | `--s-12` | 12 px | Screen gutters; panel padding (desktop); card inner gap |
-| `--s-14` | 14 px | Chip and card side padding; carousel gap (phone) |
+| `--s-14` | 14 px | Chip side padding; chart card padding; gap under the chart |
 | `--s-16` | 16 px | Picker padding; option side padding; card top and bottom padding |
-| `--s-24` | 24 px | Carousel gap (desktop) |
+| `--s-24` | 24 px | Space above the song map; its side margins |
 
 Fine adjustments, used only where listed: **2 px** (option description top margin; HELD tag vertical padding), **4 px** (switch row right padding; credit and note side margins), **18 px** (space above a picker's second section, e.g. LENGTH), **−8 px** (the Sound view's back control pulls into the picker padding so its chevron aligns with the rows).
 
@@ -255,7 +254,8 @@ Safe areas: the top bar and panel respect `env(safe-area-inset-*)`, with a 12 px
 | Token | Value | Applies to |
 |---|---|---|
 | `--target-primary` | **56 × 56 px** | Play, Back, Click, Re-roll height, tempo ± |
-| `--target-min` | **48 px** tall | Chips, mode tabs, picker options (56), key buttons (52), switch rows (56). Top segmented control: 42 px buttons inside a 48 px control. |
+| `--target-min` | **48 px** tall | Chips, the mode menu button, My progressions, picker options (56), key buttons (52), switch rows (56). |
+| `--target-hero` **NEW** | **72 × 72 px** | Re-roll only: the largest control. |
 
 Targets are at least 6 px apart.
 
@@ -267,7 +267,7 @@ Targets are at least 6 px apart.
 | `--r-picker` | 24 px | Pickers |
 | `--r-card` | 22 px | Chord cards |
 | `--r-option` | 16 px | Picker options, switch rows, Tap tempo |
-| `--r-key` | 14 px | Key and mode buttons |
+| `--r-key` | 14 px | Key buttons, song map blocks |
 
 Everything is soft and round: it reads as an instrument, not a form.
 
@@ -275,39 +275,32 @@ Everything is soft and round: it reads as an instrument, not a form.
 
 ## 6. Components
 
-1. **Mode tabs (Jam · Solo):** plain text buttons, 48 px tall, `--t-body` 500. Current: `--text`; other: `--muted`. No underline or pill. *(Solo isn't designed yet: SPEC A13.)*
-   **Settings button** (top right): 48 px pill, `--glass`, sliders icon + "Settings" in `--t-chip`. Open: `--fill-open`. Its picker drops down below the top bar (right-aligned, 420 px on desktop, full width minus gutters on phones).
-2. **Carousel card:** a fixed width (chart + 28 px). **Only the chart is boxed:** a chart card (`--r-card`, `--card` with blur, 14 px padding) holding the chord chart. The chord name sits **below it, directly on the visuals** (14 px gap), with `--halo`. Nothing else in the stage is boxed; only the bottom panel and pickers use glass.
-   - **Current:** scale 1, chart card in `--card-now` with a 1 px `--edge-now`.
-   - **Others:** scale 0.6 (phone) / 0.68 (desktop). Past: 50% opacity. Beyond the visible range: hidden.
-   - The card is a button (`role="button"`, focusable); its name is the spoken chord.
-3. **Song map:** under the carousel, up to 560 px wide with 24 px side margins, 16 px below the cards. On desktop (≥ 900 px) the two sections sit side by side, up to 960 px wide, 24 px apart.
-   - **Section label line:** "VERSE" / "CHORUS" on the left, "×2" (or "1/2", "2/2", tabular figures) on the right, `--t-fine` 500, uppercase, `--muted` on `--halo`; `--text` for the section that's playing.
-   - **Lines:** four bars each, 6 px (`--gap`) between blocks and lines, 12 px between sections.
-   - **Block:** a share of the line by its bars, never narrower than its name. `--card`, 1 px `--line`, `--r-key`, 8 px × 6 px padding. Name in `--t-caption` 500 `--muted`, typeset like the card names (quality as a superscript). A chord split over a line end: its parts are square where they meet, and only the first carries the name.
-   - **Playing block:** `--card-now`, `--edge-now`, `--text` name (edge and brightness, not colour alone). A `--track` fill grows across it from the audio clock.
-   - **Short screens** (< 840 px tall, phone widths): the other section folds to its label line; sections 8 px apart, 8 px below the cards, blocks 6 px padding.
-   - **Chord row:** names in `--t-caption` 500, each placed at the start of its chord (as a share of the section's bars). Playing: `--text`. Next: `--text` at 75%. Past: 45% opacity. Others: `--muted`.
-   - **Bar row:** one 3 px dash per bar (`--track`, `--r-pill`, 6 px apart). Fills with `--text` as the bar plays, from the audio clock, never a CSS animation.
-   - **Count-in:** while it plays, "Count-in" (`--t-caption` 500, uppercase, `--text`) with four 6 px dots filling one per beat appears just above the chord row, positioned so nothing moves.
-   - **Section names:** not shown for now; another way to show the song's sections is to come.
-4. **Chord chart:** see §7.
-5. **Floating panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
-6. **Action row (icon buttons):** five 56 px circles, spread across the row: **Mute** (speaker; `--fill-2`, `--muted`; when on, inverted with a crossed-out speaker), **Re-roll** (two arrows; inverted: `--text` fill, `--ink` icon), **Play / Pause** (`--go` fill, `--ink` icon; the centre), **Tempo** (metronome icon) and **Key** (# icon), both `--fill-2`, `--muted`, opening their pickers (open: `--fill-open`, `--text`). Each has an accessible name that includes its value ("Tempo, 84 BPM", "Key, D major, held").
-7. **Held dot:** an 8 px `--text` dot at the top right of the Tempo or Key button, with a 2 px `--bg` ring, when that value is held.
-8. **Vibe row:** a full-width 48 px pill, `--fill-2`: the vibe name in `--t-chip` 500 on the left, the current key and tempo in `--t-chip` 400 `--muted` on the right ("D major · 84 BPM", truncating with an ellipsis), then a chevron. It opens the vibe picker. On desktop it sits left of the action row in one line.
-9. **Picker:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
-10. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
-11. **Key grid:** Major/Minor in two columns, then 12 keys in six columns, 52 px tall, `--r-key`, `--fill-1`. Selected: inverted.
-12. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--go` track, knob slides 18 px right. Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
-13. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number (fixed width), "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); Hold switch; the vibe's range in `--t-caption` `--muted`.
-14. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done.
-12a. **Settings views:** the main view lists a **nav row** (like a switch row, with the label, a hint and a `--muted` right chevron) for Sound, then the Count-in and Metronome switch rows, 6 px apart. The Sound view replaces it in place: a 48 px **back control** (left chevron + "Sound" in `--t-body` 500, no fill until hover) instead of a title, then the part switches and credits. No slide animation between views.
+Black and white for now: no accent colour until the hi-fi designs (SPEC A22). The visuals are being removed.
 
-15. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Sound.
+1. **Top bar:** **mode menu** on the left: "Jam" or "Solo" in `--t-body` 500 with a down chevron, a 48 px pill with no fill until hover (`--hover`) or open (`--fill-open`). It drops down a sheet with the two modes as picker options. **My progressions** on the right: `--t-small` 500 text button, 48 px tall (disabled until saving ships). *(Solo isn't designed yet: SPEC A13.)*
+2. **Chord view:** the selected chord. **Only the chart is boxed:** a chart card (`--r-card`, `--card-now`, 1 px `--edge-now`, 14 px padding) holding the chord chart, scaled to the screen's height (§5.1). The name sits below it (14 px gap) in `--t-chord` 500, plain (§4.3). The whole thing is one button that plays the chord; hover lightens the chart card to `--hover`.
+3. **Song map:** under the chord view, 24 px below it, up to 560 px wide with 24 px side margins; 16 px between sections.
+   - **Section head:** "Verse" / "Chorus" in `--t-small` 500 on the left (`--muted`; `--text` for the current section), "×2" (or "1/2", "2/2", tabular figures) in `--t-fine` `--muted` on the right, 8 px above the row.
+   - **Row:** four equal columns, 6 px (`--gap`) apart. Fewer chords leave the rest of the row empty.
+   - **Block:** a button, min 56 px tall, `--r-key`, `--track-card` fill, `--text` name in `--t-chip` 500 (ellipsis if it can't fit), 10 × 6 px padding, beat dots 8 px below the name. Hover: `--fill-open` with a 1 px `--chart-line` inset edge. Pressed: the usual 0.97 scale.
+   - **Selected block:** `--text` fill, `--ink` name and dots (hover `--text-hover`). It's also `aria-current`, so it's never colour alone.
+   - **Beat dots (NEW):** 4 px `currentColor` circles at 35% opacity, four per bar, 3 px apart; bars 6 px apart. While playing, the current beat's dot is full opacity and 1.75× the size, set each frame from the audio clock (never a CSS animation).
+   - **Count-in:** while it plays, "Count-in" (`--t-caption` 500, uppercase, `--text`) with four 6 px dots filling one per beat appears just above the song map, positioned so nothing moves.
+4. **Chord chart:** see §7.
+5. **Panel:** `--glass`, 1 px `--line`, `--r-panel`, the padding from §5.2. It's the only fixed UI at the bottom.
+6. **Action row:** five circles spread across the row: **Settings** (sliders), **Save** (heart; filled when saved), **Re-roll** (72 px hero, two arrows, inverted: `--text` fill, `--ink` icon at 28 px), **Play / Pause** and **Mute** (speaker; when on, inverted with a crossed-out speaker). The others are 56 px, `--fill-2`, `--muted` icon; Settings open: `--fill-open`, `--text`. Every button has an accessible name.
+7. **Vibe row:** a full-width 48 px pill, `--fill-2`: the vibe name in `--t-chip` 500 on the left, the current key and tempo in `--t-chip` 400 `--muted` on the right ("D major · 84 BPM", truncating with an ellipsis), then a chevron. It opens the vibe sheet. On desktop it sits left of the action row in one line.
+8. **Sheet:** `--glass-strong`, 1 px `--line`, `--r-picker`, 16 px padding, max height 60% of the viewport (scrolls). Title in `--t-caption` uppercase `--muted`.
+9. **Picker option:** min 56 px tall, `--fill-1`, `--r-option`, name in `--t-body` and a description in `--t-caption` `--muted`. Selected: inverted.
+10. **Key grid:** Major/Minor in two columns, then 12 keys in six columns, 52 px tall, `--r-key`, `--fill-1`. Selected: inverted.
+11. **Switch row:** min 56 px, `--fill-1`, `--r-option`; label in `--t-body` with a hint in `--t-caption` `--muted`; a 46 × 28 switch. On: `--text` track with an `--ink` knob slid 18 px right (black and white; was `--go`). Off: `--switch-off` track with a 1 px `--muted` inset border (§2.4).
+12. **Settings sheets:** the main sheet lists three **nav rows** (like a switch row, with the label, its current value as the hint and a `--muted` right chevron), 6 px apart: Key, Tempo, Instruments. Each opens its own sheet in place: a 48 px **back control** (left chevron + its name in `--t-body` 500, no fill until hover) instead of a title, then its controls. No slide animation between sheets.
+13. **Tempo control:** − and + as 56 px pills either side of the `--t-readout` number, "BPM" under it; slider (44 px tall, `accent-color: --text`); Tap tempo (52 px, `--r-option`); the vibe's range in `--t-caption` `--muted`; then Hold tempo, Metronome and Count-in switch rows.
+14. **Loading pill:** top centre, `--glass`, `--r-pill`, `--t-caption` `--muted`, `role="status"`. Fades out when done. It also explains disabled controls when they're tapped.
+15. **Credit line:** `--t-fine` `--muted` with underlined links, in Settings → Instruments.
 
 ### 6.1 Icons
-Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, speaker and speaker-off (mute), re-roll (two arrows), metronome (tempo), hash (key), chevron (down, left, right), sliders (Settings). The action row is icon-only; every button has an accessible name, and Tempo and Key include their current values.
+Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `currentColor`. Set: play, pause, speaker and speaker-off (mute), re-roll (two arrows), heart (save; outlined, filled when saved), chevron (down, left, right), sliders (Settings). The action row is icon-only; every button has an accessible name.
 
 ---
 
@@ -341,13 +334,13 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 - Pressed scale is removed under reduced motion; the fill change stays.
 
 ### 8.2 Playback states
-| State | Panel | Carousel | Visuals |
+| State | Panel | Chord view and song map | Visuals |
 |---|---|---|---|
-| **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord centred. | Hidden. |
-| **Stopped** | Play icon. | First (or last tapped) chord centred; empty bar. | Hidden. |
-| **Count-in** (if on) | Pause icon. | First chord centred; "Count-in" with four dots filling one per beat appears just above the song map. | Hidden until beat 1. |
-| **Playing** | Pause icon. | Current chord centred, bar filling, cards sliding on each change. | Visible, moving. |
-| **Paused** | Play icon. | Paused chord stays centred and highlighted; bar frozen. | Frozen, still visible. |
+| **Locked-audio** | Looks like Stopped. Play's name: "Play (turns on sound)". | First chord selected. | Hidden. |
+| **Stopped** | Play icon. | Selected chord (the first, or the one tapped) white; "×2" on both sections. | Hidden. |
+| **Count-in** (if on) | Pause icon. | Selected chord; "Count-in" with four dots filling one per beat just above the song map. | Hidden until beat 1. |
+| **Playing** | Pause icon. | Playing chord white, its current beat's dot grown; "1/2" / "2/2" on the current section. | Visible, moving. |
+| **Paused** | Play icon. | The chord that was playing stays selected; no beat dot. | Frozen, still visible. |
 
 ### 8.3 Loading and errors
 - **Instruments:** the loading pill (§6.15). The synth plays meanwhile, so there is no blocking spinner.
@@ -361,7 +354,7 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 ### 9.1 Tokens
 | Token | Value | Use |
 |---|---|---|
-| `--dur-carousel` | 620 ms, `cubic-bezier(0.32, 0.72, 0, 1)` | Cards sliding and scaling |
+| `--dur-carousel` | 620 ms, `cubic-bezier(0.32, 0.72, 0, 1)` | Unused since the carousel went (kept for the hi-fi pass) |
 | `--dur-fade` | 500 ms ease | Card opacity and fill changes |
 | `--dur-loading` | 400 ms ease | Loading pill fade |
 | `--dur-bar` | 300 ms ease | Progress bar appearing |
@@ -371,7 +364,7 @@ Inline SVG, 24 px grid drawn at 22 px, 1.75 px stroke, round caps and joins, `cu
 The visuals use continuous rates, not durations (§3.3).
 
 ### 9.2 Rules
-- **The carousel moves on the chord change,** never before it. When the loop wraps, cards jumping from one end to the other move without animation, so nothing flies across the screen.
+- **The chord view and song map change on the chord change,** never before it, with no slide: the chart swaps in place.
 - **The song map's fill is never animated by CSS;** it's set each frame from the audio clock.
 - Everything beat-related follows the audio clock, minus output latency, so visuals never lead the sound.
 

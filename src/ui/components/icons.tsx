@@ -72,3 +72,9 @@ export const MutedIcon = () => (
     <path d="m16 9.5 5 5M21 9.5l-5 5" />
   </I>
 );
+/** Save. Outlined; filled when the progression is saved (shape, not colour). */
+export const HeartIcon = ({ filled = false }: { filled?: boolean }) => (
+  <I>
+    <path d="M12 19.5s-7.5-4.6-7.5-10.1A4.1 4.1 0 0 1 12 7.1a4.1 4.1 0 0 1 7.5 2.3c0 5.5-7.5 10.1-7.5 10.1z" fill={filled ? 'currentColor' : 'none'} />
+  </I>
+);

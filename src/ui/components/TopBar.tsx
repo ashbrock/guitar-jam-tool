@@ -1,42 +1,33 @@
-// Top bar (DESIGN.md §6.1): mode tabs on the left, Settings on the right.
-import { engine } from '../state/playback';
-import { mode, openPicker, type Mode } from '../state/ui';
-import { SettingsIcon } from './icons';
+// Top bar (DESIGN.md §6.1): the mode menu ("Jam ▾") on the left, My progressions on the right.
+import { mode, openPicker, showStatus } from '../state/ui';
+import { ChevronIcon } from './icons';
 import { Picker, triggerId } from './Picker';
 
 export function TopBar() {
-  const open = openPicker.value === 'settings';
-  const go = (m: Mode) => {
-    if (m === mode.value) return;
-    engine.pause(); // SPEC.md §3.2: switching modes stops playback
-    openPicker.value = null;
-    mode.value = m;
-  };
+  const open = openPicker.value === 'mode';
   return (
     <>
       <header class="top">
-        <nav class="tabs" aria-label="Mode">
-          {(['jam', 'solo'] as const).map((m) => (
-            <button class={`tab${mode.value === m ? ' on' : ''}`} aria-current={mode.value === m ? 'page' : undefined} onClick={() => go(m)}>
-              {m === 'jam' ? 'Jam' : 'Solo'}
-            </button>
-          ))}
-        </nav>
         <button
-          class="settings-btn fill"
-          id={triggerId('settings')}
+          class="mode-btn"
+          id={triggerId('mode')}
           aria-haspopup="dialog"
           aria-expanded={open}
+          aria-label={`Mode, ${mode.value === 'jam' ? 'Jam' : 'Solo'}`}
           onClick={(e) => {
             e.stopPropagation();
-            openPicker.value = open ? null : 'settings';
+            openPicker.value = open ? null : 'mode';
           }}
         >
-          <SettingsIcon />
-          Settings
+          {mode.value === 'jam' ? 'Jam' : 'Solo'}
+          <ChevronIcon />
+        </button>
+        {/* Saving arrives in the next step; until then the link explains itself rather than doing nothing. */}
+        <button class="link-btn" aria-disabled="true" onClick={() => showStatus('Saved progressions are coming soon')}>
+          My progressions
         </button>
       </header>
-      {open && <Picker name="settings" placement="top" />}
+      {open && <Picker name="mode" placement="top" />}
     </>
   );
 }

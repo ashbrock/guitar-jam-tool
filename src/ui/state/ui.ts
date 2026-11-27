@@ -1,8 +1,8 @@
-// UI-only state: which mode tab is showing, which picker is open, and the status pill's message.
+// UI-only state: which mode is showing, which picker is open, and the status pill's message.
 import { signal } from '@preact/signals';
 
 export type Mode = 'jam' | 'solo';
-export type PickerName = 'vibe' | 'key' | 'tempo' | 'settings';
+export type PickerName = 'vibe' | 'settings' | 'mode';
 
 export const mode = signal<Mode>('jam');
 export const openPicker = signal<PickerName | null>(null);

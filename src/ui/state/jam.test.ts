@@ -177,6 +177,19 @@ describe('verse and chorus', () => {
     expect(jam.playChords.value).toHaveLength(list.length);
   });
 
+  it('picking a chord cues it on the current time through its section, else the first', () => {
+    const v = jam.song.value.verse.length;
+    const c = jam.song.value.chorus.length;
+    // Stopped (no current item): first time through.
+    expect(jam.itemAt(jam.cueIndex(undefined, 'chorus', 1))).toMatchObject({ section: 'chorus', pass: 0, index: 1 });
+    // In the second verse: another verse chord stays on the second verse.
+    const secondVerse = jam.itemAt(v)!;
+    expect(jam.itemAt(jam.cueIndex(secondVerse, 'verse', v - 1))).toMatchObject({ section: 'verse', pass: 1, index: v - 1 });
+    // From the second verse to a chorus chord: the first chorus.
+    expect(jam.cueIndex(secondVerse, 'chorus', 0)).toBe(2 * v);
+    expect(jam.cueIndex(jam.itemAt(2 * v + c), 'chorus', 0)).toBe(2 * v + c);
+  });
+
   it('the engine gets each section twice', () => {
     const sum = (xs: readonly { bars: number }[]) => xs.reduce((a, x) => a + x.bars, 0);
     const { verse, chorus } = jam.song.value;

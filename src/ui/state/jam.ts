@@ -96,6 +96,15 @@ export const playStarts = computed<number[]>(() => slotStarts(playList.value));
 /** Every chord in play order (the carousel's cards). */
 export const playChords = computed<SimpleChord[]>(() => playList.value.map((it) => songChords.value[it.section][it.index]!));
 
+/**
+ * Where to cue when a chord is picked (SPEC.md §5.2): the play-list index of that chord, on the same
+ * time through its section if that section is the current one, otherwise the first time through.
+ */
+export function cueIndex(current: PlayItem | undefined, section: Section, index: number): number {
+  const pass = current?.section === section ? current.pass : 0;
+  return playList.value.findIndex((it) => it.section === section && it.pass === pass && it.index === index);
+}
+
 /** The play-list item at an engine slot index (null before playing). */
 export function itemAt(slotIndex: number | null): PlayItem | undefined {
   return slotIndex === null ? undefined : playList.value[slotIndex];

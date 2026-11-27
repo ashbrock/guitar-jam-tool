@@ -1,12 +1,12 @@
-// The single full-screen stage (SPEC.md §3): visuals behind, top bar, the carousel in the centre,
-// and the floating panel at the bottom.
+// The single full-screen stage (SPEC.md §3): top bar, the selected chord's chart, the song map, and the
+// panel at the bottom.
 import { useEffect, useRef } from 'preact/hooks';
 import * as jam from '../state/jam';
 import { togglePlay } from '../state/playback';
 import { muted } from '../state/sound';
 import { announcement, mode, openPicker, showStatus } from '../state/ui';
 import { useFrameLoop } from '../frame';
-import { Carousel } from './Carousel';
+import { ChordView } from './ChordView';
 import { SongMap } from './SongMap';
 import { Panel } from './Panel';
 import { StatusPill } from './StatusPill';
@@ -43,12 +43,13 @@ export function App() {
       } else if (e.key === '-' || e.key === '_') {
         jam.setTempo(jam.tempo.value - (e.shiftKey ? 5 : 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        const cards = [...document.querySelectorAll<HTMLButtonElement>('.carousel .card')];
-        if (!cards.length) return;
-        const at = cards.indexOf(document.activeElement as HTMLButtonElement);
-        const cur = at >= 0 ? at : cards.findIndex((c) => c.getAttribute('aria-current') === 'true');
-        const next = (cur + (e.key === 'ArrowRight' ? 1 : -1) + cards.length) % cards.length;
-        cards[next]!.focus();
+        // Moves focus along the song map's chords (Enter or Space then picks one).
+        const blocks = [...document.querySelectorAll<HTMLButtonElement>('.sm-block')];
+        if (!blocks.length) return;
+        const at = blocks.indexOf(document.activeElement as HTMLButtonElement);
+        const cur = at >= 0 ? at : blocks.findIndex((c) => c.getAttribute('aria-current') === 'true');
+        const next = (cur + (e.key === 'ArrowRight' ? 1 : -1) + blocks.length) % blocks.length;
+        blocks[next]!.focus();
         e.preventDefault();
       }
     };
@@ -76,7 +77,7 @@ export function App() {
       <main class="stage">
         {mode.value === 'jam' ? (
           <>
-            <Carousel />
+            <ChordView />
             <SongMap />
           </>
         ) : (

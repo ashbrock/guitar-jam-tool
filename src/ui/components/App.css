@@ -1,17 +1,15 @@
 /* Stage, top bar and status pill (DESIGN.md §5 and §6) */
 .viz { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 .top { position: fixed; top: 0; left: 0; right: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: max(8px, env(safe-area-inset-top)) var(--s-12) 0; }
-.tabs { display: flex; }
-.tab { height: var(--target-min); padding: 0 var(--s-12); font-weight: 500; font-size: var(--t-body); color: var(--muted); }
-.tab.on { color: var(--text); }
-@media (hover: hover) { .tab:not(.on):hover { color: var(--text); } }
-.settings-btn { height: var(--target-min); padding: 0 var(--s-16) 0 var(--s-12); border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: var(--s-8); font-size: var(--t-chip); font-weight: 500; backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill); }
-.settings-btn[aria-expanded='true'] { background: var(--fill-open); }
+.mode-btn { height: var(--target-min); padding: 0 var(--s-10) 0 var(--s-12); border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: 4px; font-size: var(--t-body); font-weight: 500; }
+.link-btn { height: var(--target-min); padding: 0 var(--s-12); border-radius: var(--r-pill); font-size: var(--t-small); font-weight: 500; }
+@media (hover: hover) { .mode-btn:hover, .link-btn:not([aria-disabled='true']):hover { background: var(--hover); } }
+.mode-btn[aria-expanded='true'] { background: var(--fill-open); }
 .status { position: fixed; top: max(14px, env(safe-area-inset-top)); left: 50%; translate: -50% 0; z-index: 3; margin: 0; padding: var(--s-8) var(--s-14); border-radius: var(--r-pill); max-width: calc(100% - 220px);
   background: var(--glass); backdrop-filter: var(--blur-pill); -webkit-backdrop-filter: var(--blur-pill); font-size: var(--t-caption); color: var(--muted); text-align: center; transition: opacity var(--dur-loading) ease; }
 .status.fading { opacity: 0; }
 @media (max-width: 520px) { .status { top: calc(max(8px, env(safe-area-inset-top)) + 56px); max-width: calc(100% - 2 * var(--s-12)); } }
-.stage { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 170px; }
+.stage { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 56px 0 168px; }
 @media (min-width: 900px) { .stage { padding-bottom: 130px; } }
 .solo-soon { max-width: 22rem; padding: 0 var(--s-24); text-align: center; }
 .solo-soon h1 { margin: 0 0 var(--s-8); font-size: var(--t-chord); font-weight: 500; }

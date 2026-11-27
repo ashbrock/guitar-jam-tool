@@ -183,6 +183,16 @@ export class Transport {
     else this.setState('stopped');
   }
 
+  /**
+   * Cues playback to start at `bar` (a chord the user picked). Only while not playing: the UI pauses
+   * first. Out-of-range bars wrap to bar 1.
+   */
+  seek(bar: number): void {
+    if (this.isActive) return;
+    const bars = this.totalSteps / STEPS_PER_BAR;
+    this.resumeBar = bar >= 0 && bar < bars ? Math.floor(bar) : 0;
+  }
+
   /** Back to bar 1: at the next downbeat if playing, immediately otherwise. */
   restart(): void {
     if (this._state === 'playing') this.jumpToTop = true;

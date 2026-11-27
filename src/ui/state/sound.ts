@@ -4,8 +4,8 @@ import { engine } from './playback';
 
 export const chordsOn = signal(true);
 export const bassOn = signal(true);
-/** Off by default (SPEC A8): the first sound is musical, not a drum machine. */
-export const drumsOn = signal(false);
+/** On by default, like the other instruments (SPEC A8, revised). */
+export const drumsOn = signal(true);
 /** The metronome click during playback. Off by default. */
 export const clickOn = signal(false);
 /** One bar of clicks before playback. An option, off by default. */

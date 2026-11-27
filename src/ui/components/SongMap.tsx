@@ -1,21 +1,21 @@
-// The song map under the chord cards (SPEC.md §5.2, DESIGN.md §6 "Song map"): a row for each section,
-// a block for each chord, sized by how many bars it lasts, four bars to a line like a lead sheet. The
-// playing chord's block lights up with an edge and fills in time with the audio, so you can see the
-// change coming. Each section shows that it plays twice, and which time through it is. On short
-// screens the section that isn't playing folds to its header.
+// The song map (SPEC.md §5.2, DESIGN.md §6 "Song map"): a row per section, a block per chord, all the
+// same width. Dots under each name count its beats (four a bar), so a 2-bar chord reads longer without a
+// wider block; while playing, the current beat's dot grows. The selected chord (the one playing, or the
+// one picked) is solid white. Tapping a chord pauses, selects it and plays it; Play starts from it.
 import { useEffect, useRef } from 'preact/hooks';
-import { FORM, REPEATS, itemAt, song, songChords } from '../state/jam';
-import { playhead } from '../state/playback';
+import { formatChord, spokenChord } from '../../theory/chords';
+import { FORM, REPEATS, itemAt, playList, song, songChords } from '../state/jam';
+import { playhead, selectChord } from '../state/playback';
 import { songMap } from '../frame';
-import { BARS_PER_LINE, chartLines } from '../bars';
-import { ChordName } from './ChordName';
+import { slotStarts } from '../bars';
 
 const LABEL = { verse: 'Verse', chorus: 'Chorus' } as const;
+const barsText = (b: number) => (b === 1 ? '1 bar' : `${b} bars`);
 
 export function SongMap() {
   const p = playhead.value;
-  const live = p.phase !== 'stopped' && p.slotIndex !== null;
-  const item = live ? itemAt(p.slotIndex) : undefined;
+  const item = itemAt(p.slotIndex) ?? playList.value[0];
+  const started = p.phase !== 'stopped';
 
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -25,11 +25,10 @@ export function SongMap() {
     };
   }, []);
 
-  const countIn = p.phase === 'count-in';
   return (
-    <div class="song-map" ref={root} aria-hidden="true">
-      {countIn && (
-        <span class="sm-countin">
+    <div class="song-map" ref={root}>
+      {p.phase === 'count-in' && (
+        <span class="sm-countin" aria-hidden="true">
           Count-in
           <span class="sm-beats">
             {[1, 2, 3, 4].map((b) => (
@@ -40,36 +39,47 @@ export function SongMap() {
       )}
       {FORM.map((sec) => {
         const here = item?.section === sec;
-        // On short screens only one section shows its blocks: the one playing (the verse when stopped).
-        const open = here || (!item && sec === FORM[0]);
+        const slots = song.value[sec];
         const chords = songChords.value[sec];
+        const starts = slotStarts(slots);
+        const pass = here && started ? `${item!.pass + 1}/${REPEATS}` : `×${REPEATS}`;
         return (
-          <section class={`sm-section${here ? ' here' : ''}${open ? ' open' : ''}`} key={sec}>
+          <section class={`sm-section${here ? ' here' : ''}`} key={sec} aria-labelledby={`sm-${sec}`}>
             <header class="sm-head">
-              <span class="sm-label">{LABEL[sec]}</span>
-              <span class="sm-pass">{here ? `${item!.pass + 1}/${REPEATS}` : `×${REPEATS}`}</span>
+              <h2 id={`sm-${sec}`}>{LABEL[sec]}</h2>
+              <span class="sm-pass" aria-label={here && started ? `time ${item!.pass + 1} of ${REPEATS}` : `plays ${REPEATS} times`}>
+                {pass}
+              </span>
             </header>
-            {chartLines(song.value[sec]).map((line) => (
-              <div class="sm-line">
-                {line.map((s) => {
-                  const now = here && s.index === item!.index;
-                  const cls = `sm-block${now ? ' now' : ''}${s.head ? '' : ' cont'}${s.tail ? '' : ' runs'}`;
-                  return (
-                    <span
-                      class={cls}
-                      style={{ flexGrow: s.bars / BARS_PER_LINE }}
-                      data-sec={sec}
-                      data-idx={s.index}
-                      data-start={s.start}
-                      data-bars={s.bars}
-                    >
-                      <i />
-                      {s.head && <ChordName chord={chords[s.index]!.chord} cls="sm-name" />}
+            <div class="sm-row">
+              {slots.map((s, i) => {
+                const now = here && item!.index === i;
+                return (
+                  <button
+                    class={`sm-block${now ? ' now' : ''}`}
+                    aria-current={now ? 'true' : undefined}
+                    aria-label={`${spokenChord(chords[i]!.chord)}, ${barsText(s.bars)}`}
+                    data-sec={sec}
+                    data-idx={i}
+                    data-start={starts[i]}
+                    data-bars={s.bars}
+                    onClick={() => selectChord(sec, i)}
+                  >
+                    <span class="sm-name">{formatChord(chords[i]!.chord)}</span>
+                    <span class="sm-dots" aria-hidden="true">
+                      {Array.from({ length: Math.max(1, Math.round(s.bars)) }, () => (
+                        <span class="sm-bar">
+                          <i />
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      ))}
                     </span>
-                  );
-                })}
-              </div>
-            ))}
+                  </button>
+                );
+              })}
+            </div>
           </section>
         );
       })}

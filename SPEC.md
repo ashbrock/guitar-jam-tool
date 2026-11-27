@@ -39,7 +39,7 @@ Accounts, saving and sharing (beyond restoring the current session, §11), recor
 | **Roll** | One output of the generator, with its key and tempo. Jam keeps a history of rolls. |
 | **Hold** | A switch on key or tempo. Re-roll doesn't change a held value. |
 | **Chord chart** | The basic fingering of a chord: open if one exists, otherwise the lowest E- or A-shape barre, never more than 5 frets. |
-| **Carousel** | The row of chord cards in the centre of the screen. The current chord is always in the middle. |
+| **Song map** | The Verse and Chorus rows under the chord, a block per chord. The selected block is white. |
 | **Visuals** | The full-screen generative picture behind everything (DESIGN.md §3). |
 | **Chord tones** | The notes of the chord currently playing (or selected). |
 | **Landing notes** | The chord tones of the *next* chord, shown towards the end of the current one. Notes a half step either side of a landing note are **approach notes**, an optional layer. |
@@ -50,27 +50,29 @@ Accounts, saving and sharing (beyond restoring the current session, §11), recor
 
 ## 3. Screen model: one full-screen stage
 
-There is a **single screen**. The visuals fill it edge to edge. Three layers sit on top:
+There is a **single screen**, black and white for now (colour comes with the hi-fi designs). **[A22]**
 
 ```
 ┌───────────────────────────────┐
-│ Jam  Solo           Settings  │  top bar: mode tabs, Settings (status pill centred when needed)
-│                               │
-│   ┌──┐  ┌──────┐  ┌──┐  ┌──┐  │  centre: the carousel of chord cards
-│   │  │  │chart │  │  │  │  │  │  (Solo: fretboard, to be designed, §8)
-│   └──┘  │ Em7  │  └──┘  └──┘  │
-│         │ ━━─  │              │  progress through the current chord
-│         └──────┘              │
+│ Jam ⌄          My progressions│  top bar: mode menu, saved progressions (status pill centred when needed)
+│          ┌────────┐           │
+│          │ chart  │           │  centre: the selected chord's chart
+│          └────────┘           │
+│             Em7               │  its name, plain (Cmaj7, not C with a raised maj7)
+│ Verse                     ×2  │
+│ [Em7][ Am ][ D  ][Bm7 ]       │  song map: a row per section, a block per chord
+│ Chorus                    ×2  │  (dots under each name count its beats)
+│ [ G ][ D  ][ Am ][ C  ]       │
 │ ╭───────────────────────────╮ │
-│ │ (🔈)  (↻)  (▶)  (♩)  (#)   │ │  floating panel, row 1: mute, re-roll, play, tempo, key
+│ │ (⚙)  (♡)  ( ↻ )  (▶)  (🔈) │ │  panel, row 1: settings, save, re-roll (largest), play, mute
 │ │ [Neo-soul   D major·84 ⌄]  │ │  row 2: vibe (with the key and tempo shown quietly)
 │ ╰───────────────────────────╯ │
 └───────────────────────────────┘
 ```
 
-- **Phone (< 900 px wide):** the panel has two rows: five icon buttons on top, the vibe beneath, at the very bottom where the thumb rests.
-- **Desktop (≥ 900 px):** the panel is one row, max 760 px wide and centred: the vibe on the left, the icon buttons on the right. The carousel shows more chords either side.
-- **Pickers** open as a floating sheet directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). **Settings** drops down from its button in the top bar instead. Only one is open at a time. They close on Esc, a tap outside, or tapping their chip again. Opening or using a picker never stops playback.
+- **Phone (< 900 px wide):** the panel has two rows: five buttons on top, the vibe beneath, at the very bottom where the thumb rests.
+- **Desktop (≥ 900 px):** the panel is one row, max 760 px wide and centred: the vibe on the left, the buttons on the right.
+- **Sheets** (vibe, Settings) open directly above the panel, anchored to it (full panel width on phones, 420 px on desktop). The **mode menu** drops down from "Jam ⌄" in the top bar. Only one is open at a time. They close on Esc, a tap outside, or tapping their button again. Opening or using one never stops playback.
 
 ### 3.1 State ownership
 | State | Owned by | Notes |
@@ -88,18 +90,18 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 
 ## 4. Shared controls
 
-### 4.1 Playback row
+### 4.1 Action row
 | Control | Behaviour |
 |---|---|
-| **Mute** (speaker) | Silences all sound while the loop, cards and visuals carry on in time: for playing with a band and following the chords. A toggle (`aria-pressed`); when on it's inverted with a crossed-out speaker. Off by default. Fades over about 20 ms, no click. |
-| **Re-roll** (two arrows) | The primary action (§5.3). Inverted, so it stands out. |
-| **Play / Pause** | Starts and pauses the loop. Green, in the centre of the row. **[A7]** |
-| **Tempo** (metronome icon) | Opens the tempo picker (§4.4). Its name includes the BPM; a dot marks it held. |
-| **Key** (#) | Opens the key picker (§4.3). Its name includes the key; a dot marks it held. |
+| **Settings** (sliders) | Opens Settings (§4.5): Key, Tempo and Instruments. |
+| **Save** (heart) | Saves the progression to My progressions; filled when the current progression is saved, and tapping again removes it. Coming in the next step; until then it's disabled and says so. **[A23]** |
+| **Re-roll** (two arrows) | The primary action (§5.3): the tool is for generating progressions quickly to play with a band. The largest button, in the centre, inverted. |
+| **Play / Pause** | Starts and pauses the loop. Play starts from the selected chord (§5.2). |
+| **Mute** (speaker) | Silences all sound while the loop and song map carry on in time: for playing with a band and following the chords. A toggle (`aria-pressed`); when on it's inverted with a crossed-out speaker. Off by default. Fades over about 20 ms, no click. |
 
-- Count-in and metronome live in Settings (§4.5). The vibe has its own row below, showing the current key and tempo too, so they stay visible although Tempo and Key are icons.
-- **Looping is always on.** The whole progression loops.
-- **Pause** holds the playhead. **Play** resumes from the start of the bar that was playing (not mid-bar), after a count-in if count-in is on.
+- The vibe has its own row below, showing the current key and tempo too, so the key is always on screen to call to the band.
+- **Looping is always on.** The whole song loops.
+- **Pause** stops the sound and cues the start of the chord that was playing, so Play starts that chord again, after a count-in if count-in is on.
 - Playback states: `locked-audio` → `stopped` → `count-in` → `playing` ⇄ `paused`. How each looks is in DESIGN.md §8.
 
 ### 4.2 Vibe picker
@@ -107,35 +109,30 @@ There is a **single screen**. The visuals fill it edge to edge. Three layers sit
 - Choosing a vibe makes a **new progression in the same key**. Tempo moves to the vibe's default **unless tempo is held**. The picker closes.
 - There's no length control: the vibe sets each song's length (§5.5).
 
-### 4.3 Key picker
+### 4.3 Key (in Settings)
 - **Major / Minor** segmented control, then 12 tonics in two rows of six, spelled for the mode (D♭ and F♯ major; E♭ and B♭ minor; C♯ minor, not D♭ minor).
 - **Changing the tonic transposes** the current progression. Nothing re-rolls.
 - **Changing major ↔ minor makes a new progression** in the same tonic, because the two modes use different rules. The old one goes onto the history stack, so Back returns to it.
-- **Hold key** switch: "Re-roll won't change it". A held key shows a dot on the Key button and "held" in its name.
+- **Hold key** switch: "Re-roll won't change it". A held key shows ", held" on the Key row in Settings.
 - Spelling of chromatic chords follows the key (♭3, ♭7, ♯4 in major; the leading tone and ♭5 blue note in minor). The table lives in `src/theory/` and is tested.
 
-### 4.4 Tempo picker
+### 4.4 Tempo (in Settings)
 - Range **40–240 BPM**, whole numbers. Big readout with **− / +** either side (1 BPM per tap), a slider, and **Tap tempo** (averages up to the last 5 taps; taps more than 2 s apart start again).
 - A line under the controls says the vibe's usual range ("Neo-soul usually sits between 65 and 100 BPM").
-- **Hold tempo** switch, with the same dot on the Tempo button.
+- **Hold tempo** switch (", held" on the Tempo row).
+- **Metronome** and **Count-in** switches live here too (§4.5).
 - Tempo changes take effect at the next beat, never mid-beat.
 
 ### 4.5 Settings (global)
-**Settings** (top right) opens on three rows:
+**Settings** (bottom left of the action row) opens a sheet with three rows. Each opens its own sheet in place, with a back arrow:
 
-| Row | Kind | Default | Behaviour |
-|---|---|---|---|
-| **Sound ›** | Opens a second view in place, with a back arrow | — | Chords, Bass and Drums switches, plus the instrument credits (§7.4). |
-| **Count-in** | Switch | **Off** | One bar of clicks before playback, heard even with the metronome off. While it plays, "Count-in" shows above the song map with four dots filling one per beat, so it reads without sound. |
-| **Metronome** | Switch | **Off** | A click on every beat, accent on beat 1. |
-
-| Sound part | Default | Notes |
+| Row | Shows | Opens |
 |---|---|---|
-| Chords | On | Turn off to play the chords yourself over bass and drums. |
-| Bass | On | |
-| Drums | **Off [A8]** | Kick, snare and hat in the vibe's groove. |
+| **Key ›** | "D major", ", held" | Major / Minor, the 12 tonics, Hold key (§4.3). |
+| **Tempo ›** | "84 BPM", ", held", "· metronome on" | The tempo controls and Hold tempo (§4.4), then **Metronome** (a click on every beat, accent on beat 1; **off**) and **Count-in** (one bar of clicks before playback, heard even with the metronome off; **off**). While the count-in plays, "Count-in" shows above the song map with four dots filling one per beat, so it reads without sound. |
+| **Instruments ›** | "Chords, bass and drums" | Chords, Bass and Drums switches, **all on by default [A8]**, plus the instrument credits (§7.4). Turn Chords off to play them yourself over bass and drums. |
 
-Focus moves into each view as it opens (the back arrow in Sound; the Sound row on return), and back to the Settings button when it closes. Changes take effect at the next scheduled note and never stop or restart the loop.
+Focus moves into each sheet as it opens (its back arrow; the row that opened it on return), and back to the Settings button when it closes. Changes take effect at the next scheduled note and never stop or restart the loop.
 
 ### 4.6 Editing while playing
 - Re-roll, Back, a vibe change or a key mode change: the new progression starts **at the next downbeat, from bar 1**.
@@ -150,21 +147,15 @@ Focus moves into each view as it opens (the back arrow in Sound; the Sound row o
 - Jam, vibe **Neo-soul**, key **D major**, the vibe's default tempo, a progression already generated. **[A1]** The screen is never empty.
 - Nothing plays until the first tap (§12.3). The visuals are hidden until playback starts.
 
-### 5.2 The carousel
-- One **card** per chord, for the whole song (verse then chorus): the chord chart above, the chord name below. The cards slide straight from the verse into the chorus.
-- **The current chord is always centred.** The rest of the loop sits either side and slides along as the progression plays, wrapping round at the loop point. Up to a third of the loop sits behind (dimmed), the rest ahead:
-  - phone: up to 2 behind and 3 ahead;
-  - desktop: up to 3 behind and 4 ahead.
-- **Past chords** are dimmed; **upcoming chords** are at full strength; the **current chord** is larger, on a brighter card with an edge (shape and size, not just colour).
-- **Song map** (under the cards): the whole song at a glance, like a lead sheet. **[A21]**
-  - A row for each section, labelled **Verse** and **Chorus**, with a block for each chord. A block's width follows how many bars the chord lasts, four bars to a line; a chord that runs over a line end continues on the next line.
-  - Each section shows **×2**. While it plays, that becomes which time through it is (**1/2**, **2/2**) and the section label brightens.
-  - The playing chord's block is highlighted (brighter, with an edge) and **fills smoothly from the audio clock**, so you can see the change coming.
-  - **Short screens** (under 840 px tall): only the section that's playing (the verse when stopped) shows its blocks; the other folds to its label line.
-- **When paused,** the chord that was playing stays centred and highlighted, and its block's fill freezes where it stopped.
-- **When stopped,** the first chord (or the last tapped) is centred, with an empty bar.
-- **Tapping a card plays the chord** once (a preview), whether or not the loop is running. When stopped, it also centres that card. Tapping never changes the loop.
-- Charts are the basic shape only (§2). A chord with no basic shape shows its name without a chart.
+### 5.2 The chord and the song map
+- **The chord view:** the **selected chord's** chart, with its name below in plain text ("Cmaj7", "F♯m7"). The selected chord is the one playing; while stopped or paused, it's the one picked (the first chord after a new roll). Tapping the chart plays the chord once.
+- **Song map** (under the chord): the whole song at a glance. **[A21]**
+  - A row for each section, labelled **Verse** and **Chorus**, with a block for each chord, **all the same width** (four to a row; fewer chords leave the rest of the row empty).
+  - **Dots** under each name count the chord's beats, four a bar: a 2-bar chord shows eight, in two groups. While playing, the current beat's dot grows, from the audio clock, so you can see the change coming.
+  - The **selected chord's block is solid white**; the others have a low-opacity fill.
+  - Each section shows **×2**. Once playback has started, that becomes which time through it is (**1/2**, **2/2**) and the section label brightens.
+- **Tapping a block** pauses playback if it's playing, selects that chord (the chart shows it; it turns white) and plays it once. **Play then starts from it.** If the tapped chord's section is the current one, it stays on the same time through; otherwise it's the first time through.
+- Charts are the basic shape only (§2). A chord with no basic shape shows "No chart for this chord" in place of the chart.
 
 ### 5.3 Re-roll
 1. The user taps **Re-roll** (or presses `R`).
@@ -306,13 +297,13 @@ The notes you play (microphone pitch detection, nothing recorded or stored) coul
 | `R` | Re-roll (Jam) |
 | `M` | Mute / unmute |
 | `U` | Back to the previous progression (Jam) |
-| `←` `→` | Move focus between chord cards |
-| `Enter` | Play the focused chord (Jam); open it for editing (Solo) |
+| `←` `→` | Move focus between the song map's chords |
+| `Enter` | Select and play the focused chord (Jam); open it for editing (Solo) |
 | `+` `−` | Tempo ±1 (`Shift` for ±5) |
 | `Esc` | Close the open picker |
 
 - Shortcuts are ignored while a text field has focus.
-- The carousel is an ordered list. Each card's accessible name is the spoken chord ("E minor 7"). The current card has `aria-current`. No announcement on every chord change during playback.
+- Each section of the song map is a labelled group. Each block's accessible name is the spoken chord and its length ("E minor 7, 2 bars"); the selected one has `aria-current`. No announcement on every chord change during playback.
 - Pickers are dialogs: focus moves into them on open and returns to their button on close.
 - Toggle buttons use `aria-pressed`; switches use `role="switch"`; single choices use `role="radio"`.
 
@@ -413,7 +404,7 @@ So a refresh, a locked phone or a discarded tab doesn't wipe work. **Not** savin
 | History at its oldest roll | Back disabled, with "No earlier progression yet" on tap. |
 | Tempo out of range (typed, tapped) | Clamped to 40–240. |
 | ½-bar chords at 240 BPM | Allowed; timing tests cover them. |
-| One-chord progression | The carousel shows one centred card; the loop is that chord. |
+| One-chord progression | One block in the row; the loop is that chord. |
 | Settings and another picker | Only one opens at a time; opening one closes the other. |
 | Samples slow or failing | Synth plays meanwhile; status pill reports (§7.2). |
 | Device or browser stalls | Sounds are scheduled 150 ms ahead on the audio clock, so short stalls are inaudible. After a longer stall, missed notes are skipped and playback continues on the beat. Never a burst of late notes. |
@@ -421,7 +412,7 @@ So a refresh, a locked phone or a discarded tab doesn't wipe work. **Not** savin
 | Slow device, heavy visuals | The visuals may drop frames; audio is unaffected. If frame times stay high, the visuals reduce their detail **[A17]**. |
 | Reduced motion | DESIGN.md §9.3. No functional difference. |
 | Rotate during playback | Layout changes; playback and the current chord are unaffected. |
-| Very narrow screens (≤ 340 px) | Every control stays ≥ 48 px; the carousel shows fewer chords ahead. |
+| Very narrow screens (≤ 340 px) | Every control stays ≥ 48 px; long chord names in the song map end in an ellipsis. |
 
 ---
 
@@ -438,7 +429,7 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A5** | Solo vibe optional, default Plain (no drums). | Working default. |
 | **A6** | Avoid notes: a half step above a chord tone. Scale set as in §8.4. | Working default. |
 | **A7** | Left-handed setting mirrors the transport (Play under the left thumb). | Working default; needs a home for the setting. |
-| **A8** | Drums off by default; switch in the vibe picker. | ✅ Decided. |
+| **A8** | All instruments (chords, bass, drums) on by default; switches in Settings › Instruments. (Was: drums off.) | ✅ Decided. |
 | **A9** | Plain Web Audio, no Tone.js. | ✅ Decided. |
 | **A10** | Self-hosted fonts. | ✅ Decided. |
 | **A11** | Count-in and metronome are switches in Settings, both off by default. The count-in shows on the first chord card. | ✅ Decided. |
@@ -451,4 +442,6 @@ Decided items are marked ✅. Open ones are working defaults that stand unless y
 | **A18** | Visuals use WebGL (Three.js, approved) where available, loaded on first Play, with the 2D styles as the fallback. All six vibes use the particle-waves scene. | ✅ Decided (dependency approved). |
 | **A19** | Undo's button is replaced by Mute; Back stays on the keyboard (`U`). Bring it back somewhere on touch (e.g. a long-press on Re-roll) if it's missed. | Working default. |
 | **A20** | Verse and chorus play straight through (verse ×2 → chorus ×2, looping); no switching. Length is bars per section. Bridges, intros and outros: v2, possibly AI-built. | ✅ Decided. |
-| **A21** | A song map under the cards (a row per section, a block per chord sized by bars, the playing block filling) replaces the bar timeline. Short phones fold the section that isn't playing. | ✅ Decided. |
+| **A21** | A song map under the chord (a row per section, equal-width blocks with beat dots, the selected block white) replaces the bar timeline. Tapping a block pauses and selects it; Play starts from it. | ✅ Decided. |
+| **A22** | One chord chart instead of the carousel; top bar with a mode menu and My progressions; panel of Settings, Save, Re-roll (largest), Play, Mute, with the vibe below; Key, Tempo and Instruments in Settings. Black and white until hi-fi designs. | ✅ Decided. |
+| **A23** | Save progressions (heart) to My progressions, a full page; local to this browser, no accounts or sharing. Delete only for now. | ✅ Decided; next step. |

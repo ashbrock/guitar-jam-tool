@@ -243,6 +243,31 @@ describe('pause, resume and restart', () => {
     expect(t.playheadAt(h.time).bar).toBe(0);
   });
 
+  it('seek cues a bar while stopped or paused: the playhead shows its chord and Play starts there', () => {
+    const { h, t } = setup('C D E F', { bpm: 120 });
+    t.seek(3);
+    expect(t.playheadAt(h.time)).toMatchObject({ phase: 'stopped', bar: 3, slotIndex: 3 });
+    t.start();
+    h.run(5); // in bar 2 after wrapping (3 → 0 → 1)
+    t.pause();
+    t.seek(1);
+    expect(t.playheadAt(h.time)).toMatchObject({ phase: 'paused', bar: 1, slotIndex: 1 });
+    h.events = [];
+    t.start();
+    h.run(0.2);
+    expect(new Set(h.of('chord')[0]!.notes.map((n) => n % 12))).toEqual(new Set([2, 6, 9])); // D major
+  });
+
+  it('seek is ignored while playing, and wraps an out-of-range bar to bar 1', () => {
+    const { h, t } = setup('C D E F', { bpm: 120 });
+    t.seek(9);
+    expect(t.playheadAt(h.time).bar).toBe(0);
+    t.start();
+    h.run(2.2);
+    t.seek(3);
+    expect(t.playheadAt(h.time).bar).toBe(1);
+  });
+
   it('stop rewinds to bar 1', () => {
     const { h, t } = setup('C D E F', { bpm: 120 });
     t.start();

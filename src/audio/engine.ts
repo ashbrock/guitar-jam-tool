@@ -39,7 +39,7 @@ export interface FeelSettings {
   voicing: VoicingStyle;
 }
 
-export const DEFAULT_PARTS: PartLevels = { chords: true, bass: true, click: true, drums: false };
+export const DEFAULT_PARTS: PartLevels = { chords: true, bass: true, click: true, drums: true };
 
 export interface EngineOptions {
   /** For tests and the dev harness: observe every scheduled event with the audio time it was scheduled at. */
@@ -59,6 +59,8 @@ export interface Engine {
   pause(): void;
   togglePlay(): Promise<boolean>;
   restart(): void;
+  /** Cues playback to start at this bar (a chord the user picked). Ignored while playing. */
+  seek(bar: number): void;
   setProgression(slots: readonly PlaybackSlot[], opts?: { fromTop?: boolean }): void;
   setTempo(bpm: number): void;
   readonly tempo: number;
@@ -81,6 +83,17 @@ export interface Engine {
 
 type ContextFactory = () => AudioContext;
 
+/** The slot playing at a bar (before the transport exists), or null for an empty progression. */
+function slotAtBar(slots: readonly PlaybackSlot[], bar: number): number | null {
+  if (!slots.length) return null;
+  let t = 0;
+  for (let i = 0; i < slots.length; i++) {
+    t += slots[i]!.bars;
+    if (bar < t) return i;
+  }
+  return 0;
+}
+
 export function createEngine(options: EngineOptions = {}, makeContext: ContextFactory = () => new AudioContext({ latencyHint: 'interactive' })): Engine {
   let ctx: AudioContext | null = null;
   let voices: Voices | null = null;
@@ -98,6 +111,8 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
   let parts: PartLevels = { ...DEFAULT_PARTS };
   let countIn = true;
   let muted = false;
+  /** A bar cued before audio was unlocked; handed to the transport when it's built. */
+  let cuedBar = 0;
   let lastState: EngineState = 'locked-audio';
 
   const toFeel = (f: FeelSettings): Feel => ({ groove: grooveById(f.groove), swing: f.swing, voicing: f.voicing });
@@ -131,6 +146,7 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
     transport.setTempo(tempo);
     transport.setCountIn(countIn);
     transport.setProgression(slots);
+    transport.seek(cuedBar);
     transport.onStateChange((s) => setState(s));
     setState(transport.state);
 
@@ -215,8 +231,13 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
     restart() {
       transport?.restart();
     },
+    seek(bar) {
+      if (transport) transport.seek(bar);
+      else cuedBar = bar;
+    },
     setProgression(next, opts) {
       slots = next;
+      if (opts?.fromTop) cuedBar = 0;
       transport?.setProgression(next, opts);
     },
     setTempo(bpm) {
@@ -248,7 +269,7 @@ export function createEngine(options: EngineOptions = {}, makeContext: ContextFa
       voices!.previewNote(midi);
     },
     playhead() {
-      if (!ctx || !transport) return { state: lastState, phase: 'stopped', countInBeat: null, bar: 0, beat: 0, slotIndex: slots.length ? 0 : null, beatFraction: 0 };
+      if (!ctx || !transport) return { state: lastState, phase: 'stopped', countInBeat: null, bar: cuedBar, beat: 0, slotIndex: slotAtBar(slots, cuedBar), beatFraction: 0 };
       // What's audible lags what's scheduled by the output latency; visuals follow the audible time.
       const latency = (ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0;
       return { state: lastState, ...transport.playheadAt(ctx.currentTime - latency) };

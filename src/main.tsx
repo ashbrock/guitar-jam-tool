@@ -2,7 +2,7 @@ import { render } from 'preact';
 import './ui/styles/tokens.css';
 import './ui/styles/base.css';
 import './ui/components/App.css';
-import './ui/components/Carousel.css';
+import './ui/components/Jam.css';
 import './ui/components/Panel.css';
 import './ui/components/Picker.css';
 import { App } from './ui/components/App';

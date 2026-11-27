@@ -1,10 +1,10 @@
 // The one animation-frame loop. Each frame it reads the playhead from the audio clock, then:
 // updates the coarse playhead signal (components re-render at most once per beat), draws the visuals,
-// and fills the playing chord's block in the song map directly (60 fps without re-rendering).
+// and lights the current beat's dot in the song map directly (without re-rendering).
 import { useEffect } from 'preact/hooks';
 import type { RefObject } from 'preact';
 import { Visuals } from '../visuals/index';
-import { blockFill, slotStarts } from './bars';
+import { beatIndex, slotStarts } from './bars';
 import { itemAt, playList, playStarts, song, songChords, vibe } from './state/jam';
 import { engine, syncPlayhead } from './state/playback';
 
@@ -17,9 +17,9 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
     const visuals = new Visuals(canvas.current, glCanvas.current, bg);
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    // The orb centres on the chord carousel; measure where that sits.
+    // The visuals centre on the chord chart; measure where that sits.
     const focus = () => {
-      const c = document.querySelector('.carousel');
+      const c = document.querySelector('.chord-view');
       if (!c) return;
       const r = c.getBoundingClientRect();
       visuals.setFocus((r.top + r.height / 2) / window.innerHeight);
@@ -50,9 +50,9 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
         levels: engine.levels(),
       });
 
-      // The playing chord's block fills smoothly from the audio clock. Held while paused; empty when stopped.
+      // The current beat's dot, from the audio clock. Only while playing: none when paused or stopped.
       const map = songMap.el;
-      if (map && p.phase !== 'paused') {
+      if (map) {
         const cur = p.phase === 'playing' ? itemAt(p.slotIndex) : undefined;
         // Bars into the current time through the section: the loop position less where this chord
         // starts in the loop, plus where it starts in its section.
@@ -62,7 +62,8 @@ export function useFrameLoop(canvas: RefObject<HTMLCanvasElement | null>, glCanv
         map.querySelectorAll<HTMLElement>('.sm-block').forEach((el) => {
           const d = el.dataset;
           const on = cur && d.sec === cur.section && Number(d.idx) === cur.index;
-          (el.firstElementChild as HTMLElement).style.width = `${on ? blockFill(barsIn, Number(d.start), Number(d.bars)) * 100 : 0}%`;
+          const k = on ? beatIndex(barsIn, Number(d.start), Number(d.bars)) : -1;
+          el.querySelectorAll('.sm-dots i').forEach((dot, j) => dot.classList.toggle('on', j === k));
         });
       }
       raf = requestAnimationFrame(frame);

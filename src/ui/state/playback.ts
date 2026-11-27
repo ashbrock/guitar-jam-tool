@@ -4,6 +4,8 @@
 import { signal } from '@preact/signals';
 import { createEngine, type EngineState } from '../../audio/engine';
 import type { Playhead } from '../../audio/transport';
+import type { Section } from '../../theory/song';
+import { cueIndex, itemAt, playStarts, songChords } from './jam';
 import { showStatus } from './ui';
 
 export const engine = createEngine();
@@ -50,8 +52,36 @@ engine.subscribe((e) => {
   }
 });
 
+/**
+ * Play / Pause (SPEC.md §5.2). Pausing cues the start of the chord that was playing, so Play always
+ * starts from the selected chord.
+ */
 export async function togglePlay(): Promise<void> {
+  if (engine.playhead().phase === 'playing') {
+    engine.pause();
+    cueChordStart();
+    return;
+  }
   await engine.togglePlay();
+}
+
+/** Cues the start of the chord the playhead is on (after a pause, which resumes from the bar). */
+function cueChordStart(): void {
+  const i = engine.playhead().slotIndex;
+  if (i !== null && playStarts.value[i] !== undefined) engine.seek(playStarts.value[i]!);
+}
+
+/**
+ * A chord in the song map was tapped (SPEC.md §5.2): pause if playing, make it the selected chord (the
+ * chart shows it and Play starts there) and play it once.
+ */
+export function selectChord(section: Section, index: number): void {
+  const current = itemAt(engine.playhead().slotIndex);
+  if (isActive()) engine.pause();
+  const i = cueIndex(current, section, index);
+  if (i >= 0) engine.seek(playStarts.value[i]!);
+  const c = songChords.value[section][index];
+  if (c) void engine.previewChord(c.chord);
 }
 
 // ---------- Screen wake lock while playing (SPEC.md §12.3) ----------
