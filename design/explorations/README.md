@@ -103,10 +103,11 @@ Nothing here is wired into the app on `main` unless noted.
 
 ## 05 · Chord wheel (sketch)
 
-**What it is:** a wheel of the chords in the progression's key, as a possible replacement for, or companion to, the chord chart in Jam. Two layouts to compare:
-- **A · Key wheel:** only the key's seven chords, in fifths order (IV I V ii vi iii vii°; ♭VI ♭III ♭VII iv i v ii° in minor), with an outer ring of each chord's common extensions. Borrowed chords are listed under it.
-- **B · Circle of fifths:** all twelve majors with their relative minors, turned so the key is at the top; the key's chords lit, the rest faint, so borrowed chords show where they sit. A picked chord's extensions appear under it.
+**What it is:** a wheel of the progression's harmony, as a possible companion to the chord chart in Jam.
+- **Inner ring:** the key's seven chords in fifths order (IV I V ii vi iii vii°; ♭VI ♭III ♭VII iv i v ii° in minor), the tonic at the top.
+- **Outer ring:** the chords this vibe borrows from outside the key (secondary dominants like V/ii, chords from the parallel key like iv and ♭VII, passing chords), each sitting **outside the chord it most often leads to**, taken from the vibe's own transition weights. So it reads as "ways into" each chord, and it differs per vibe.
+- Chords the progression uses are ringed; the playing or tapped one is white. The progression draws its shape in the centre (verse solid, chorus dashed, borrowed chords as hollow points).
 
-Both ring the chords the progression uses, light the playing (or tapped) one, and draw the progression's shape in the centre (verse solid, chorus dashed). It uses the real generator and audio: re-roll, change key or vibe, Play, and tap any chord or extension to hear it.
+An earlier pass compared this "key wheel" (then with an outer ring of extensions) against a full circle of fifths; the key wheel won for Jam, and the outer ring was switched to borrowed chords. Extensions wait for a later "richer chords" option.
 
-**Status:** sketch in `05-chord-wheel/index.html` (`?v=a` or `?v=b`). Not wired into the app. Extensions are a common-practice table in the sketch, not yet vibe data.
+**Status:** sketch in `05-chord-wheel/index.html`, using the real generator and audio (re-roll, key, vibe, Play, tap to hear). Not wired into the app.

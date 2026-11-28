@@ -1,80 +1,97 @@
 // Exploration: a chord wheel for Jam. Not wired into the app.
 //
-// A. Key wheel: only the key's seven chords, around a circle in fifths order (IV I V ii vi iii vii°, or
-//    ♭VI ♭III ♭VII iv i v ii° in minor), so neighbours are a fifth apart. An outer ring holds each
-//    chord's extensions (maj7, 9, m11…). Chords the progression uses get a ring; the playing or picked
-//    one is solid white. Chords outside the key are listed under the wheel.
-// B. Circle of fifths: all twelve majors outside, their relative minors inside, rotated so the key sits
-//    at the top. The key's seven chords are lit, the rest faint, so borrowed chords show where they sit.
-//    Extensions for the picked chord appear under the wheel.
-// Both draw the progression's path around the wheel: solid for the verse, dashed for the chorus.
+// Inner ring: the key's seven chords around a circle in fifths order (IV I V ii vi iii vii°, or
+// ♭VI ♭III ♭VII iv i v ii° in minor), the tonic at the top, so neighbours are a fifth apart.
+// Outer ring: the chords this vibe borrows from outside the key (secondary dominants, chords from the
+// parallel key, passing chords), each sitting outside the chord it most often leads to, taken from the
+// vibe's own transition weights. So the outer ring reads as "ways into" each chord.
+// Chords the progression uses get a ring; the playing or tapped one is solid white. The progression
+// draws its shape in the centre: verse solid, chorus dashed; borrowed chords as hollow points.
 import { createEngine } from '../../../src/audio/engine';
 import { VIBES, vibeById } from '../../../src/data/vibes/index';
 import { formatChord, parseChord, spokenChord, type Chord } from '../../../src/theory/chords';
 import { resolveDegreeChord } from '../../../src/theory/degrees';
 import { KEY_TONICS, formatKey, type Key, type Mode } from '../../../src/theory/keys';
-import { formatNote, pc, type Note } from '../../../src/theory/notes';
+import { pc, type Note } from '../../../src/theory/notes';
 import { newSeed } from '../../../src/theory/random';
-import { simplify } from '../../../src/theory/simplify';
+import { simplify, type SimpleChord } from '../../../src/theory/simplify';
 import { generateSong, type Section, type Song } from '../../../src/theory/song';
+import type { GeneratorParams } from '../../../src/theory/vibe';
 
-// ---------- The key's chords (pure) ----------
+// ---------- The wheel's chords (pure) ----------
 
-interface Spot {
-  degree: string;
-  quality: string;
-  /** Common extensions, as qualities ("maj7", "m9"). */
-  exts: string[];
-}
-
-/** The seven diatonic chords in fifths order, with common extensions. */
-const DIATONIC: Record<Mode, Spot[]> = {
+/** The key's seven chords in fifths order, as degree + triad quality. */
+const DIATONIC: Record<Mode, { degree: string; quality: string }[]> = {
   major: [
-    { degree: 'IV', quality: '', exts: ['maj7', 'add9', '6'] },
-    { degree: 'I', quality: '', exts: ['maj7', '6/9', 'add9'] },
-    { degree: 'V', quality: '', exts: ['7', '9', 'sus4'] },
-    { degree: 'ii', quality: 'm', exts: ['m7', 'm9', 'm11'] },
-    { degree: 'vi', quality: 'm', exts: ['m7', 'm9', 'm11'] },
-    { degree: 'iii', quality: 'm', exts: ['m7', 'm11'] },
-    { degree: 'vii', quality: 'dim', exts: ['m7b5'] },
+    { degree: 'IV', quality: '' },
+    { degree: 'I', quality: '' },
+    { degree: 'V', quality: '' },
+    { degree: 'ii', quality: 'm' },
+    { degree: 'vi', quality: 'm' },
+    { degree: 'iii', quality: 'm' },
+    { degree: 'vii', quality: 'dim' },
   ],
   minor: [
-    { degree: 'bVI', quality: '', exts: ['maj7', 'add9', 'maj7#11'] },
-    { degree: 'bIII', quality: '', exts: ['maj7', 'add9', '6'] },
-    { degree: 'bVII', quality: '', exts: ['7', 'add9', 'sus2'] },
-    { degree: 'iv', quality: 'm', exts: ['m7', 'm9', 'm6'] },
-    { degree: 'i', quality: 'm', exts: ['m7', 'm9', 'm11'] },
-    { degree: 'v', quality: 'm', exts: ['m7', 'm9'] },
-    { degree: 'ii', quality: 'dim', exts: ['m7b5'] },
+    { degree: 'bVI', quality: '' },
+    { degree: 'bIII', quality: '' },
+    { degree: 'bVII', quality: '' },
+    { degree: 'iv', quality: 'm' },
+    { degree: 'i', quality: 'm' },
+    { degree: 'v', quality: 'm' },
+    { degree: 'ii', quality: 'dim' },
   ],
 };
-for (const m of ['major', 'minor'] as const) for (const s of DIATONIC[m]) for (const q of [s.quality, ...s.exts]) if (!parseChord(`C${q}`).ok) throw new Error(q);
+const TONIC_INDEX: Record<Mode, number> = { major: 1, minor: 4 };
 
-const family = (q: string) => (q === 'dim' ? 'dim' : q === 'm' ? 'minor' : 'major');
-const kindFamily = (k: string) => (k === 'dim' ? 'dim' : k === 'minor' ? 'minor' : 'major');
-const NUMERAL = (d: string, q: string) => d.replace('b', '♭') + (q === 'dim' ? '°' : '');
+interface Borrowed {
+  degree: string;
+  /** The vibe's favourite quality for it. */
+  quality: string;
+  /** Index (in DIATONIC order) of the key chord it leads to: it sits outside that one. */
+  target: number;
+}
+
+/**
+ * The vibe's out-of-key chords for a mode, each placed outside the key chord it most often moves to
+ * (from the vibe's transition weights). If it never moves straight to a key chord, it sits by the tonic.
+ */
+export function borrowedChords(params: GeneratorParams, mode: Mode): Borrowed[] {
+  const rules = params.modes[mode];
+  const inKey = DIATONIC[mode].map((d) => d.degree);
+  return Object.keys(rules.vocabulary)
+    .filter((d) => !inKey.includes(d))
+    .map((degree) => {
+      const qualities = Object.entries(rules.vocabulary[degree]!).sort((a, b) => b[1] - a[1]);
+      const moves = Object.entries(rules.transitions[degree] ?? {})
+        .filter(([to]) => inKey.includes(to))
+        .sort((a, b) => b[1] - a[1]);
+      const target = moves.length ? inKey.indexOf(moves[0]![0]) : TONIC_INDEX[mode];
+      return { degree, quality: qualities[0]![0], target };
+    });
+}
+
+const fam = (k: string) => (k === 'dim' ? 'dim' : k === 'minor' ? 'minor' : 'major');
+const numeral = (d: string, q = '') => d.replace(/b/g, '♭').replace('#', '♯') + (q === 'dim' || q === 'dim7' || q === 'm7b5' ? '°' : '');
 
 // ---------- State ----------
 
 const engine = createEngine();
-let view: 'a' | 'b' = (new URLSearchParams(location.search).get('v') as 'a' | 'b') ?? 'a';
 let vibeId = 'neo-soul';
 let key: Key = { tonic: { letter: 'D', acc: 0 }, mode: 'major' };
 let song: Song = { verse: [], chorus: [] };
-/** What's lit: the playing chord, or the last one tapped. */
-let lit: { root: number; fam: string; quality?: string } | null = null;
-/** The picked chord's spot (for B's extension chips). */
-let picked: { chord: Chord; exts: string[] } | null = null;
+/** What's lit: the playing chord, or the last one tapped (root pitch class + family). */
+let lit: string | null = null;
 
+const resolve = (degree: string, quality: string, bass?: string): SimpleChord => simplify(resolveDegreeChord(degree, quality, key, bass));
 const songChords = () => ({
-  verse: song.verse.map((s) => simplify(resolveDegreeChord(s.degree, s.quality, key, s.bassDegree))),
-  chorus: song.chorus.map((s) => simplify(resolveDegreeChord(s.degree, s.quality, key, s.bassDegree))),
+  verse: song.verse.map((s) => resolve(s.degree, s.quality, s.bassDegree)),
+  chorus: song.chorus.map((s) => resolve(s.degree, s.quality, s.bassDegree)),
 });
 const playList = () => {
   const c = songChords();
   return [...c.verse, ...c.verse, ...c.chorus, ...c.chorus];
 };
-const playBars = () => [...song.verse, ...song.verse, ...song.chorus, ...song.chorus].map((s) => s.bars);
+const idOf = (c: SimpleChord) => `${pc(c.chord.root)}:${fam(c.kind)}`;
 
 function reroll(): void {
   const v = vibeById(vibeId)!;
@@ -84,7 +101,7 @@ function reroll(): void {
   sendSong();
 }
 function sendSong(): void {
-  const bars = playBars();
+  const bars = [...song.verse, ...song.verse, ...song.chorus, ...song.chorus].map((s) => s.bars);
   engine.setProgression(playList().map((c, i) => ({ chord: c.chord, bars: bars[i]! as 1 | 2 })), { fromTop: true });
   lit = null;
   render();
@@ -102,158 +119,84 @@ function sector(r0: number, r1: number, a0: number, a1: number): string {
   const big = a1 - a0 > Math.PI ? 1 : 0;
   return `M${x0} ${y0}A${r1} ${r1} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 ${big} 0 ${x3} ${y3}Z`;
 }
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-
-interface Hit {
-  root: number;
-  fam: string;
-  /** The chord's angle on the wheel: the path is drawn in the centre at this angle. */
-  a: number;
-}
-/** Radius of the progression's shape in the wheel's centre (A, B). */
-let pathR = 46;
-/** Outlines for chords in the progression, drawn over all the cells so neighbours don't hide them. */
-let outlines = '';
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
 // ---------- Rendering ----------
 
 const svg = document.getElementById('wheel')!;
+/** Where each chord on the wheel sits (by id), for the path in the centre. */
+let spots = new Map<string, { a: number; outer: boolean }>();
 
 function render(): void {
-  document.querySelectorAll<HTMLButtonElement>('.seg button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === view)));
-  const hits: Hit[] = view === 'a' ? drawA() : drawB();
-  drawPaths(hits);
-  drawLists();
-}
-
-/** Which chords the song uses, by root pitch class and family. */
-function used(): Set<string> {
   const c = songChords();
-  return new Set([...c.verse, ...c.chorus].map((x) => `${pc(x.chord.root)}:${kindFamily(x.kind)}`));
-}
-const isLit = (root: number, fam: string, quality?: string) => !!lit && lit.root === root && lit.fam === fam && (quality === undefined || lit.quality === quality);
-
-function cell(d: string, cls: string, data: Record<string, string>, label: string): string {
-  if (cls.includes(' used')) outlines += `<path d="${d}" class="outline" />`;
-  const attrs = Object.entries(data).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ');
-  return `<path d="${d}" class="${cls}" ${attrs} role="button" tabindex="0" aria-label="${esc(label)}"></path>`;
-}
-
-function drawA(): Hit[] {
-  const spots = DIATONIC[key.mode];
-  const n = spots.length;
-  const tonicIdx = key.mode === 'major' ? 1 : 4;
+  const used = new Set([...c.verse, ...c.chorus].map(idOf));
+  const inner = DIATONIC[key.mode];
+  const outer = borrowedChords(vibeById(vibeId)!.params, key.mode);
+  const n = inner.length;
   const step = (2 * Math.PI) / n;
-  const angle = (i: number) => -Math.PI / 2 + (i - tonicIdx) * step;
-  const u = used();
-  let out = '';
-  outlines = '';
-  pathR = 46;
-  const hits: Hit[] = [];
-  spots.forEach((s, i) => {
-    const ch = resolveDegreeChord(s.degree, s.quality, key);
-    const root = pc(ch.root);
-    const fam = family(s.quality);
+  const angle = (i: number) => -Math.PI / 2 + (i - TONIC_INDEX[key.mode]) * step;
+  spots = new Map();
+  let cells = '';
+  let text = '';
+  let outlines = '';
+
+  const draw = (d: string, ch: SimpleChord, extraCls: string, label: string) => {
+    const id = idOf(ch);
+    const now = lit === id;
+    const inSong = used.has(id);
+    if (inSong) outlines += `<path d="${d}" class="outline" />`;
+    cells += `<path d="${d}" class="cell ${extraCls}${now ? ' now' : ''}" data-r="${esc(formatChord(ch.chord))}" data-id="${id}" role="button" tabindex="0" aria-label="${esc(label + (inSong ? ', in the progression' : ''))}"></path>`;
+    return now;
+  };
+
+  inner.forEach((s, i) => {
+    const ch = resolve(s.degree, s.quality);
     const a0 = angle(i) - step / 2;
     const a1 = angle(i) + step / 2;
-    const now = isLit(root, fam) && lit?.quality === undefined;
-    const inSong = u.has(`${root}:${fam}`);
-    out += cell(sector(58, 128, a0, a1), `cell${now ? ' now' : ''}${inSong ? ' used' : ''}`, { q: s.quality, r: formatChord(ch), i: String(i) }, `${spokenChord(ch)}${inSong ? ', in the progression' : ''}`);
-    const [tx, ty] = pt(96, angle(i));
-    out += `<text x="${tx}" y="${ty - 6}" font-size="19" font-weight="500" class="${now ? 't-now' : ''}">${esc(formatChord(ch))}</text>`;
-    out += `<text x="${tx}" y="${ty + 13}" font-size="10" class="${now ? 't-now' : 't-ext'}">${esc(NUMERAL(s.degree, s.quality))}</text>`;
-    hits.push({ root, fam, a: angle(i) });
-    // Outer ring: extensions, split across the wedge.
-    const k = s.exts.length;
-    s.exts.forEach((q, j) => {
-      const b0 = a0 + ((a1 - a0) * j) / k;
-      const b1 = a0 + ((a1 - a0) * (j + 1)) / k;
-      const ec = resolveDegreeChord(s.degree, q, key);
-      const lt = isLit(root, fam, q);
-      out += cell(sector(132, 192, b0, b1), `cell ext${lt ? ' now' : ''}`, { q, r: formatChord(ec), i: String(i) }, spokenChord(ec));
-      const [ex, ey] = pt(162, (b0 + b1) / 2);
-      out += `<text x="${ex}" y="${ey}" font-size="11.5" class="${lt ? 't-now' : 't-ext'}">${esc(suffix(ec))}</text>`;
+    const now = draw(sector(58, 132, a0, a1), ch, '', `${spokenChord(ch.chord)}, ${numeral(s.degree, s.quality)}`);
+    const [tx, ty] = pt(97, angle(i));
+    text += `<text x="${tx}" y="${ty - 7}" font-size="21" font-weight="500" class="${now ? 't-now' : ''}">${esc(formatChord(ch.chord))}</text>`;
+    text += `<text x="${tx}" y="${ty + 14}" font-size="10.5" class="${now ? 't-now' : 't-sub'}">${esc(numeral(s.degree, s.quality))}</text>`;
+    spots.set(idOf(ch), { a: angle(i), outer: false });
+
+    // The borrowed chords that lead to this one, split across the outer wedge.
+    const mine = outer.filter((b) => b.target === i);
+    if (!mine.length) {
+      cells += `<path d="${sector(136, 194, a0, a1)}" class="cell empty" aria-hidden="true"></path>`;
+      return;
+    }
+    mine.forEach((b, j) => {
+      const b0 = a0 + ((a1 - a0) * j) / mine.length;
+      const b1 = a0 + ((a1 - a0) * (j + 1)) / mine.length;
+      const bc = resolve(b.degree, b.quality);
+      const bn = draw(sector(136, 194, b0, b1), bc, 'out', `${spokenChord(bc.chord)}, ${numeral(b.degree, b.quality)}, borrowed, leads to ${formatChord(ch.chord)}`);
+      const [bx, by] = pt(165, (b0 + b1) / 2);
+      const size = mine.length > 2 ? 12.5 : 14;
+      text += `<text x="${bx}" y="${by - 6}" font-size="${size}" font-weight="500" class="${bn ? 't-now' : ''}">${esc(formatChord(bc.chord))}</text>`;
+      text += `<text x="${bx}" y="${by + 10}" font-size="9.5" class="${bn ? 't-now' : 't-sub'}">${esc(numeral(b.degree, b.quality))}</text>`;
+      if (!spots.has(idOf(bc))) spots.set(idOf(bc), { a: (b0 + b1) / 2, outer: true });
     });
   });
-  svg.innerHTML = out + outlines;
-  return hits;
+
+  svg.innerHTML = cells + outlines + text + paths(c);
+  lists(c);
 }
 
-/** A chord's suffix as shown on the outer ring ("maj7", "m9", "7"). */
-const suffix = (c: Chord) => formatChord(c).slice(formatNote(c.root).length) || 'maj';
-
-function drawB(): Hit[] {
-  const relMajor = key.mode === 'major' ? pc(key.tonic) : (pc(key.tonic) + 3) % 12;
-  const spots = DIATONIC[key.mode];
-  // Diatonic chords by ring position: outer −1..1 are spots 0..2; inner −1..1 are spots 3..5; inner +2 is spot 6.
-  const at = (ring: 'o' | 'i', k: number): Spot | undefined =>
-    ring === 'o' ? (k >= -1 && k <= 1 ? spots[k + 1] : undefined) : k >= -1 && k <= 1 ? spots[k + 4] : k === 2 ? spots[6] : undefined;
-  const step = (2 * Math.PI) / 12;
-  const u = used();
-  const majorName = (p: number) => formatNote(KEY_TONICS.major.find((t) => pc(t) === p)!);
-  const minorName = (p: number) => formatNote(KEY_TONICS.minor.find((t) => pc(t) === p)!);
-  let out = '';
-  outlines = '';
-  pathR = 60;
-  const hits: Hit[] = [];
-  for (let k = -5; k <= 6; k++) {
-    const a = -Math.PI / 2 + k * step;
-    const a0 = a - step / 2;
-    const a1 = a + step / 2;
-    const majPc = (((relMajor + 7 * k) % 12) + 12) % 12;
-    const minPc = (majPc + 9) % 12;
-    for (const ring of ['o', 'i'] as const) {
-      const s = at(ring, k);
-      const root = ring === 'o' ? majPc : minPc;
-      const ch: Chord = s
-        ? resolveDegreeChord(s.degree, s.quality, key)
-        : { ...parseChordOk(`C${ring === 'o' ? '' : 'm'}`), root: noteOf(ring === 'o' ? majorName(root) : minorName(root)) };
-      const fam = s ? family(s.quality) : ring === 'o' ? 'major' : 'minor';
-      const inSong = u.has(`${root}:${fam}`) || (ring === 'i' && u.has(`${root}:dim`));
-      const now = isLit(root, fam) || (ring === 'i' && isLit(root, 'dim'));
-      const [r0, r1, tr] = ring === 'o' ? [134, 192, 163] : [72, 130, 101];
-      const cls = `cell${s || inSong ? '' : ' off'}${now ? ' now' : ''}${inSong ? ' used' : ''}`;
-      out += cell(sector(r0, r1, a0, a1), cls, { q: s?.quality ?? (ring === 'o' ? '' : 'm'), r: formatChord(ch), i: s ? String(spots.indexOf(s)) : '' }, `${spokenChord(ch)}${s ? '' : ', outside the key'}${inSong ? ', in the progression' : ''}`);
-      const [tx, ty] = pt(tr, a);
-      out += `<text x="${tx}" y="${ty}" font-size="${ring === 'o' ? 17 : 14}" font-weight="500" class="${now ? 't-now' : s || inSong ? '' : 't-off'}">${esc(formatChord(ch))}</text>`;
-      if (s || inSong) hits.push({ root, fam: inSong && !s && u.has(`${root}:dim`) ? 'dim' : fam, a });
-    }
-  }
-  svg.innerHTML = out + outlines;
-  return hits;
-}
-
-function parseChordOk(s: string): Chord {
-  const r = parseChord(s);
-  if (!r.ok) throw new Error(s);
-  return r.chord;
-}
-const noteOf = (name: string): Note => parseChordOk(name.replace('♯', '#').replace('♭', 'b')).root;
-
-/** The progression's path: a line through each chord in play order (verse solid, chorus dashed). */
-function drawPaths(hits: Hit[]): void {
-  const c = songChords();
-  const find = (x: { chord: Chord; kind: string }) => hits.find((h) => h.root === pc(x.chord.root) && h.fam === kindFamily(x.kind));
+/** The progression's shape in the centre: a point at each chord's angle, verse solid, chorus dashed. */
+function paths(c: Record<Section, SimpleChord[]>): string {
   let out = '';
   for (const sec of ['verse', 'chorus'] as Section[]) {
-    const pts = c[sec].map(find).filter((h): h is Hit => !!h);
+    const pts = c[sec].map((x) => spots.get(idOf(x))).filter((p): p is { a: number; outer: boolean } => !!p);
     if (pts.length < 2) continue;
-    // The verse on the outer edge of the centre, the chorus a little inside it, so both stay readable.
-    const r = sec === 'verse' ? pathR : pathR - 9;
-    const xy = pts.map((p) => pt(r, p.a));
-    const loop = [...xy, xy[0]!];
-    out += `<polyline class="path ${sec}" points="${loop.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}" />`;
-    for (const [x, y] of xy) out += `<circle class="dot" cx="${x}" cy="${y}" r="2.5" />`;
+    const r = sec === 'verse' ? 46 : 36;
+    const xy = pts.map((p) => [...pt(r, p.a), p.outer] as const);
+    out += `<polyline class="path ${sec}" points="${[...xy, xy[0]!].map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}" />`;
+    for (const [x, y, o] of xy) out += `<circle class="dot${o ? ' hollow' : ''}" cx="${x}" cy="${y}" r="3" />`;
   }
-  svg.insertAdjacentHTML('beforeend', out);
+  return out;
 }
 
-function chip(c: Chord, now: boolean, extra = ''): string {
-  return `<button class="chip${now ? ' now' : ''}" data-r="${esc(formatChord(c))}" aria-label="${esc(spokenChord(c))}" ${extra}>${esc(formatChord(c))}</button>`;
-}
-
-function drawLists(): void {
-  const c = songChords();
+function lists(c: Record<Section, SimpleChord[]>): void {
   const p = engine.playhead();
   const playing = p.phase === 'playing' ? p.slotIndex : null;
   const v = c.verse.length;
@@ -261,77 +204,34 @@ function drawLists(): void {
   const nowAt = (sec: Section, i: number) =>
     playing !== null && (sec === 'verse' ? playing === i || playing === i + v : playing === 2 * v + i || playing === 2 * v + ch + i);
   const row = (sec: Section) =>
-    `<span class="label">${sec === 'verse' ? 'Verse ×2' : 'Chorus ×2'}</span>` + c[sec].map((x, i) => chip(x.chord, nowAt(sec, i))).join('');
+    `<span class="label">${sec === 'verse' ? 'Verse ×2' : 'Chorus ×2'}</span>` +
+    c[sec].map((x, i) => `<button class="chip${nowAt(sec, i) ? ' now' : ''}" data-r="${esc(formatChord(x.chord))}" data-id="${idOf(x)}">${esc(formatChord(x.chord))}</button>`).join('');
   document.getElementById('verse')!.innerHTML = row('verse');
   document.getElementById('chorus')!.innerHTML = row('chorus');
-
-  // Chords the progression uses that aren't in the key.
-  const inKey = new Set(DIATONIC[key.mode].map((s) => `${pc(resolveDegreeChord(s.degree, s.quality, key).root)}:${family(s.quality)}`));
-  const outside = [...c.verse, ...c.chorus].filter((x, i, all) => !inKey.has(`${pc(x.chord.root)}:${kindFamily(x.kind)}`) && all.findIndex((y) => formatChord(y.chord) === formatChord(x.chord)) === i);
-  document.getElementById('outside')!.innerHTML =
-    view === 'a' && outside.length ? `<span class="label">Outside the key (not on this wheel)</span>` + outside.map((x) => chip(x.chord, false)).join('') : '';
-
-  // B: the picked chord's extensions.
-  document.getElementById('exts')!.innerHTML =
-    view === 'b' && picked
-      ? `<span class="label">${esc(formatChord(picked.chord))}: extensions</span>` +
-        picked.exts.map((q) => chip({ ...parseChordOk(`C${q}`), root: picked!.chord.root }, isLit(pc(picked!.chord.root), lit?.fam ?? '', q))).join('')
-      : view === 'b'
-        ? `<span class="label">Tap a chord to see its extensions.</span>`
-        : '';
-
-  document.getElementById('note')!.textContent =
-    view === 'a'
-      ? 'A shows only the key’s seven chords, a fifth apart around the circle, with extensions always visible on the outer ring. Chords borrowed from outside the key aren’t on it.'
-      : 'B is the full circle of fifths, turned so the key is at the top: its seven chords are lit, borrowed chords show where they sit. Extensions appear here when you pick a chord.';
 }
 
 // ---------- Interaction ----------
 
-function preview(symbol: string, spot?: { idx: string; quality: string }): void {
-  const c = parseChordOk(symbol.replace(/♯/g, '#').replace(/♭/g, 'b').replace('°', 'dim'));
-  const fam = spot ? family(DIATONIC[key.mode][Number(spot.idx)]?.quality ?? spot.quality) : 'major';
-  const s = spot && spot.idx !== '' ? DIATONIC[key.mode][Number(spot.idx)] : undefined;
-  const isExt = !!s && spot!.quality !== s.quality;
-  lit = { root: pc(c.root), fam: s ? family(s.quality) : spot ? family(spot.quality) : fam, quality: isExt ? spot!.quality : undefined };
-  picked = s ? { chord: resolveDegreeChord(s.degree, s.quality, key), exts: s.exts } : picked;
-  void engine.previewChord(c);
+const parse = (s: string): Chord => {
+  const r = parseChord(s.replace(/♯/g, '#').replace(/♭/g, 'b'));
+  if (!r.ok) throw new Error(s);
+  return r.chord;
+};
+function tap(el: Element | null): void {
+  const t = el?.closest('[data-r]') as HTMLElement | SVGElement | null;
+  if (!t || !t.dataset.r) return;
   if (engine.playhead().phase === 'playing') engine.pause();
+  lit = t.dataset.id ?? null;
+  void engine.previewChord(parse(t.dataset.r));
   render();
 }
-
-svg.addEventListener('click', (e) => {
-  const t = (e.target as Element).closest('[data-r]') as SVGElement | null;
-  if (!t || t.classList.contains('off')) return;
-  preview(t.dataset.r!, { idx: t.dataset.i ?? '', quality: t.dataset.q ?? '' });
-});
+svg.addEventListener('click', (e) => tap(e.target as Element));
 svg.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
-  const t = e.target as SVGElement;
-  if (!t.dataset?.r || t.classList.contains('off')) return;
   e.preventDefault();
-  preview(t.dataset.r, { idx: t.dataset.i ?? '', quality: t.dataset.q ?? '' });
+  tap(e.target as Element);
 });
-document.querySelector('.page')!.addEventListener('click', (e) => {
-  const b = (e.target as Element).closest('.chips [data-r]') as HTMLElement | null;
-  if (!b) return;
-  const c = parseChordOk(b.dataset.r!.replace(/♯/g, '#').replace(/♭/g, 'b'));
-  const kind = simplify(c).kind;
-  lit = { root: pc(c.root), fam: kindFamily(kind), quality: b.closest('#exts') ? formatChord(c).slice(formatNote(c.root).length) : undefined };
-  if (lit.quality !== undefined && picked) {
-    const s = DIATONIC[key.mode].find((x) => pc(resolveDegreeChord(x.degree, x.quality, key).root) === pc(c.root));
-    lit = { root: pc(c.root), fam: s ? family(s.quality) : lit.fam, quality: picked.exts.find((q) => formatChord({ ...parseChordOk(`C${q}`), root: c.root }) === formatChord(c)) };
-  }
-  void engine.previewChord(c);
-  render();
-});
-document.querySelectorAll<HTMLButtonElement>('.seg button').forEach((b) =>
-  b.addEventListener('click', () => {
-    view = b.dataset.v as 'a' | 'b';
-    history.replaceState(null, '', `?v=${view}`);
-    render();
-  }),
-);
+document.querySelector('.lists')!.addEventListener('click', (e) => tap(e.target as Element));
 
 const keySel = document.getElementById('key') as HTMLSelectElement;
 for (const m of ['major', 'minor'] as const)
@@ -341,7 +241,6 @@ keySel.addEventListener('change', () => {
   const [m, l, a] = keySel.value.split(':');
   const modeChanged = m !== key.mode;
   key = { tonic: { letter: l as Note['letter'], acc: Number(a) }, mode: m as Mode };
-  picked = null;
   if (modeChanged) reroll();
   else sendSong();
 });
@@ -351,14 +250,11 @@ vibeSel.addEventListener('change', () => {
   vibeId = vibeSel.value;
   reroll();
 });
-document.getElementById('reroll')!.addEventListener('click', () => {
-  picked = null;
-  reroll();
-});
+document.getElementById('reroll')!.addEventListener('click', reroll);
 const playBtn = document.getElementById('play')!;
 playBtn.addEventListener('click', () => void engine.togglePlay());
 
-// While playing, light the playing chord on the wheel.
+// While playing, light the playing chord.
 let lastSlot: number | null = null;
 let lastPhase = '';
 const tick = () => {
@@ -366,7 +262,7 @@ const tick = () => {
   playBtn.textContent = p.phase === 'playing' || p.phase === 'count-in' ? 'Pause' : 'Play';
   if (p.phase === 'playing' && (p.slotIndex !== lastSlot || lastPhase !== 'playing')) {
     const c = playList()[p.slotIndex ?? 0];
-    if (c) lit = { root: pc(c.chord.root), fam: kindFamily(c.kind) };
+    if (c) lit = idOf(c);
     render();
   }
   lastSlot = p.slotIndex;
