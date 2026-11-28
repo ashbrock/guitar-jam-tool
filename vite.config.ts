@@ -10,6 +10,7 @@ export default defineConfig(({ command, isPreview }) => ({
       // Every page to publish (Vite only builds the root index.html unless told otherwise).
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
+        chordWheel: resolve(import.meta.dirname, 'design/explorations/05-chord-wheel/index.html'),
         generative: resolve(import.meta.dirname, 'design/explorations/04-generative/index.html'),
         pixelTiles: resolve(import.meta.dirname, 'design/explorations/03-pixel-tiles/index.html'),
         lateSetChart: resolve(import.meta.dirname, 'design/explorations/02-late-set-chart/index.html'),

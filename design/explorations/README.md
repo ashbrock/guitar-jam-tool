@@ -98,3 +98,15 @@ Nothing here is wired into the app on `main` unless noted.
 - **Solo mode:** the notes you play (microphone pitch detection, no recording) could feed extra harmonics into the strings, so the visuals answer your solo.
 - **Accidentals:** at display size the Noto ♭/♯ look thin beside DM Sans; we'd draw our own.
 - **Chord charts:** basic shapes from `src/theory/shapes.ts` (open where possible, else the lower E- or A-shape barre), with tests.
+
+---
+
+## 05 · Chord wheel (sketch)
+
+**What it is:** a wheel of the chords in the progression's key, as a possible replacement for, or companion to, the chord chart in Jam. Two layouts to compare:
+- **A · Key wheel:** only the key's seven chords, in fifths order (IV I V ii vi iii vii°; ♭VI ♭III ♭VII iv i v ii° in minor), with an outer ring of each chord's common extensions. Borrowed chords are listed under it.
+- **B · Circle of fifths:** all twelve majors with their relative minors, turned so the key is at the top; the key's chords lit, the rest faint, so borrowed chords show where they sit. A picked chord's extensions appear under it.
+
+Both ring the chords the progression uses, light the playing (or tapped) one, and draw the progression's shape in the centre (verse solid, chorus dashed). It uses the real generator and audio: re-roll, change key or vibe, Play, and tap any chord or extension to hear it.
+
+**Status:** sketch in `05-chord-wheel/index.html` (`?v=a` or `?v=b`). Not wired into the app. Extensions are a common-practice table in the sketch, not yet vibe data.
